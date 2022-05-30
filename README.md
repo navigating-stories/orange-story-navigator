@@ -38,4 +38,4 @@ or
 
 The new widget appears in the toolbox bar under the section `Navigating Stories`.
 
-![screenshot](https://github.com/navigating-stories/dutch-dsg-orange-widget/blob/master/screenshot.png)
+![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot.png)
