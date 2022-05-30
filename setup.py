@@ -5,19 +5,19 @@ from os import path, walk
 import sys
 from setuptools import setup, find_packages
 
-NAME = "Orange3 Example Add-on"
+NAME = "Orange3-Text-Navigating-Stories"
 
-VERSION = "0.0.3"
+VERSION = "0.0.1"
 
-AUTHOR = 'Bioinformatics Laboratory, FRI UL'
-AUTHOR_EMAIL = 'contact@orange.biolab.si'
+AUTHOR = 'Kody Moodley, The Netherlands eScience Center'
+AUTHOR_EMAIL = 'k.moodley@esciencecenter.nl'
 
-URL = 'http://orange.biolab.si/download'
-DESCRIPTION = "Add-on containing example widgets"
+URL = 'http://github.com/navigating-stories/dutch-dsg-orange-widget'
+DESCRIPTION = "Orange3-Text module(s) for the Navigating Stories project by the University of Twente (UT)"
 LONG_DESCRIPTION = open(path.join(path.dirname(__file__), 'README.pypi'),
                         'r', encoding='utf-8').read()
 
-LICENSE = "BSD"
+LICENSE = "Apache 2.0"
 
 KEYWORDS = (
     # [PyPi](https://pypi.python.org) packages with keyword "orange3 add-on"
@@ -28,7 +28,6 @@ KEYWORDS = (
 PACKAGES = find_packages()
 
 PACKAGE_DATA = {
-    'orangecontrib.example': ['tutorials/*.ows'],
     'orangecontrib.example.widgets': ['icons/*'],
 }
 
@@ -46,19 +45,19 @@ ENTRY_POINTS = {
     'orange3.addon': (
         'example = orangecontrib.example',
     ),
-    # Entry point used to specify packages containing tutorials accessible
-    # from welcome screen. Tutorials are saved Orange Workflows (.ows files).
-    'orange.widgets.tutorials': (
-        # Syntax: any_text = path.to.package.containing.tutorials
-        'exampletutorials = orangecontrib.example.tutorials',
-    ),
+    # # Entry point used to specify packages containing tutorials accessible
+    # # from welcome screen. Tutorials are saved Orange Workflows (.ows files).
+    # 'orange.widgets.tutorials': (
+    #     # Syntax: any_text = path.to.package.containing.tutorials
+    #     'exampletutorials = orangecontrib.example.tutorials',
+    # ),
 
     # Entry point used to specify packages containing widgets.
     'orange.widgets': (
         # Syntax: category name = path.to.package.containing.widgets
         # Widget category specification can be seen in
         #    orangecontrib/example/widgets/__init__.py
-        'Examples = orangecontrib.example.widgets',
+        'Navigating Stories = orangecontrib.example.widgets',
     ),
 
     # Register widget help

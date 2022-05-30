@@ -1,9 +1,9 @@
-Hello World
-===========
+Kody's test widget
+==================
 
 ![image](icons/mywidget.png)
 
-A dummy widget that greets the world.
+A widget to test orange3-text features 
 
 Signals
 -------
@@ -17,4 +17,4 @@ Signals
 Description
 -----------
 
-This is a simple widget that greets the world using a QLabel. If you are interested in widget development, you should take a look at it's source code.
+Just a test playground to learn how to build orange3-text widgets

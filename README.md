@@ -1,9 +1,7 @@
-Orange3 Example Add-on
-======================
+Dutch Digital Story Grammar (DSG) Example Add-on for Orange3
+============================================================
 
-This is an example add-on for [Orange3](http://orange.biolab.si). Add-on can extend Orange either 
-in scripting or GUI part, or in both. We here focus on the GUI part and implement a simple (empty) widget,
-register it with Orange and add a new workflow with this widget to example tutorials.
+This is a very basic, experimental add-on for Orange3 which enables digital story grammar (DSG) analysis of Dutch text documents. Please see the following paper for more information: [https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205](https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205)
 
 Installation
 ------------
@@ -17,12 +15,6 @@ Python's site-packages directory), run
 
     pip install -e .
 
-Documentation / widget help can be built by running
-
-    make html htmlhelp
-
-from the doc directory.
-
 Usage
 -----
 
@@ -35,6 +27,6 @@ or
 
     python -m Orange.canvas
 
-The new widget appears in the toolbox bar under the section Example.
+The new widget appears in the toolbox bar under the section `Navigating Stories`.
 
 ![screenshot](https://github.com/biolab/orange3-example-addon/blob/master/screenshot.png)
