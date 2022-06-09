@@ -2,7 +2,7 @@ jupyterlab==3.4.2
 lxml==4.8.0
 Orange3==3.32.0
 Orange3-Text==1.7.0
-pandas==1.4.2
+pandas
 regex==2022.4.24
 stanza==1.4.0
 stroll-srl==0.5.1

@@ -25,6 +25,9 @@ class MyWidget(OWWidget):
     settings_version = 1
     run_nlp = None
 
+    SRL_FIELDS = [ "sent_id", "head_id", "head", "nsubj", "rel", "Arg0", "Arg1", "Arg2",
+                   "ArgM-ADV", "ArgM-CAU", "ArgM-DIS", "ArgM-LOC", "ArgM-MNR", "ArgM-MOD", "ArgM-NEG", "ArgM-REC", "ArgM-TMP", ]
+
     class Inputs:
         corpus = Input("Corpus", Corpus, default=True)
 
@@ -135,8 +138,84 @@ class MyWidget(OWWidget):
         nlp_table_df = self.correct_attachments_table(nlp_table_df)
         print("finished running correct attachments table.")
         print()
-        # srl_table_df = nlp_table_to_srl_table(nlp_table_df)
-        return text, nlp_table_df 
+        print("running srl analysis...", letter_id)
+        srl_table_df = self.nlp_table_to_srl_table(nlp_table_df)
+        print("finished running srl analysis.")
+        print()
+        return text, nlp_table_df, srl_table_df 
+
+    def nlp_table_to_srl_table(self, nlp_table_df):
+        srl_table_df = pandas.DataFrame({ field: [] for field in self.SRL_FIELDS })
+        srl_data = {}
+        nlp_data = {}
+        sentence = {}
+        last_id = 0
+        sent_id = 1
+        for i, row in nlp_table_df.iterrows():
+            if row['id'] <= last_id:
+                if len(srl_data) > 0:
+                    self.add_srl_data_to_srl_table(srl_table_df, srl_data, nlp_data, sentence)
+                sent_id += 1
+                srl_data = {}
+                nlp_data = {}
+                sentence = {}
+            if row['srl'] != "_":
+                if row['head'] not in srl_data:
+                    srl_data[row['head']] = { "sent_id": sent_id, "head_id": row["head"] }
+                if row['srl'] in srl_data[row['head']]:
+                    print(f"duplicate role for {row['srl']} [{i}]: {srl_data[row['head']][row['srl']]} and {row['lemma']}")
+                    srl_data[row['head']][row['srl']] += " " + row['lemma']
+                else:
+                    srl_data[row['head']][row['srl']] = row['lemma']
+            if row['frame'] == "rel":
+                if row['id'] not in srl_data:
+                    srl_data[row['id']] = { "sent_id": sent_id, "head_id": row["id"] }
+                if row['frame'] not in srl_data[row['id']]:
+                    srl_data[row['id']][row['frame']] = row['lemma']
+                else:
+                    srl_data[row['id']][row['frame']] += " " + row['lemma']
+            if row['deprel'] == "nsubj":
+                if row['head'] not in nlp_data:
+                    nlp_data[row['head']] = { "sent_id": sent_id, "head_id": row["head"] }
+                if 'nsubj' in nlp_data[row['head']]:
+                    nlp_data[row['head']]["nsubj"] += " " + row['lemma']
+                else:
+                    nlp_data[row['head']]["nsubj"] = row['lemma']
+            if row['deprel'] == "compound:prt":
+                if row['head'] not in nlp_data:
+                    nlp_data[row['head']] = { "sent_id": sent_id, "head_id": row["head"] }
+                if 'head' in nlp_data[row['head']]:
+                    nlp_data[row['head']]["head"] += " " + row['lemma']
+                else:
+                    nlp_data[row['head']]["head"] = row['lemma']
+            last_id = row['id']
+            sentence[row['id']] = row['lemma']
+        if len(srl_data) > 0:
+            self.add_srl_data_to_srl_table(srl_table_df, srl_data, nlp_data, sentence)
+        return srl_table_df
+
+    def add_srl_data_to_srl_table(self, srl_table_df, srl_data, nlp_data, sentence):
+        print(srl_data)
+        for phrase_key in srl_data:
+            if 'head' in srl_data[phrase_key]:
+                srl_data[phrase_key]["head"] += " " + sentence[phrase_key]
+            elif phrase_key > 0:
+                srl_data[phrase_key]["head"] = sentence[phrase_key]
+            else:
+                srl_data[phrase_key]["head"] = "FILLER"
+            if phrase_key in nlp_data:
+                srl_table_df.loc[len(srl_table_df)] = self.srl_dict_to_srl_list(srl_data[phrase_key], nlp_data[phrase_key])
+            else:
+                srl_table_df.loc[len(srl_table_df)] = self.srl_dict_to_srl_list(srl_data[phrase_key], {})
+    
+    def srl_dict_to_srl_list(self, srl_dict, nlp_dict):
+        srl_list = len(self.SRL_FIELDS) * [ "" ]
+        for i in range(0, len(self.SRL_FIELDS)):
+            if self.SRL_FIELDS[i] in srl_dict:
+                srl_list[i] = srl_dict[self.SRL_FIELDS[i]]
+            if self.SRL_FIELDS[i] in nlp_dict:
+                srl_list[i] = nlp_dict[self.SRL_FIELDS[i]]
+        return srl_list
 
     def read_file(self, in_file_id):
         return self.corpus.documents[in_file_id]
@@ -148,8 +227,9 @@ class MyWidget(OWWidget):
 
     @Inputs.corpus
     def set_corpus(self, corpus: Optional[Corpus]):
-        run_nlp = stanza.Pipeline(lang='nl', processors='tokenize,lemma,pos,depparse')
+        run_nlp = stanza.Pipeline(lang='nl', processors='tokenize,lemma,pos,depparse,srl')
         all_nlp_data = pandas.DataFrame([])
+        all_srl_data = pandas.DataFrame([])
         
         # reset gui
         # for i in reversed(range(self.controlArea.layout().count())): 
@@ -169,23 +249,22 @@ class MyWidget(OWWidget):
 
         if self.corpus is not None:     
             for letter_id in range(0, len(self.corpus.documents)):
-                text, nlp_table_df = self.analyze_letter(run_nlp, letter_id)
-                # , srl_table_df
-                # all_srl_data = pandas.concat([all_srl_data, srl_table_df])
+                text, nlp_table_df, srl_table_df = self.analyze_letter(run_nlp, letter_id)
+                all_srl_data = pandas.concat([all_srl_data, srl_table_df])
                 all_nlp_data = pandas.concat([all_nlp_data, nlp_table_df])
 
-        self.Outputs.table.send(table_from_frame(all_nlp_data))
+        self.Outputs.table.send(table_from_frame(all_srl_data))
 
         print()
         print()
         print("NLP analysis:")
         print()
-        print()
-        print()
         print(all_nlp_data)
         print()
         print()
+        print("SRL analysis")
         print()
+        print(all_srl_data)
 
 if __name__ == "__main__":
     WidgetPreview(MyWidget).run()
