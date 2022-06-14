@@ -1,7 +1,7 @@
 Dutch Digital Story Grammar (DSG) Example Add-on for Orange3
 ============================================================
 
-This is a very basic, experimental add-on for Orange3 which enables digital story grammar (DSG) analysis of Dutch text documents. Please see the following paper for more information: [https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205](https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205)
+This add-on for Orange3 which enables digital story grammar (DSG) analysis of Dutch texts. Please see the following paper for more information on DSG: Andrade and Andersen (2020) [https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205](https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205)
 
 Requirements
 ------------
@@ -36,6 +36,15 @@ or
 
     python -m Orange.canvas
 
-The new widget appears in the toolbox bar under the section `Navigating Stories`.
+The DSG widget appears in the toolbox bar under the section `Navigating Stories`:
 
 ![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot.png)
+
+Connecting the DSG widget to the Corpus widget from the Text Mining section will automatically start a DSG analysis on the first corpus of the Corpus widget (21 letters from the future).
+
+![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot1.png)
+
+The result, a table with a dependency parsing analysis and a semantic role labeling analysis, can be inspected in the Data Table widget of the Data section in Orange:
+
+![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot2.png)
+
