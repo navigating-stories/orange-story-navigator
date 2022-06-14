@@ -43,7 +43,7 @@ Connecting the DSG widget to the Corpus widget from the `Text Mining` section wi
 
 ![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot1.png)
 
-The result, a table with a dependency parsing analysis and a semantic role labeling analysis, can be inspected in the Data Table widget of the `Data` section in Orange:
+The result, a table with a dependency parsing analysis and a semantic role labeling analysis, can be inspected in the Data Table widget of the `Data` section in Orange, after connecting the DSG output of the DSG module to the input of the Data Table module in the Data Table module:
 
 ![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot2.png)
 
