@@ -14,9 +14,9 @@ import stanza
 import stroll.stanza
 import re
 
-class MyWidget(OWWidget):
-    name = "Digital Story Grammar (DSG) \r\n for Orange3"
-    description = "A widget to implement and visualise Digital Story Grammar (DSG).\r\n See https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205"
+class StanzaNLSRL(OWWidget):
+    name = "Stanza NL SRL"
+    description = "Natural language processing for Dutch with Stanza with semantic role labelling as final step, uses Stroll: https://github.com/Filter-Bubble/stroll"
     category=None
     icon = "icons/mywidget.svg"
     priority = 200
@@ -32,7 +32,6 @@ class MyWidget(OWWidget):
         corpus = Input("Corpus", Corpus, default=True)
 
     class Outputs:
-        words = Input("Words", Corpus)
         table = Output("DSG", Table)
 
     def swap_aux_head(self, sentence_df, child, head, heads_head):
@@ -267,4 +266,4 @@ class MyWidget(OWWidget):
         print(all_srl_data)
 
 if __name__ == "__main__":
-    WidgetPreview(MyWidget).run()
+    WidgetPreview(StanzaNLSRL).run()

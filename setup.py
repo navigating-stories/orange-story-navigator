@@ -28,7 +28,7 @@ KEYWORDS = (
 PACKAGES = find_packages()
 
 PACKAGE_DATA = {
-    'orangecontrib.example.widgets': ['icons/*'],
+    'orangecontrib.navigatingstories.widgets': ['icons/*'],
 }
 
 DATA_FILES = [
@@ -43,7 +43,7 @@ ENTRY_POINTS = {
     # Entry points that marks this package as an orange add-on. If set, addon will
     # be shown in the add-ons manager even if not published on PyPi.
     'orange3.addon': (
-        'example = orangecontrib.example',
+        'navigatingstories = orangecontrib.navigatingstories',
     ),
     # # Entry point used to specify packages containing tutorials accessible
     # # from welcome screen. Tutorials are saved Orange Workflows (.ows files).
@@ -57,17 +57,17 @@ ENTRY_POINTS = {
         # Syntax: category name = path.to.package.containing.widgets
         # Widget category specification can be seen in
         #    orangecontrib/example/widgets/__init__.py
-        'Navigating Stories = orangecontrib.example.widgets',
+        'Navigating Stories = orangecontrib.navigatingstories.widgets',
     ),
 
     # Register widget help
     "orange.canvas.help": (
-        'html-index = orangecontrib.example.widgets:WIDGET_HELP_PATH',)
+        'html-index = orangecontrib.navigatingstories.widgets:WIDGET_HELP_PATH',)
 }
 
 NAMESPACE_PACKAGES = ["orangecontrib"]
 
-TEST_SUITE = "orangecontrib.example.tests.suite"
+TEST_SUITE = "orangecontrib.navigatingstories.tests.suite"
 
 
 def include_documentation(local_dir, install_dir):
