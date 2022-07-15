@@ -39,8 +39,9 @@ Here is an example pipeline:
 
 ![screenshot](dsg_nl_dep_rules.jpg)
 
-The widget Import Documents will read text files from a directory. The widget
-Corpus Viewer can be used making a selection of the files. The widget DSG
-NL DEP Rules processes the text files. The results of the analysis can be
-inspected with the Data Table widget.
+The widget Import Documents (from Text Mining) will read text files from a 
+directory. The widget Corpus Viewer (from Text Mining) can be used making 
+a selection of the files. The widget DSG NL DEP Rules (from Navigating 
+Stories) processes the text files. The results of the analysis can be
+inspected with the Data Table widget (from Data).
 
