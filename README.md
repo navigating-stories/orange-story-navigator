@@ -35,15 +35,12 @@ or
 
     python -m Orange.canvas
 
-The DSG widget appears in the toolbox bar in the section `Navigating Stories`:
+Here is an example pipeline:
 
-![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot.png)
+![screenshot](dsg_nl_dep_rules.jpg)
 
-Connecting the DSG widget to the Corpus widget from the `Text Mining` section will automatically start a DSG analysis on the first corpus of the Corpus widget (21 letters from the future).
-
-![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot1.png)
-
-The result, a table with a dependency parsing analysis and a semantic role labeling analysis, can be inspected in the Data Table widget of the `Data` section in Orange, after connecting the DSG output of the DSG module to the input of the Data Table module in the Data Table module:
-
-![screenshot](https://github.com/navigating-stories/test-orange-widget/blob/master/screenshot2.png)
+The widget Import Documents will read text files from a directory. The widget
+Corpus Viewer can be used making a selection of the files. The widget DSG
+NL DEP Rules processes the text files. The results of the analysis can be
+inspected with the Data Table widget.
 
