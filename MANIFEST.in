@@ -1,2 +1,6 @@
-include orangecontrib/navigatingstories/tutorials/*.ows
-include orangecontrib/navigatingstories/widgets/icons/*
+recursive-include orangecontrib *.pyx *.cpp *.net *.py *.tab *.png *.svg *.tsv
+recursive-include doc *.bat *.json *.md *.png *.py *.rst Makefile
+
+include *.py *.txt *.rst *.pypi *.md *.ini .coveragerc
+include COPYING
+include LICENSE

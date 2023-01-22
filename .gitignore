@@ -1,13 +1,19 @@
 # Build files
 build
 dist
-*.egg-info
+Orange3_Network.egg-info
+doc/_build
 *.so
 *.pyd
 *.pyc
+MANIFEST
+
+# virtual environment
+nv
 
 # Cython generated files
 __pycache__
+__pycache__/
 
 # Editor files
 .idea
@@ -17,13 +23,13 @@ __pycache__
 .pydevproject
 .settings/*
 .DS_Store
-__pycache__/
 
-.travis/
-.python-version
-.travis.yml
+# Windows temp files
+Thumbs.db
+
+# PyLint, Coverage reports
+.pylint_cache/*
+htmlcov/*
+.coverage
 .ipynb_checkpoints/
-.git/
-dsgenv/
-venv/
-Orange3_Text_Navigating_Stories.egg-info/
+.git

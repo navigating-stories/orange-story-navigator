@@ -13,16 +13,15 @@ import pandas
 import stanza
 import stroll.stanza
 import re
+import sys
 
-class StanzaNLSRL(OWWidget):
+class OWSNDSGSRL(OWWidget):
     name = "Stanza NL SRL"
     description = "Natural language processing for Dutch with Stanza with semantic role labelling as final step, uses Stroll: https://github.com/Filter-Bubble/stroll"
-    category=None
-    icon = "icons/mywidget.svg"
-    priority = 200
-    keywords = []
-    settingsHandler = DomainContextHandler()
-    settings_version = 1
+    # category=None
+    icon = "icons/dsg_stanzasrl_icon.png"
+    priority = 6488
+
     run_nlp = None
 
     SRL_FIELDS = [ "sent_id", "head_id", "head", "nsubj", "rel", "Arg0", "Arg1", "Arg2",
@@ -32,7 +31,9 @@ class StanzaNLSRL(OWWidget):
         corpus = Input("Corpus", Corpus, default=True)
 
     class Outputs:
-        table = Output("DSG", Table)
+        table = Output("Table", Table)
+
+    # auto_commit = Setting(False)
 
     def swap_aux_head(self, sentence_df, child, head, heads_head):
         for i in range(0, len(sentence_df)):
@@ -221,8 +222,8 @@ class StanzaNLSRL(OWWidget):
 
     def __init__(self):
         super().__init__() 
-        import warnings
-        warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
+        # self.corpus = None
+        # self.table = None
 
     @Inputs.corpus
     def set_corpus(self, corpus: Optional[Corpus]):
@@ -234,6 +235,8 @@ class StanzaNLSRL(OWWidget):
         # for i in reversed(range(self.controlArea.layout().count())): 
         #     self.controlArea.layout().itemAt(i).widget().setParent(None)
 
+        self.corpus = corpus
+
         if hasattr(self, "corpus"):
             if self.corpus is None:
                 print("it is none")
@@ -244,9 +247,8 @@ class StanzaNLSRL(OWWidget):
                 else:
                     print("it is the same")
 
-        self.corpus = corpus
-
         if self.corpus is not None:     
+            print("got here")
             for letter_id in range(0, len(self.corpus.documents)):
                 text, nlp_table_df, srl_table_df = self.analyze_letter(run_nlp, letter_id)
                 all_srl_data = pandas.concat([all_srl_data, srl_table_df])
@@ -265,5 +267,38 @@ class StanzaNLSRL(OWWidget):
         print()
         print(all_srl_data)
 
+
+
+# def main():
+#     WidgetPreview(OWSNDSGSRL).run()
+
+
+# if __name__ == "__main__":
+#     main()
+
+# test without GUI and loading Orange
+# ------------------------------------
+def main(argv=sys.argv):
+    from AnyQt.QtWidgets import QApplication
+    app = QApplication(list(argv))
+    args = app.arguments()
+    if len(args) > 1:
+        filename = args[1]
+    else:
+        filename = "iris"
+
+    ow = OWSNDSGSRL()
+    ow.show()
+    ow.raise_()
+
+    # dataset = Table(filename)
+    # ow.set_data(dataset)
+    # ow.handleNewSignals()
+    app.exec_()
+    # ow.set_data(None)
+    # ow.handleNewSignals()
+    return 0
+
+
 if __name__ == "__main__":
-    WidgetPreview(StanzaNLSRL).run()
+    sys.exit(main())

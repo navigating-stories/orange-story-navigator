@@ -1,108 +1,205 @@
 #!/usr/bin/env python
 
-from os import path, walk
+import os
+from setuptools import setup
 
-import sys
-from setuptools import setup, find_packages
+from distutils.command.build_ext import build_ext
+from distutils.core import Extension
 
-NAME = "Orange3-Text-Navigating-Stories"
+from setuptools import find_packages
 
-VERSION = "0.0.1"
+import numpy
 
+try:
+    from Cython.Distutils.build_ext import new_build_ext as build_ext
+    have_cython = True
+except ImportError:
+    have_cython = False
+
+NAME = 'Orange-Story-Navigator'
+DOCUMENTATION_NAME = 'Orange Story Navigator'
+
+VERSION = '1.7.0'
+
+DESCRIPTION = 'Narrative analysis add-on for the Orange 3 data mining software package.'
+LONG_DESCRIPTION  = open(os.path.join(os.path.dirname(__file__),
+                                      'README.pypi')).read()
 AUTHOR = 'Kody Moodley, The Netherlands eScience Center'
 AUTHOR_EMAIL = 'k.moodley@esciencecenter.nl'
-
-URL = 'http://github.com/navigating-stories/dutch-dsg-orange-widget'
-DESCRIPTION = "Orange3-Text module(s) for the Navigating Stories project by the University of Twente (UT)"
-LONG_DESCRIPTION = open(path.join(path.dirname(__file__), 'README.pypi'),
-                        'r', encoding='utf-8').read()
-
-LICENSE = "Apache 2.0"
+URL = 'https://github.com/biolab/orange3-network'
+LICENSE = 'GPLv3'
 
 KEYWORDS = (
-    # [PyPi](https://pypi.python.org) packages with keyword "orange3 add-on"
-    # can be installed using the Orange Add-on Manager
+    'story analysis',
+    'narrative theory',
+    'natural language processing',
+    'story networks',
+    'character networks',
+    'data mining',
+    'machine learning',
+    'artificial intelligence',
+    'orange',
     'orange3 add-on',
+)
+
+CLASSIFIERS = (
+    'Development Status :: 4 - Beta',
+    'Environment :: X11 Applications :: Qt',
+    'Environment :: Console',
+    'Environment :: Plugins',
+    'Programming Language :: Python',
+    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+    'Operating System :: OS Independent',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    'Topic :: Scientific/Engineering :: Visualization',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Intended Audience :: Education',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Developers',
 )
 
 PACKAGES = find_packages()
 
 PACKAGE_DATA = {
-    'orangecontrib.navigatingstories.widgets': ['icons/*'],
+    'orangecontrib.storynavigation.widgets': ['icons/*'],
+    'orangecontrib.storynavigation.widgets.tests': ['*'],
+    'orangecontrib.storynavigation.widgets.rules': ['*']
 }
 
 DATA_FILES = [
     # Data files that will be installed outside site-packages folder
 ]
 
-INSTALL_REQUIRES = [
-    'Orange3',
-]
+SETUP_REQUIRES = (
+    'setuptools',
+)
 
-ENTRY_POINTS = {
-    # Entry points that marks this package as an orange add-on. If set, addon will
-    # be shown in the add-ons manager even if not published on PyPi.
-    'orange3.addon': (
-        'navigatingstories = orangecontrib.navigatingstories',
+INSTALL_REQUIRES = (
+    'anyqt',
+    'Orange3>=3.31',
+    'orange-widget-base',
+    'scikit-learn',
+),
+
+EXTRAS_REQUIRE = {
+    # Dependencies which are problematic to install automatically
+    'GUI': (
+        'AnyQt',
     ),
-    # # Entry point used to specify packages containing tutorials accessible
-    # # from welcome screen. Tutorials are saved Orange Workflows (.ows files).
-    # 'orange.widgets.tutorials': (
-    #     # Syntax: any_text = path.to.package.containing.tutorials
-    #     'exampletutorials = orangecontrib.example.tutorials',
-    # ),
-
-    # Entry point used to specify packages containing widgets.
-    'orange.widgets': (
-        # Syntax: category name = path.to.package.containing.widgets
-        # Widget category specification can be seen in
-        #    orangecontrib/example/widgets/__init__.py
-        'Navigating Stories = orangecontrib.navigatingstories.widgets',
+    'reST': (
+        'numpydoc',
     ),
-
-    # Register widget help
-    "orange.canvas.help": (
-        'html-index = orangecontrib.navigatingstories.widgets:WIDGET_HELP_PATH',)
+    'test': (
+        'coverage',
+    ),
+    'doc': (
+        'sphinx', 'recommonmark', 'sphinx_rtd_theme'
+    ),
 }
 
-NAMESPACE_PACKAGES = ["orangecontrib"]
+DEPENDENCY_LINKS = (
+)
 
-TEST_SUITE = "orangecontrib.navigatingstories.tests.suite"
+ENTRY_POINTS = {
+    'orange3.addon': (
+        'Story Navigator = orangecontrib.storynavigation',
+    ),
+    'orange.widgets': (
+        'Story Navigator = orangecontrib.storynavigation.widgets',
+    ),
+    # Register widget help
+    "orange.canvas.help": (
+        'html-index = orangecontrib.storynavigation.widgets:WIDGET_HELP_PATH',
+    )
+}
+
+NAMESPACES = ['orangecontrib']
+
+class build_ext_error(build_ext):
+    def initialize_options(self):
+        raise SystemExit(
+            "Cannot compile extensions. numpy and cython are required to "
+            "build Orange."
+        )
+
+# def ext_modules():
+#     includes = [numpy.get_include()]
+#     libraries = []
+
+#     if os.name == 'posix':
+#         libraries.append("m")
+
+#     return [
+#         # Cython extensions. Will be automatically cythonized.
+#         Extension(
+#             "*",
+#             include_dirs=includes,
+#             libraries=libraries,
+#         )
+#     ]
+
+
+def configuration(parent_package='', top_path=None):
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration(None)
+    config.set_options(ignore_setup_xxx_py=True,
+                       assume_default_configuration=True,
+                       delegate_options_to_subpackages=True,
+                       quiet=True)
+    config.add_subpackage('orangecontrib.storynavigation')
+    return config
 
 
 def include_documentation(local_dir, install_dir):
     global DATA_FILES
-    if 'bdist_wheel' in sys.argv and not path.exists(local_dir):
-        print("Directory '{}' does not exist. "
-              "Please build documentation before running bdist_wheel."
-              .format(path.abspath(local_dir)))
-        sys.exit(0)
 
     doc_files = []
-    for dirpath, dirs, files in walk(local_dir):
-        doc_files.append((dirpath.replace(local_dir, install_dir),
-                          [path.join(dirpath, f) for f in files]))
+    for dirpath, _, files in os.walk(local_dir):
+        doc_files.append(
+            (
+                dirpath.replace(local_dir, install_dir),
+                [os.path.join(dirpath, f) for f in files]
+            )
+        )
     DATA_FILES.extend(doc_files)
 
 
 if __name__ == '__main__':
-    include_documentation('doc/_build/html', 'help/orange3-example')
+    cmdclass = {}
+    if have_cython:
+        cmdclass["build_ext"] = build_ext
+    else:
+        # substitute a build_ext command with one that raises an error when
+        # building. In order to fully support `pip install` we need to
+        # survive a `./setup egg_info` without numpy so pip can properly
+        # query our install dependencies
+        cmdclass["build_ext"] = build_ext_error
+
+    include_documentation('doc/_build/html', 'help/orange3-story-navigator')
+
     setup(
+        configuration=configuration,
         name=NAME,
         version=VERSION,
-        author=AUTHOR,
-        author_email=AUTHOR_EMAIL,
-        url=URL,
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
         long_description_content_type='text/markdown',
+        author=AUTHOR,
+        author_email=AUTHOR_EMAIL,
+        url=URL,
         license=LICENSE,
+        keywords=KEYWORDS,
+        classifiers=CLASSIFIERS,
         packages=PACKAGES,
         package_data=PACKAGE_DATA,
         data_files=DATA_FILES,
+        setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
+        extras_require=EXTRAS_REQUIRE,
+        dependency_links=DEPENDENCY_LINKS,
         entry_points=ENTRY_POINTS,
-        keywords=KEYWORDS,
-        namespace_packages=NAMESPACE_PACKAGES,
+        namespace_packages=NAMESPACES,
+        include_package_data=True,
         zip_safe=False,
+        cmdclass=cmdclass
     )

@@ -1,8 +1,12 @@
-jupyterlab==3.4.2
-lxml==4.8.0
-Orange3==3.32.0
-Orange3-Text==1.7.0
-pandas
-regex==2022.4.24
-stanza==1.4.0
-stroll-srl==0.5.1
+wheel==0.38.4
+lxml==4.9.2
+PyQt5==5.15.7
+PyQtWebEngine==5.15.6
+Orange3==3.34.1
+Orange3-Text==1.12.0
+pandas==1.5.3
+regex==2022.10.31
+stanza==1.4.2
+spacy==3.4.4
+dgl==0.6.1
+-e git+https://github.com/kodymoodley/stroll-singlethreaded@master#egg=stroll-srl

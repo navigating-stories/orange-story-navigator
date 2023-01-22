@@ -1,0 +1,28 @@
+[
+ [
+  "Orange Story Navigator",
+  [
+   {
+    "text": "Digital Story Grammar Dependency Parser",
+    "doc": "widgets/dsgdepparser.md",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_stanzadep_icon.png",
+    "background": "#C0FF97",
+    "keywords": []
+   },
+   {
+    "text": "Digital Story Grammar Semantic Role Labeller",
+    "doc": "widgets/dsgsrl.md",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_stanzasrl_icon.png",
+    "background": "#C0FF97",
+    "keywords": []
+   },
+   {
+    "text": "Digital Story Grammar Ruleset",
+    "doc": "widgets/dsgruleset.md",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_ruleset_icon.png",
+    "background": "#C0FF97",
+    "keywords": []
+   }
+  ]
+ ]
+]

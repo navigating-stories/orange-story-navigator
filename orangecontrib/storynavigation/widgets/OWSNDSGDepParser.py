@@ -1,3 +1,24 @@
+# from Orange.data import Table
+# from Orange.data.util import get_unique_names
+# from Orange.widgets import gui, widget, settings
+# from Orange.widgets.widget import OWWidget, Input, Output, Msg
+# from orangecontrib.storynavigation import Network
+# from orangecontrib.storynavigation.network import community as cd
+# from orangewidget.settings import rename_setting
+# from Orange.widgets.utils.widgetpreview import WidgetPreview
+# from orangecontrib.storynavigation.network.readwrite import read_pajek, transform_data_to_orange_table
+# from os.path import join, dirname
+
+# ### ---
+# from orangecontrib.text import Corpus
+# import pandas
+# import stanza
+# from Orange.data.pandas_compat import table_from_frame
+# from AnyQt.QtWidgets import QWidget
+# import os
+# from typing import Optional, Set, List, Tuple, Dict, Any
+# from Orange.widgets.settings import DomainContextHandler, ContextSetting, Setting
+
 from Orange.data import Table
 from Orange.widgets import gui
 from Orange.widgets.settings import Setting
@@ -12,23 +33,21 @@ from Orange.data.pandas_compat import table_from_frame
 import pandas
 import stanza
 import re
+import sys
 
-class StanzaNLDEP(OWWidget):
-    name = "Stanza NL DEP"
-    description = "Natural language processing for Dutch with Stanza with dependency parsing as final step"
-    category=None
-    icon = "icons/mywidget.svg"
-    priority = 200
-    keywords = []
-    settingsHandler = DomainContextHandler()
-    settings_version = 1
+class OWSNDSGDepParser(OWWidget):
+    name = 'DSG dep-parser'
+    description = 'Digital Story Grammer: Dutch dependency parsing with Stanza'
+    icon = 'icons/dsg_stanzadep_icon.png'
+    priority = 6430
+
     run_nlp = None
 
     class Inputs:
         corpus = Input("Corpus", Corpus, default=True)
 
     class Outputs:
-        table = Output("DSG", Table)
+        table = Output("Table", Table)
 
     def swap_aux_head(self, sentence_df, child, head, heads_head):
         for i in range(0, len(sentence_df)):
@@ -138,8 +157,9 @@ class StanzaNLDEP(OWWidget):
 
     def __init__(self):
         super().__init__() 
-        import warnings
-        warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
+        self.corpus = None
+        # import warnings
+        # warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
 
     @Inputs.corpus
     def set_corpus(self, corpus: Optional[Corpus]):
@@ -172,5 +192,39 @@ class StanzaNLDEP(OWWidget):
         print(all_nlp_data)
         print()
 
+def main():
+    #network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'leu_by_genesets.net'))
+    # network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'lastfm.net'))
+    #network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'Erdos02.net'))
+    #transform_data_to_orange_table(network)
+    # WidgetPreview(OWSNDSGRuleset).run(set_graph=network)
+    WidgetPreview(OWSNDSGDepParser).run()
+
 if __name__ == "__main__":
-    WidgetPreview(StanzaNLDEP).run()
+    main()
+
+
+# def main(argv=sys.argv):
+#     from AnyQt.QtWidgets import QApplication
+#     app = QApplication(list(argv))
+#     args = app.arguments()
+#     if len(args) > 1:
+#         filename = args[1]
+#     else:
+#         filename = "iris"
+
+#     ow = OWSNDSGDepParser()
+#     ow.show()
+#     ow.raise_()
+
+#     dataset = Table(filename)
+#     ow.set_data(dataset)
+#     ow.handleNewSignals()
+#     app.exec_()
+#     ow.set_data(None)
+#     ow.handleNewSignals()
+#     return 0
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())

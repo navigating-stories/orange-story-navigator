@@ -1,48 +1,45 @@
-from Orange.data import Table
-from Orange.widgets import gui
-from Orange.widgets.settings import Setting
+from AnyQt.QtCore import QThread, Qt
+from AnyQt.QtWidgets import QWidget, QGridLayout
 from Orange.widgets.widget import OWWidget, Input, Output, Msg
 from orangecontrib.text import Corpus
-from AnyQt.QtWidgets import QWidget
 from Orange.widgets.utils.widgetpreview import WidgetPreview
-import os
-from typing import Optional, Set, List, Tuple, Dict, Any
-from Orange.widgets.settings import DomainContextHandler, ContextSetting, Setting
+from Orange.data import ContinuousVariable, Table, Domain
+from Orange.widgets import gui, widget
+from Orange.widgets.settings import Setting
 from Orange.data.pandas_compat import table_from_frame
+from typing import Optional
+import os
 import pandas
-import stanza
 import re
 import json
 import spacy
 from spacy.matcher import DependencyMatcher
+import sys
 
+class OWSNDSGRuleset(widget.OWWidget):
+    name = 'DSG ruleset'
+    description = 'Digital Story Grammar: Rules for how to decompose sentences into narrative components'
+    icon = 'icons/dsg_ruleset_icon.png'
+    priority = 6425
 
-class DSGNLDEPRules(OWWidget):
-    name = "DSG NL DEP Rules"
-    description = "Digital Story Grammar rules for Dutch operating on Stanza dependency parsing analysis"
-    category=None
-    icon = "icons/mywidget.svg"
-    priority = 200
-    keywords = []
-    settingsHandler = DomainContextHandler()
-    settings_version = 1
+    resizing_enabled = False
     DEBUG = False
-    NL_SPACY_PIPELINE = "nl_core_news_sm"
-    NL_DEPENDENCY_PATTERN_FILE = "orangecontrib/navigatingstories/widgets/rules/multilingual_dsg_patterns_nl.json"
+    NL_SPACY_PIPELINE = "nl_core_news_sm" 
+    NL_DEPENDENCY_PATTERN_FILE = "orangecontrib/storynavigation/widgets/rules/multilingual_dsg_patterns_nl.json"
 
     class Inputs:
-        data = Input("Data", Table)
-
+        data = Input("Table", Table)
 
     class Outputs:
-        table = Output("Data", Table)
+        table = Output("Table", Table)
 
+    auto_commit = Setting(False)
 
     def __init__(self):
-        super().__init__() 
-        import warnings
-        warnings.filterwarnings("ignore", message=r"Passing", category=FutureWarning)
+        super().__init__()
 
+        self.data = None
+        self.table = None
 
     def check_dict_in_list(self, dict_obj, dict_list):
         """Check if a dictionary (partially) matches a list of dictionaries.
@@ -72,7 +69,6 @@ class DSGNLDEPRules(OWWidget):
                         break
     
         return all(check)
-
 
     def load_spacy_pipeline(self, name):
         """Check if the spacy language pipeline was downloaded and load it.
@@ -112,7 +108,6 @@ class DSGNLDEPRules(OWWidget):
     
         return matcher
 
-
     def extract_matches(self, doc, matches, matcher, nlp, keys):
         """Extract the matched tokens for selected keys.
     
@@ -145,7 +140,6 @@ class DSGNLDEPRules(OWWidget):
                 matches_list.append(match_dict)
     
         return matches_list
-
 
     def get_subject_object_verb_table(self, docs, nlp, matcher, keys=["verb", "subj", "obj", "comp", "prep", "aux", "subjadj", "objadj", "obl", "case", "case_arg", "objfixed", ]):
         """Construct a pandas dataframe with subjects, verbs, and objects per sentence of documents.
@@ -337,20 +331,57 @@ class DSGNLDEPRules(OWWidget):
                     result_table.loc[i][column_name] = ""
         return result_table
 
-
     @Inputs.data
     def process_data(self, data: Optional[Table]):
         nlp_nl = self.load_spacy_pipeline(self.NL_SPACY_PIPELINE)
         matcher_nl = self.create_matcher(nlp_nl, self.NL_DEPENDENCY_PATTERN_FILE)
         
-        sentences = [ re.sub("\n", " ", str(data[i]["content"])) for i in range(0, len(data)) ] 
-        result_table = self.get_subject_object_verb_table(sentences, nlp_nl, matcher_nl)
-        result_table = self.remove_underscores(self.combine_rows(result_table))
-        result_table_combined = self.add_verb_group_column(result_table)
+        if data is not None:
+            print()
+            print("hello:")
+            print()
+            print(data[0])
+            print()
+            print()
+            sentences = [ re.sub("\n", " ", str(data[i]["content"])) for i in range(0, len(data)) ]
+            # sentences = [ re.sub("\n", " ", str(data[i][data[i].domain.index("Text")])) for i in range(0, len(data)) ] 
+            result_table = self.get_subject_object_verb_table(sentences, nlp_nl, matcher_nl)
+            result_table = self.remove_underscores(self.combine_rows(result_table))
+            result_table_combined = self.add_verb_group_column(result_table)
 
-        # a predefined domain is necessary to get consistently formatted output
-        self.Outputs.table.send(table_from_frame(result_table_combined))
+            # a predefined domain is necessary to get consistently formatted output
+            self.Outputs.table.send(table_from_frame(result_table_combined))
+
+def main():
+    WidgetPreview(OWSNDSGRuleset).run()
 
 
 if __name__ == "__main__":
-    WidgetPreview(DSGNLDEPRules).run()
+    main()
+
+# test without GUI and loading Orange
+# ------------------------------------
+# def main(argv=sys.argv):
+#     from AnyQt.QtWidgets import QApplication
+#     app = QApplication(list(argv))
+#     args = app.arguments()
+#     if len(args) > 1:
+#         filename = args[1]
+#     else:
+#         filename = "iris"
+
+#     ow = OWSNDSGRuleset()
+#     ow.show()
+#     ow.raise_()
+
+#     # dataset = Table(filename)
+#     # ow.set_data(dataset)
+#     # ow.handleNewSignals()
+#     app.exec_()
+#     # ow.set_data(None)
+#     # ow.handleNewSignals()
+#     return 0
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())

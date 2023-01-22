@@ -1,47 +1,72 @@
-Digital Story Grammar (DSG) Add-on for Orange3
-==============================================
+Orange3 Story Navigator
+=======================
 
-This add-on for Orange3 enables digital story grammar (DSG) analysis of Dutch texts. Please see the following paper for more information on DSG: [Andrade and Andersen (2020)](https://www.tandfonline.com/doi/full/10.1080/13645579.2020.1723205)
+Orange3-Story-Navigator is an add-on for the Orange data mining software package. It
+provides story textual analysis features based on principles in [narrative psychology](https://web.lemoyne.edu/~hevern/narpsych/nr-basic.html). The aim of the widgets in the Story Navigator Orange module are to support human analysis of stories represented in digital texts with a main focus on identifying and describing the following components of the narrative (see [[1]](http://www.communicationcache.com/uploads/1/0/8/8/10887248/kenneth_burke_-_a_grammar_of_motives_1945.pdf) and [[2]](https://www.semanticscholar.org/paper/Qualitative-Research-in-Clinical-and-Health-Murray-Sools/8db3916fcd1593086f0a62d78d15eacc2d3236e6) for definitions):
 
-Requirements
+1. Setting
+2. Main agent
+3. Means
+4. Acts and events
+5. Purpose
+6. Breach
+
+[1] Burke, K. (1969). The grammar of motives. Prentice Hall, New York. Originally published in 1945.
+[2] M. Murray and A. Sools, P. Rohleder, A.C. Lyons (Eds.), Qualitative research in clinical and health psychology, Palgrave MacMillan, Houndmills Basingstoke (2015), pp. 133-154
+
+[Story Navigator documentation]().
+
+Documentation is found at: http://orange3-storynavigator.readthedocs.org/
+
+Installation:
+-------------
+
+This section is for those who just want to install and use the add-on in Orange3.
+
+Install from Orange add-on installer through Options - Add-ons.
+
+To install the add-on with [pip](https://pypi.org/project/pip/) use
+
+    pip install Orange-Story-Navigator
+
+Development:
 ------------
-The following versions of Python and Orange3 were used:
 
-+ Python v3.8.3
-+ Orange3 v3.32.0
-+ Orange3-text v1.7.0
+This section is for those who want to build the add-on from source and extend, customise, or fix bugs in it.
 
-Installation
-------------
+Requirements:
 
-To install the add-on from source, clone this repo, `cd` into the root directory and run
+1. A tool for checking out a [Git]() repository
+2. Python 3.9.16+
 
-    pip install -r requirements.txt
-    pip install .
+Steps to build and test from source:
 
-To make this add-on known to your local Orange without copying the code it to Python's site-packages directory, run
+1. Get a copy of the code
+    
+    ```git clone git@github.com:navigating-stories/orange-story-navigator.git```
 
-    pip install -e .
+2. Change into the ```orange-story-navigator/``` directory
+    
+    ```cd orange-story-navigator```
 
-Usage
------
+3. Create and activate a new Python virtual environment using [virtualenv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
 
-After the installation, the widget from this add-on is registered with Orange. To run Orange from the terminal,
-use
+4. Run the following command
 
-    orange-canvas
+    ```pip install -r requirements.txt```
+
+5. If Step 4. completed with no errors, run this command
+
+    ```pip install -e .```
+
+This command installs the widget and registers it with your Orange3 installation. If you encountered an error during Step 4, file an [issue](https://github.com/navigating-stories/orange-story-navigator/issues) with the details and skip the remaining steps.
+
+6. Run 
+
+    ```orange-canvas```
 
 or
 
-    python -m Orange.canvas
+```python -m Orange.canvas```
 
-Here is an example pipeline:
-
-![screenshot](dsg_nl_dep_rules.jpg)
-
-The widget Import Documents (from Text Mining) will read text files from a 
-directory. The widget Corpus Viewer (from Text Mining) can be used making 
-a selection of the files. The widget DSG NL DEP Rules (from Navigating 
-Stories) processes the text files. The results of the analysis can be
-inspected with the Data Table widget (from Data).
-
+The Orange3 application should start up after a few seconds and you can test the ```story-navigator``` widget.
