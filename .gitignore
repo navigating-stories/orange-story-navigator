@@ -10,6 +10,7 @@ MANIFEST
 
 # virtual environment
 nv
+venv
 
 # Cython generated files
 __pycache__
