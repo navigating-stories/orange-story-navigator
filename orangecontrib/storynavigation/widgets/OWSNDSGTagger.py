@@ -329,12 +329,12 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.__pending_selected_documents = self.selected_documents
 
         # Info attributes
-        self.update_info()
-        info_box = gui.widgetBox(self.controlArea, "Info")
-        gui.label(info_box, self, "Tokens: %(n_tokens)s")
-        gui.label(info_box, self, "Types: %(n_types)s")
-        gui.label(info_box, self, "Matching documents: %(n_matching)s")
-        gui.label(info_box, self, "Matches: %(n_matches)s")
+        # self.update_info()
+        # info_box = gui.widgetBox(self.controlArea, "Info")
+        # gui.label(info_box, self, "Tokens: %(n_tokens)s")
+        # gui.label(info_box, self, "Types: %(n_types)s")
+        # gui.label(info_box, self, "Matching documents: %(n_matching)s")
+        # gui.label(info_box, self, "Matches: %(n_matches)s")
 
         # Search features
         ex_sel = QListView.ExtendedSelection
