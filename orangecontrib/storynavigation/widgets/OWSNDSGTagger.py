@@ -290,7 +290,7 @@ class VisibleDomainModel(DomainModel):
 
 
 class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
-    name = "NLP Tagger"
+    name = "Word Highlighter"
     description = "Identifies named entities and part-of-speech tokens (nouns, adjectives, verbs etc.) in text"
     icon = "icons/dsgtagger.svg"
     priority = 500
@@ -315,6 +315,42 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     regexp_filter = ContextSetting("")
     show_tokens = Setting(False)
     autocommit = Setting(True)
+    
+    # POS
+    vbz = Setting(True)
+    nouns = Setting(True)
+    adj = Setting(True)
+    pron = Setting(True)
+    adp = Setting(True)
+    adv = Setting(True)
+    conj = Setting(True)
+    det = Setting(True)
+    num = Setting(True)
+    prt = Setting(True)
+
+    # NER
+    per = Setting(True)
+    loc = Setting(True)
+    gpe = Setting(True)
+    norp = Setting(True)
+    fac = Setting(True)
+    org = Setting(True)
+    product = Setting(True)
+    eventner = Setting(True)
+    work_of_art = Setting(True)
+    law = Setting(True)
+    language = Setting(True)
+    date = Setting(True)
+    time = Setting(True)
+    percent = Setting(True)
+    money = Setting(True)
+    quantity = Setting(True)
+    ordinal = Setting(True)
+    cardinal = Setting(True)
+        
+    # panels for pos and ner tag selection
+    postags_box = None
+    nertags_box = None
 
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
@@ -328,63 +364,71 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.nlp_nl = None
         self.__pending_selected_documents = self.selected_documents
 
-        # Info attributes
-        # self.update_info()
-        # info_box = gui.widgetBox(self.controlArea, "Info")
-        # gui.label(info_box, self, "Tokens: %(n_tokens)s")
-        # gui.label(info_box, self, "Types: %(n_types)s")
-        # gui.label(info_box, self, "Matching documents: %(n_matching)s")
-        # gui.label(info_box, self, "Matches: %(n_matches)s")
-
         # Search features
         ex_sel = QListView.ExtendedSelection
-        search_box = gui.widgetBox(self.controlArea, "Search features")
+        # search_box = gui.widgetBox(self.controlArea, "Search features")
         self.search_listbox = sl = VariableListViewSearch(selectionMode=ex_sel)
-        search_box.layout().addWidget(sl)
+        # search_box.layout().addWidget(sl)
         sl.setModel(VisibleDomainModel(separators=False))
         sl.selectionModel().selectionChanged.connect(self.search_features_changed)
 
         # Display features
-        display_box = gui.widgetBox(self.controlArea, "Display features")
+        # display_box = gui.widgetBox(self.controlArea, "Display features")
         self.display_listbox = dl = VariableListViewSearch(selectionMode=ex_sel)
-        display_box.layout().addWidget(dl)
+        # display_box.layout().addWidget(dl)
         dl.setModel(VisibleDomainModel(separators=False))
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
 
         # Tag type selection
-        tag_type_panel = gui.widgetBox(self.controlArea, "Tag type")
+        tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         self.tagtype_box = box = gui.radioButtonsInBox(self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
         self.named_entities = gui.appendRadioButton(box, "Named Entities")
-        self.pos_tags = gui.appendRadioButton(box, "POS")
+        self.pos_tags = gui.appendRadioButton(box, "Parts of Speech")
         tag_type_panel.layout().addWidget(box)
-        # self.search_listbox = sl = VariableListViewSearch(selectionMode=ex_sel)
-        # search_box.layout().addWidget(sl)
-        # sl.setModel(VisibleDomainModel(separators=False))
-        # sl.selectionModel().selectionChanged.connect(self.search_features_changed)
 
-        self.show_tokens_checkbox = gui.checkBox(
-            display_box,
-            self,
-            "show_tokens",
-            "Show Tokens && Tags",
-            callback=self.show_docs,
-        )
+        # POS tag list
+        self.postags_box = gui.vBox(self.controlArea, "Parts of Speech to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        gui.checkBox(self.postags_box, self, "vbz", "Verbs",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "nouns", "Nouns",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "adj", "Adjectives",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "adp", "Prepositions / Postpositions",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "adv", "Adverbs",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "conj", "Conjunctives",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "det", "Determinative",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
+        self.controlArea.layout().addWidget(self.postags_box)
+
+        # NER tag list
+        self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        gui.checkBox(self.nertags_box, self, "per", "People",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "gpe", "Countries, cities, regions",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "loc", "Other kinds of locations",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "norp", "Nationalities and religious or political groups",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "fac", "Buildings, airports, highways, bridges etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "org", "Companies, agencies, institutions, etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "product", "Objects, vehicles, foods, etc. (Not services)",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "eventner", "Named hurricanes, battles, wars, sports events, etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "work_of_art", "Titles of books, songs, etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "law", "Named documents made into laws",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "language", "Any named language",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "date", "Absolute or relative dates or periods",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "time", "Times smaller than a day",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "percent", "Percentages",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "money", "Monetary values",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "quantity", "Measurements, as of weight or distance",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "ordinal", "'first', 'second', etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "cardinal", "Numerals that do not fall under another category",callback=self.ner_selection_changed)
+        
+        self.controlArea.layout().addWidget(self.nertags_box)
+        self.nertags_box.setEnabled(False)
 
         # Auto-commit box
-        gui.auto_commit(
-            self.controlArea, self, "autocommit", "Send data", "Auto send is on"
-        )
+        gui.auto_commit(self.controlArea, self, "autocommit", "Send data", "Auto send is on", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
 
         # Search
-        self.filter_input = gui.lineEdit(
-            self.mainArea,
-            self,
-            "regexp_filter",
-            orientation=Qt.Horizontal,
-            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
-            label="RegExp Filter:",
-            callback=self.refresh_search,
-        )
+        self.filter_input = gui.lineEdit(self.mainArea,self,"regexp_filter",orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),label="RegExp Filter:",callback=self.refresh_search)
 
         # Main area
         self.splitter = QSplitter(orientation=Qt.Horizontal, childrenCollapsible=False)
@@ -404,7 +448,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.selectionModel().selectionChanged.connect(self.selection_changed)
         # Document contents
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
-
         self.mainArea.layout().addWidget(self.splitter)
 
     def copy_to_clipboard(self):
@@ -430,6 +473,21 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         return nlp
 
     def _tagtype_changed(self):
+        if self.tag_type == 1:
+            self.postags_box.setEnabled(True)
+            self.nertags_box.setEnabled(False)
+        else:
+            self.postags_box.setEnabled(False)
+            self.nertags_box.setEnabled(True)
+        
+        self.show_docs()
+        self.commit.deferred()
+
+    def pos_selection_changed(self):
+        self.show_docs()
+        self.commit.deferred()
+
+    def ner_selection_changed(self):
         self.show_docs()
         self.commit.deferred()
 
@@ -469,13 +527,13 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     def setup_controls(self):
         """Setup controls in control area"""
         domain = self.corpus.domain
-        if not self.corpus.has_tokens():
-            self.show_tokens_checkbox.setCheckState(Qt.Unchecked)
-            #
-            # self.tagtype_box.setCheckState(Qt.Unchecked)
+        # if not self.corpus.has_tokens():
+        #     self.show_tokens_checkbox.setCheckState(Qt.Unchecked)
+        #     #
+        #     # self.tagtype_box.setCheckState(Qt.Unchecked)
 
-        self.show_tokens_checkbox.setEnabled(self.corpus.has_tokens())
-        #
+        # self.show_tokens_checkbox.setEnabled(self.corpus.has_tokens())
+        # #
         # self.tagtype_box.setEnabled(self.corpus.has_tokens())
 
         self.search_listbox.model().set_domain(domain)
@@ -547,13 +605,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self):
-        # if (self.tag_type == 1):
-        #     print("TAG TYPE IS 1!!!")
-        # elif (self.tag_type == 2):
-        #     print("TAG TYPE IS 2!!!") 
-        # else:
-        #     print("TAG TYPE IS ", str(self.tag_type), "!!!")
-
         """Show the selected documents in the right area"""
         if self.corpus is None:
             return
@@ -611,15 +662,75 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     def __nertag_text(self, text):
         sents = sent_tokenize(text, language='dutch')
         html = ""
+
+        ner_tags = []
+        if (self.per):
+            ner_tags.append("PERSON")
+        if (self.loc):
+            ner_tags.append("LOC")
+        if (self.gpe):
+            ner_tags.append("GPE")
+        if (self.norp):
+            ner_tags.append("NORP")
+        if (self.fac):
+            ner_tags.append("FAC")
+        if (self.org):
+            ner_tags.append("ORG")
+        if (self.product):
+            ner_tags.append("PRODUCT")
+        if (self.eventner):
+            ner_tags.append("EVENT")
+        if (self.work_of_art):
+            ner_tags.append("WORK_OF_ART")
+        if (self.law):
+            ner_tags.append("LAW")
+        if (self.language):
+            ner_tags.append("LANGUAGE")
+        if (self.date):
+            ner_tags.append("DATE")
+        if (self.time):
+            ner_tags.append("TIME")
+        if (self.percent):
+            ner_tags.append("PERCENT")
+        if (self.money):
+            ner_tags.append("MONEY")
+        if (self.quantity):
+            ner_tags.append("QUANTITY")
+        if (self.ordinal):
+            ner_tags.append("ORDINAL")
+        if (self.cardinal):
+            ner_tags.append("CARDINAL")
+
+        options = {"ents" : ner_tags, "colors" : {}}
+
         for sentence in sents:
             tagged_sentence = self.nlp_nl(sentence)
-            html += displacy.render(tagged_sentence, style="ent")
+            html += displacy.render(tagged_sentence, style="ent", options = options)
         
         return html
 
     def __postag_text(self, text):
-        pos_tags = ["PRON", "VERB", "NOUN", "ADJ", "ADP",
-                    "ADV", "CONJ", "DET", "NUM", "PRT"]
+        pos_tags = []
+        if (self.vbz):
+            pos_tags.append("VERB")
+        if (self.adj):
+            pos_tags.append("ADJ")
+        if (self.nouns):
+            pos_tags.append("NOUN")
+        if (self.pron):
+            pos_tags.append("PRON")
+        if (self.adp):
+            pos_tags.append("ADP")
+        if (self.adv):
+            pos_tags.append("ADV")
+        if (self.conj):
+            pos_tags.append("CONJ")
+        if (self.det):
+            pos_tags.append("DET")
+        if (self.num):
+            pos_tags.append("NUM")
+        if (self.prt):
+            pos_tags.append("PRT")
         
         sents = sent_tokenize(text, language='dutch')
         
@@ -628,7 +739,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             tagged_sentence = self.nlp_nl(sentence)
             tags = []
             for token in tagged_sentence:
-                tags.append((token.text, token.pos_))
+                tags.append((token.text, token.pos_, token.tag_))
         
             from nltk.tokenize import WhitespaceTokenizer
             spans = list(WhitespaceTokenizer().span_tokenize(sentence))
@@ -636,7 +747,14 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             ents = []
             for tag, span in zip(tags, spans):
                 if tag[1] in pos_tags:
-                    ents.append({"start" : span[0], 
+                    if tag[1] == 'PRON':
+                        print(tag[2])
+                        if tag[2] == 'PPER':
+                            ents.append({"start" : span[0], 
+                                    "end" : span[1], 
+                                    "label" : tag[1] })
+                    else:
+                        ents.append({"start" : span[0], 
                                     "end" : span[1], 
                                     "label" : tag[1] })
 
