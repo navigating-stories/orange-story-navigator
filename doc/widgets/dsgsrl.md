@@ -1,5 +1,5 @@
-Story Navigator
-===============
+Semantic Role Labeller
+======================
 
 Semantic Role Labelling (SRL) for Dutch and English documents.
 

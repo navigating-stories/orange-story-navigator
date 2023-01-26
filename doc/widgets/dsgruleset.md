@@ -1,5 +1,5 @@
-Story Navigator
-===============
+Ruleset Parser
+==============
 
 Calculation of subject, verb, object tuples in sentences using predefined NLP rules.
 

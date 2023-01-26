@@ -24,7 +24,7 @@
     "keywords": []
    },
    {
-    "text": "Digital Story Grammar NLP tagger",
+    "text": "Digital Story Grammar Word Highlighter",
     "doc": "widgets/dsgtagger.md",
     "icon": "../orangecontrib/storynavigation/widgets/icons/dsgtagger.svg",
     "background": "#C0FF97",

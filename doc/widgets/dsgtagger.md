@@ -1,7 +1,7 @@
-Story Navigator
-===============
+Word Highlighter
+================
 
-NLP tagger supporting Named Entity Recognition and Part of Speech tagging for Dutch and English documents.
+Word highlighter supporting Named Entity Recognition and Part of Speech tagging for Dutch and English documents.
 
 **Inputs**
 
@@ -11,11 +11,11 @@ NLP tagger supporting Named Entity Recognition and Part of Speech tagging for Du
 
 - Table: A data table providing all identified entities in each sentence of the input text documents.
 
-**NLP Tagger** widget applies NER and POS-tagging to sentences. It highlights the identified entities inline in the input text documents.
+**Word Highlighter** widget applies NER and POS-tagging to sentences. It highlights the identified entities inline in the input text documents.
 
-![](images/dsgsrl-example.png)
+![](images/dsgtagger-example2.png)
 
 Example
 -------
 
-This simple example shows how **NLP Tagger** can enrich the workflow. We have used a dataset of Dutch narrative stories about the corona pandemic.
+This simple example shows how **Word Highlighter** can enrich the workflow. We have used a dataset of Dutch narrative stories about the corona pandemic.

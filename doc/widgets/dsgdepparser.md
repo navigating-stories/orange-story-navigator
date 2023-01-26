@@ -1,5 +1,5 @@
-Story Navigator
-===============
+Dependency Parser
+=================
 
 NLP Dependency Parsing for Dutch and English.
 
