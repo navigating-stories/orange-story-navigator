@@ -13,4 +13,5 @@ sphinx==5.3.0
 recommonmark==0.7.1
 sphinx-rtd-theme==1.1.1
 Cython==0.29.33
+dhtmlparser3==3.0.17
 -e git+https://github.com/kodymoodley/stroll-singlethreaded@master#egg=stroll-srl

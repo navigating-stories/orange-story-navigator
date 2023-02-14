@@ -23,6 +23,7 @@ from AnyQt.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QTableView,
+    QLabel,
 )
 from Orange.data import Variable
 from Orange.data.domain import Domain, filter_visible
@@ -41,6 +42,7 @@ from spacy import displacy
 import nltk
 nltk.download('perluniprops')
 from nltk.tokenize import sent_tokenize, word_tokenize
+import dhtmlparser3
 
 HTML = """
 <!doctype html>
@@ -311,8 +313,11 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     
     agent_prominence_score_max = 0.
     agent_prominence_score_min = 0.
+    agent_prominence_metrics = ['Unique nouns', 'Unique words', 'Sentence subjects', 'Sentence subjects norm']
+    agent_prominence_metric = 'Unique nouns'
 
     word_prominence_scores = {}
+    html_result = ''
 
     tag_type = Setting(1)
     search_features: List[Variable] = ContextSetting([])
@@ -334,6 +339,8 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     num = Setting(True)
     prt = Setting(True)
     propn = Setting(True)
+    all_pos = Setting(True)
+    zero_pos = Setting(False)
 
     # NER
     per = Setting(True)
@@ -361,6 +368,19 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     main_agents_box = None
     nl_stopwords = []
 
+    # pos counts
+    noun_count = 0
+    verb_count = 0
+    adjective_count = 0
+    word_count = 0
+    word_count_nostops = 0
+    sentence_count = 0
+    sentence_count_per_word = {}
+    count_per_word = {}
+    sli = None
+    highlight_colors = {}
+    punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
+    
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
         no_feats_display = Msg("No features selected for display.")
@@ -372,11 +392,11 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         with open('orangecontrib/storynavigation/widgets/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
             self.nl_stopwords = [line.rstrip() for line in f]
     
-        print()
-        print()
-        print(self.nl_stopwords)
-        print()
-        print()
+        # print()
+        # print()
+        # print(self.nl_stopwords)
+        # print()
+        # print()
 
         self.corpus = None  # Corpus
         self.nlp_nl = None
@@ -417,6 +437,8 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
         gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
         gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "all_pos", "All",callback=self.pos_selection_changed)
+        gui.checkBox(self.postags_box, self, "zero_pos", "None",callback=self.pos_selection_changed)
         
         self.controlArea.layout().addWidget(self.postags_box)
 
@@ -443,7 +465,15 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         
         self.controlArea.layout().addWidget(self.nertags_box)
         self.nertags_box.setEnabled(False)
+
+        # Prominence score slider
         self.main_agents_box = gui.vBox(self.controlArea, "Filter entities by prominence score:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        self.metric_name_combo = gui.comboBox(self.main_agents_box, self, 'agent_prominence_metric',
+                                             items=self.agent_prominence_metrics,
+                                             sendSelectedValue=True,
+                                             callback=self.prominence_metric_change)
+
+        self.main_agents_box.setEnabled(True)
 
         gui.hSlider(
             self.main_agents_box,
@@ -451,57 +481,20 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             "agent_prominence_score_min",
             minValue=0.,
             maxValue=100.,
-            # step=0.01,
-            callback=self.rehighlight_entities,
+            # step=.01,
+            ticks=True,
+            callback=self.slider_callback,
             label='Min:',
-            # labelFormat=' %d',
             labelFormat="%.1f",
-            # ticks=True,
-            # divideFactor=1.0,
-            tracking=True,
-            # vertical=False,
-            # createLabel=True,
-            # sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
             intOnly=False,
         )
 
-  
-        # ftobox = gui.hBox(None)
-        # ftobox.layout().setContentsMargins(0, 0, 0, 0)
-        # gui.widgetLabel(ftobox, "from")
-        gui.spin(
-            self.main_agents_box, self, "agent_prominence_score_min", minv=0, maxv=100,
-            controlWidth=60, alignment=Qt.AlignRight,
-            callback=self.rehighlight_entities)
-
-
-        gui.hSlider(
-            self.main_agents_box,
-            self,
-            "agent_prominence_score_max",
-            minValue=0.,
-            maxValue=100.,
-            step=0.01,
-            callback=self.rehighlight_entities,
-            label='Max:',
-            # labelFormat=' %d',
-            labelFormat="%.1f",
-            # ticks=True,
-            # divideFactor=1.0,
-            tracking=False,
-            # vertical=False,
-            # createLabel=True,
-            # sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
-            intOnly=False,
-        )
-        # gui.widgetLabel(ftobox, "to")
-        gui.spin(
-            self.main_agents_box, self, "agent_prominence_score_max", minv=0, maxv=100,
-            controlWidth=60, alignment=Qt.AlignRight,
-            callback=self.rehighlight_entities)
-        # gui.rubber(ftobox)
         self.controlArea.layout().addWidget(self.main_agents_box)
-        # self.controlArea.layout().addWidget(ftobox, 2, 2)
+
+        gui.spin(
+            self.main_agents_box, self, "agent_prominence_score_min", minv=0., maxv=100.,
+            controlWidth=60, alignment=Qt.AlignRight,
+            callback=self.slider_callback)
 
         # Auto-commit box
         gui.auto_commit(self.controlArea, self, "autocommit", "Send data", "Auto send is on", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
@@ -533,7 +526,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         text = self.doc_webview.selectedText()
         QApplication.clipboard().setText(text)
 
-
     def load_spacy_pipeline(self, name):
         """Check if the spacy language pipeline was downloaded and load it.
         Downloads the language pipeline if not available.
@@ -554,9 +546,11 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     def _tagtype_changed(self):
         if self.tag_type == 1:
             self.postags_box.setEnabled(True)
+            self.main_agents_box.setEnabled(True)
             self.nertags_box.setEnabled(False)
         else:
             self.postags_box.setEnabled(False)
+            self.main_agents_box.setEnabled(False)
             self.nertags_box.setEnabled(True)
         
         self.show_docs()
@@ -571,8 +565,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def rehighlight_entities(self):
-        if (self.agent_prominence_score_max < self.agent_prominence_score_min):
-            self.agent_prominence_score_max = self.agent_prominence_score_min
         self.show_docs()
         self.commit.deferred()
 
@@ -612,14 +604,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     def setup_controls(self):
         """Setup controls in control area"""
         domain = self.corpus.domain
-        # if not self.corpus.has_tokens():
-        #     self.show_tokens_checkbox.setCheckState(Qt.Unchecked)
-        #     #
-        #     # self.tagtype_box.setCheckState(Qt.Unchecked)
-
-        # self.show_tokens_checkbox.setEnabled(self.corpus.has_tokens())
-        # #
-        # self.tagtype_box.setEnabled(self.corpus.has_tokens())
 
         self.search_listbox.model().set_domain(domain)
         self.display_listbox.model().set_domain(domain)
@@ -685,31 +669,86 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
+
+        self.agent_prominence_score_min = 0.
+        self.word_prominence_scores = {}
+        self.html_result = ''
+
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
         self.commit.deferred()
 
+    def filter_entities(self):
+        if ((len(self.word_prominence_scores) == 0) or (self.html_result == '')):
+            self.show_docs(slider_engaged=False)
+            self.commit.deferred()
+        else:
+            entities = set()
+            for item in self.word_prominence_scores:
+                if self.word_prominence_scores[item] >= self.agent_prominence_score_min:
+                    entities.add(item)
+
+            dom = dhtmlparser3.parse(self.html_result)
+            for mark in dom.find("mark"):
+                current_mark_style = mark.parameters["style"]
+                current_mark_bgcolor_str = current_mark_style.split(';')[0]
+                current_mark_bgcolor = current_mark_bgcolor_str.split(':')[1].strip()
+                newbg_parts = ['background: white']
+                newbg_parts.extend(current_mark_style.split(';')[1:])
+                whitebg_current_mark_style = ';'.join(newbg_parts)
+
+                stri = mark.content_without_tags().strip()
+                stri = re.sub(r'\s+', '.', stri)
+                parts = stri.split('.')
+                self.highlight_colors[parts[0]] = current_mark_bgcolor
+
+                if parts[0] not in entities:
+                    old_params = mark.parameters
+                    old_params['style'] = whitebg_current_mark_style
+                    mark.replace_with(dhtmlparser3.Tag("mark", old_params, [parts[0]], is_non_pair=False))
+                else:
+                    old_params = mark.parameters
+                    old_params['style'] = whitebg_current_mark_style.replace('white', self.highlight_colors[parts[0]])
+                    mark.replace_with(dhtmlparser3.Tag("mark", old_params, [parts[0]], is_non_pair=False))
+
+        return str(dom)
+
     def calculate_prominence_score(self, word, list_of_sentences, tags):
-        as_subj_count = 0
+        score = 0 
     
-        for tag in tags:
-            if tag[3] == 'nsubj':
-                as_subj_count += 1
+        if (self.agent_prominence_metric == "Sentence subjects"):
+            as_subj_count = 0
+            for tag in tags:
+                if tag[3] == 'nsubj':
+                    as_subj_count += 1
 
-        totalCount = 0
-        for sentence in list_of_sentences:
-            tokens = word_tokenize(sentence, language='dutch')
-            curr_count = 0
-            isInSent = False
-            for token in tokens:
-                if (word == token):
-                    isInSent = True
-            if isInSent:
-                curr_count += 1
-            totalCount += curr_count
+            score = (as_subj_count / len(list_of_sentences)) * 100
+            # print("subjects score: ", score)
 
-        return (as_subj_count / len(list_of_sentences)) * 100
-        # return (as_subj_count / curr_count) * 100
+        elif (self.agent_prominence_metric == "Sentence subjects norm"):
+            as_subj_count = 0
+            for tag in tags:
+                if tag[3] == 'nsubj':
+                    as_subj_count += 1
+
+            score = (as_subj_count / self.sentence_count_per_word[word]) * 100
+            # print("norm score: ", score)
+
+        elif (self.agent_prominence_metric == "Unique nouns"):
+            score = (self.count_per_word[word] / self.noun_count) * 100
+            # print("unique nouns score: ", score)
+        elif (self.agent_prominence_metric == "Unique words"):
+            score = (self.count_per_word[word] / self.word_count_nostops) * 100
+            # print("unique words score: ", score)
+        elif (self.agent_prominence_metric == "Persons only"):
+            
+            score = 0
+            # print("persons only score: ", score)
+        else:
+            score = 0
+            # print("other score: ", score)
+
+        return score
 
     def get_max_prominence_score(self):
         highest_score = 0
@@ -718,7 +757,23 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                 highest_score = self.word_prominence_scores[item]
         return highest_score
 
-    def show_docs(self):
+    def prominence_metric_change(self):
+        self.agent_prominence_score_min = 0.
+        self.word_prominence_scores = {}
+        self.html_result = ''
+        self.show_docs(slider_engaged=False)
+        self.commit.deferred()
+
+    def slider_callback(self):
+        if self.agent_prominence_score_min > self.agent_prominence_score_max:
+            self.agent_prominence_score_min = self.agent_prominence_score_max
+        self.show_docs(slider_engaged=True)
+        self.commit.deferred()
+
+    def show_docs(self, slider_engaged = False):
+        # print()
+        # print(self.agent_prominence_metric)
+        # print()
         """Show the selected documents in the right area"""
         if self.corpus is None:
             return
@@ -738,7 +793,10 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
                 if feature.name == 'content':
                     if (self.tag_type == 1):
-                        value = self.__postag_text(value)
+                        if (slider_engaged):
+                            value = self.filter_entities()
+                        else:
+                            value = self.__postag_text(value)
                     else:
                         value = self.__nertag_text(value)
 
@@ -767,11 +825,74 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                     f"<td>{tokens_}</td></tr>"
                 )
             parts.append(text)
+            parts.append(self.get_word_prominence_bar_chart_html())
 
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
         self.doc_webview.setHtml(HTML.format(html), base)
+
+    def get_word_prominence_bar_chart_html(self):
+        import matplotlib.pyplot as plt
+        import base64
+        from io import BytesIO
+        from operator import itemgetter
+  
+        n = 10
+
+        res = dict(sorted(self.word_prominence_scores.items(), key = itemgetter(1), reverse = True)[:n]) 
+        names = list(res.keys())
+        values = list(res.values())
+
+        plt.bar(range(len(res)), values, tick_label=names)
+        plt.xticks(rotation=45)
+        # Option 1
+        plt.rcParams['font.size'] = 8
+        # Option 2
+        # plt.rcParams.update({'font.size': 18})
+        tmpfile = BytesIO()
+        plt.savefig(tmpfile, format='png')
+        plt.tight_layout(rect=[0.05, 0.05, 1, 0.75])
+        encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+
+        html = '<img src=\'data:image/png;base64,{}\'>'.format(encoded)
+
+        plt.figure().clear()
+        plt.close()
+        plt.cla()
+        plt.clf()
+
+        return html
+
+    def calculate_word_type_count(self, sent_models):
+        n = set()
+        a = set()
+        v = set()
+        w = set()
+        for sent_model in sent_models:
+            tags = []
+            for token in sent_model:
+                
+                nopunct_token = ''
+                # Removing punctuations in string
+                for ele in token.text.strip():
+                    if ele not in self.punc:
+                        nopunct_token += ele
+
+                if ((token.text.lower().strip() not in self.nl_stopwords) and (len(nopunct_token) == len(token.text.strip()))):
+                    self.count_per_word[token.text] += 1
+                    w.add(token.text)
+                    if token.pos_ in ['NOUN', 'PRON', 'PROPN']:
+                        n.add(token.text)
+                    if token.pos_ in ['ADJ']:
+                        a.add(token.text)
+                    if token.pos_ in ['VERB']:
+                        v.add(token.text)
+                    
+        self.noun_count = len(n)
+        self.word_count = len(w)
+        self.adjective_count = len(a)
+        self.verb_count = len(v)
 
     def __nertag_text(self, text):
         sents = sent_tokenize(text, language='dutch')
@@ -827,7 +948,10 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         return html
 
     def __postag_text(self, text):
+        # pos tags that the user wants to highlight
         pos_tags = []
+
+        # add pos tags to highlight according to whether the user has selected them or not
         if (self.vbz):
             pos_tags.append("VERB")
         if (self.adj):
@@ -851,15 +975,66 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         if (self.propn):
             pos_tags.append("PROPN")
 
+        # tokenize input text into sentences
         sents = sent_tokenize(text, language='dutch')
-        
+
+        # count no. of sents
+        sentence_count = len(sents)
+
+        # count no. of words and words not considering stopwords 
+        from spacy.lang.nl import Dutch
+        nlp = Dutch()
+        tokenizer = nlp.tokenizer
+        for sentence in sents:
+            sentence = sentence.replace("\n"," ")
+            sentence = sentence.replace("  "," ")
+            sentence = re.sub('\s+',' ',sentence)
+            
+            # tokens = word_tokenize(sentence, language='dutch')
+            tokens_doc = tokenizer(sentence)
+            tokens = []
+            for d in tokens_doc:
+                tokens.append(d.text)
+
+            self.word_count += len(tokens)
+            for token in tokens:
+                self.sentence_count_per_word[token] = 0
+                self.count_per_word[token] = 0
+                if token.lower().strip() not in self.nl_stopwords:
+                    self.word_count_nostops += 1
+
+        # count no. of sents that each word appears in
+        for sentence in sents:
+            sentence = sentence.replace("\n"," ")
+            sentence = sentence.replace("  "," ")
+            sentence = re.sub('\s+',' ',sentence)
+            # tokens = word_tokenize(sentence, language='dutch')
+            tokens_doc = tokenizer(sentence)
+            tokens = []
+            for d in tokens_doc:
+                tokens.append(d.text)
+
+            for token in tokens:
+                self.sentence_count_per_word[token] += 1
+
+        # output of this function
         html = ""
+
+        # generate and store nlp tagged models for each sentence
+        sentence_nlp_models = []
         for sentence in sents:
             sentence = sentence.replace("\n"," ")
             sentence = sentence.replace("  "," ")
             sentence = re.sub('\s+',' ',sentence)
 
             tagged_sentence = self.nlp_nl(sentence)
+            sentence_nlp_models.append(tagged_sentence)
+
+        # calculate the number of unique nouns in the text
+        self.calculate_word_type_count(sentence_nlp_models)
+
+        # loop through model to filter out those words that need to be tagged (bsaed on user selection and prominence score)
+        for sentence, tagged_sentence in zip(sents, sentence_nlp_models):
             tags = []
             for token in tagged_sentence:
                 tags.append((token.text, token.pos_, token.tag_, token.dep_))
@@ -873,27 +1048,28 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                 if tag[0].lower().strip() not in self.nl_stopwords:
                     if tag[1] in pos_tags:
                         if tag[1] == 'PRON':
-                            # print()
-                            # print()
-                            # print("word: ", tag[0], " tags: ", tag[2])
-                            # print()
-                            # print()
                             if ('|' in tag[2]):
                                 tmp_tags = tag[2].split('|')
                                 if ((tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'pr' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'bez' and tmp_tags[2] == 'det')):
-                                    ents.append({"start" : span[0], 
-                                            "end" : span[1], 
-                                            "label" : tag[1]})
+                                    p_score = 0
+                                    p_score = self.calculate_prominence_score(tag[0], sents, tags)
+                                    self.word_prominence_scores[tag[0].lower()] = p_score
+                                    
+                                    if (p_score >= self.agent_prominence_score_min):
+                                        ents.append({"start" : span[0], 
+                                                "end" : span[1], 
+                                                "label" : tag[1] })
+
+                                    # ents.append({"start" : span[0], 
+                                    #         "end" : span[1], 
+                                    #         "label" : tag[1]})
 
                         elif ((tag[1] == 'NOUN') or (tag[1] == 'PROPN')):
                             p_score = 0
-                            if tag[0].lower() not in self.word_prominence_scores:
-                                p_score = self.calculate_prominence_score(tag[0], sents, tags)
-                                self.word_prominence_scores[tag[0].lower()] = p_score
-                            else:
-                                p_score = self.word_prominence_scores[tag[0].lower()]
-
-                            if ((p_score >= self.agent_prominence_score_min) and (p_score <= self.agent_prominence_score_max)):
+                            p_score = self.calculate_prominence_score(tag[0], sents, tags)
+                            self.word_prominence_scores[tag[0].lower()] = p_score
+                            
+                            if (p_score >= self.agent_prominence_score_min):
                                 ents.append({"start" : span[0], 
                                         "end" : span[1], 
                                         "label" : tag[1] })
@@ -903,8 +1079,10 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                                         "end" : span[1], 
                                         "label" : tag[1] })
 
+            # specify sentences and filtered entities to tag / highlight
             doc = {"text" : sentence, "ents" : ents}
 
+            # specify colors for highlighting each entity type
             colors = {"PRON": "#BB4CBA",
                 "VERB": "lightpink",
                 "NOUN": "turquoise",
@@ -918,10 +1096,18 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                 "PROPN" : "#259100"}
         
             self.agent_prominence_score_max = self.get_max_prominence_score()
-            if self.agent_prominence_score_min > self.agent_prominence_score_max:
-                self.agent_prominence_score_min = self.agent_prominence_score_max
+            # collect the above config params together 
             options = {"ents" : pos_tags, "colors" : colors}
+            # give all the params to displacy to generate HTML code of the text with highlighted tags
             html += displacy.render(doc, style = "ent", options = options, manual = True)
+        
+        # print()
+        # print()
+        # print(html)
+        # print()
+        # print()
+
+        self.html_result = html
         
         return html
 
