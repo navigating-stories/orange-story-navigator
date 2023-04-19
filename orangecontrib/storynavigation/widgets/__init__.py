@@ -15,7 +15,7 @@ DESCRIPTION = "Textual story narrative theory analysis tools for Orange."
 
 BACKGROUND = "#C0FF97"
 
-ICON = "icons/Category-NavigatingStories.jpg"
+ICON = "icons/Category-NavigatingStories.png"
 
 # Location of widget help files.
 WIDGET_HELP_PATH = (

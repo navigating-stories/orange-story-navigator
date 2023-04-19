@@ -1,3 +1,11 @@
+# class OWSNNarrativeNetwork(widget.OWWidget):
+#     name = 'Narrative Network Analysis'
+#     description = 'Digital Story Grammar: Rules for how to decompose sentences into narrative components'
+#     icon = 'icons/dsg_ruleset_icon.png'
+#     priority = 6425
+# NL_SPACY_PIPELINE = "nl_core_news_sm" 
+
+
 import os
 import re
 import sre_constants
@@ -292,12 +300,11 @@ class VisibleDomainModel(DomainModel):
         super().set_domain(domain)
 
 
-class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
-    name = "Entity Highlighter"
-    description = "Identifies named entities and part-of-speech tokens (nouns, adjectives, verbs etc.) in text"
-    icon = "icons/dsgtagger.png"
-    priority = 500
-
+class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
+    name = 'Narrative Network Analysis'
+    description = 'Digital Story Grammar: Rules for how to decompose sentences into narrative components'
+    icon = 'icons/narrative_network_icon.png'
+    priority = 6425
     NL_SPACY_MODEL = "nl_core_news_lg" 
 
     class Inputs:
@@ -317,86 +324,86 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     show_tokens = Setting(False)
     autocommit = Setting(True)
     
-    # Scoring related to agent prominence score
-    agent_prominence_score_max = 0.
-    agent_prominence_score_min = 0.
-    agent_prominence_metrics = ['Unique nouns', 'Unique words', 'Sentence subjects', 'Sentence subjects norm']
-    agent_prominence_metric = 'Unique nouns'
+    # # Scoring related to agent prominence score
+    # agent_prominence_score_max = 0.
+    # agent_prominence_score_min = 0.
+    # agent_prominence_metrics = ['Unique nouns', 'Unique words', 'Sentence subjects', 'Sentence subjects norm']
+    # agent_prominence_metric = 'Unique nouns'
 
     # Index of word prominence scores for each word in story
-    word_prominence_scores = {}
+    # word_prominence_scores = {}
     
     # HTML string rendering of story document
     html_result = ''
 
     # POS or NER? radiobutton selection of entity type to highlight
-    tag_type = Setting(1)
+    # tag_type = Setting(1)
 
     # Parts of speech (POS) checkbox selected initialization
-    vbz = Setting(True)
-    nouns = Setting(True)
-    adj = Setting(True)
-    pron = Setting(True)
-    adp = Setting(True)
-    adv = Setting(True)
-    conj = Setting(True)
-    det = Setting(True)
-    num = Setting(True)
-    prt = Setting(True)
-    propn = Setting(True)
-    all_pos = Setting(True)
-    zero_pos = Setting(False)
+    # vbz = Setting(True)
+    # nouns = Setting(True)
+    # adj = Setting(True)
+    # pron = Setting(True)
+    # adp = Setting(True)
+    # adv = Setting(True)
+    # conj = Setting(True)
+    # det = Setting(True)
+    # num = Setting(True)
+    # prt = Setting(True)
+    # propn = Setting(True)
+    # all_pos = Setting(True)
+    # zero_pos = Setting(False)
 
     # Named entity recognition (NER) types checkbox selected initialization
-    per = Setting(True)
-    loc = Setting(True)
-    gpe = Setting(True)
-    norp = Setting(True)
-    fac = Setting(True)
-    org = Setting(True)
-    product = Setting(True)
-    eventner = Setting(True)
-    work_of_art = Setting(True)
-    law = Setting(True)
-    language = Setting(True)
-    date = Setting(True)
-    time = Setting(True)
-    percent = Setting(True)
-    money = Setting(True)
-    quantity = Setting(True)
-    ordinal = Setting(True)
-    cardinal = Setting(True)
+    # per = Setting(True)
+    # loc = Setting(True)
+    # gpe = Setting(True)
+    # norp = Setting(True)
+    # fac = Setting(True)
+    # org = Setting(True)
+    # product = Setting(True)
+    # eventner = Setting(True)
+    # work_of_art = Setting(True)
+    # law = Setting(True)
+    # language = Setting(True)
+    # date = Setting(True)
+    # time = Setting(True)
+    # percent = Setting(True)
+    # money = Setting(True)
+    # quantity = Setting(True)
+    # ordinal = Setting(True)
+    # cardinal = Setting(True)
         
     # Panels for POS and NER tag types or lists
-    postags_box = None
-    nertags_box = None
-    main_agents_box = None
+    # postags_box = None
+    # nertags_box = None
+    # main_agents_box = None
 
     # list of Dutch stopwords
     nl_stopwords = []
 
     # POS counts initialisation
-    noun_count = 0
-    verb_count = 0
-    adjective_count = 0
+    # noun_count = 0
+    # verb_count = 0
+    # adjective_count = 0
 
     # Other counts initialisation
-    word_count = 0
-    word_count_nostops = 0
-    sentence_count = 0
-    sentence_count_per_word = {}
-    count_per_word = {}
+    # word_count = 0
+    # word_count_nostops = 0
+    # sentence_count = 0
+    # sentence_count_per_word = {}
+    # count_per_word = {}
 
     sli = None
 
     # list of colour values for the background highlight for each entity type
-    highlight_colors = {}
+    # highlight_colors = {}
 
     # list of punctuation characters
-    punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
+    # punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
 
     # list of POS checkboxes for each POS type
-    pos_checkboxes = []
+    # pos_checkboxes = []
     
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
@@ -426,86 +433,86 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
 
         # Tag type selection panel
-        tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        self.tagtype_box = box = gui.radioButtonsInBox(self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
-        self.named_entities = gui.appendRadioButton(box, "Named Entities")
-        self.pos_tags = gui.appendRadioButton(box, "Parts of Speech")
-        tag_type_panel.layout().addWidget(box)
+        # tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # self.tagtype_box = box = gui.radioButtonsInBox(self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
+        # self.named_entities = gui.appendRadioButton(box, "Named Entities")
+        # self.pos_tags = gui.appendRadioButton(box, "Parts of Speech")
+        # tag_type_panel.layout().addWidget(box)
 
         # POS tag list
-        self.postags_box = gui.vBox(self.controlArea, "Parts of Speech to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        self.vc = gui.checkBox(self.postags_box, self, "vbz", "Verbs",callback=self.pos_selection_changed)
-        self.nc = gui.checkBox(self.postags_box, self, "nouns", "Nouns",callback=self.pos_selection_changed)
-        self.propnc = gui.checkBox(self.postags_box, self, "propn", "Proper nouns",callback=self.pos_selection_changed)
-        self.adjc = gui.checkBox(self.postags_box, self, "adj", "Adjectives",callback=self.pos_selection_changed)
-        self.adpc = gui.checkBox(self.postags_box, self, "adp", "Prepositions / Postpositions",callback=self.pos_selection_changed)
-        self.advc = gui.checkBox(self.postags_box, self, "adv", "Adverbs",callback=self.pos_selection_changed)
-        self.conjc = gui.checkBox(self.postags_box, self, "conj", "Conjunctives",callback=self.pos_selection_changed)
-        self.detc = gui.checkBox(self.postags_box, self, "det", "Determinative",callback=self.pos_selection_changed)
-        self.numc = gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
-        self.prtc = gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
-        self.pronc = gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
-        self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
-        self.allc.setChecked(False)
-        self.allc.stateChanged.connect(self.on_state_changed_pos)
+        # self.postags_box = gui.vBox(self.controlArea, "Parts of Speech to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # self.vc = gui.checkBox(self.postags_box, self, "vbz", "Verbs",callback=self.pos_selection_changed)
+        # self.nc = gui.checkBox(self.postags_box, self, "nouns", "Nouns",callback=self.pos_selection_changed)
+        # self.propnc = gui.checkBox(self.postags_box, self, "propn", "Proper nouns",callback=self.pos_selection_changed)
+        # self.adjc = gui.checkBox(self.postags_box, self, "adj", "Adjectives",callback=self.pos_selection_changed)
+        # self.adpc = gui.checkBox(self.postags_box, self, "adp", "Prepositions / Postpositions",callback=self.pos_selection_changed)
+        # self.advc = gui.checkBox(self.postags_box, self, "adv", "Adverbs",callback=self.pos_selection_changed)
+        # self.conjc = gui.checkBox(self.postags_box, self, "conj", "Conjunctives",callback=self.pos_selection_changed)
+        # self.detc = gui.checkBox(self.postags_box, self, "det", "Determinative",callback=self.pos_selection_changed)
+        # self.numc = gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
+        # self.prtc = gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
+        # self.pronc = gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
+        # self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
+        # self.allc.setChecked(False)
+        # self.allc.stateChanged.connect(self.on_state_changed_pos)
 
-        self.pos_checkboxes = [self.vc, self.nc, self.propnc, self.adjc, self.adpc, self.advc, self.conjc, self.detc, self.numc, self.prtc, self.pronc]        
+        # self.pos_checkboxes = [self.vc, self.nc, self.propnc, self.adjc, self.adpc, self.advc, self.conjc, self.detc, self.numc, self.prtc, self.pronc]        
         # gui.checkBox(self.postags_box, self, "zero_pos", "None",callback=self.pos_selection_changed)
-        self.controlArea.layout().addWidget(self.postags_box)
+        # self.controlArea.layout().addWidget(self.postags_box)
 
         # NER tag list
-        self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        gui.checkBox(self.nertags_box, self, "per", "People",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "gpe", "Countries, cities, regions",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "loc", "Other kinds of locations",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "norp", "Nationalities and religious or political groups",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "fac", "Buildings, airports, highways, bridges etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "org", "Companies, agencies, institutions, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "product", "Objects, vehicles, foods, etc. (Not services)",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "eventner", "Named hurricanes, battles, wars, sports events, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "work_of_art", "Titles of books, songs, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "law", "Named documents made into laws",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "language", "Any named language",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "date", "Absolute or relative dates or periods",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "time", "Times smaller than a day",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "percent", "Percentages",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "money", "Monetary values",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "quantity", "Measurements, as of weight or distance",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "ordinal", "'first', 'second', etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "cardinal", "Numerals that do not fall under another category",callback=self.ner_selection_changed)
+        # self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # gui.checkBox(self.nertags_box, self, "per", "People",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "gpe", "Countries, cities, regions",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "loc", "Other kinds of locations",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "norp", "Nationalities and religious or political groups",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "fac", "Buildings, airports, highways, bridges etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "org", "Companies, agencies, institutions, etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "product", "Objects, vehicles, foods, etc. (Not services)",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "eventner", "Named hurricanes, battles, wars, sports events, etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "work_of_art", "Titles of books, songs, etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "law", "Named documents made into laws",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "language", "Any named language",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "date", "Absolute or relative dates or periods",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "time", "Times smaller than a day",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "percent", "Percentages",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "money", "Monetary values",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "quantity", "Measurements, as of weight or distance",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "ordinal", "'first', 'second', etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "cardinal", "Numerals that do not fall under another category",callback=self.ner_selection_changed)
         
-        self.controlArea.layout().addWidget(self.nertags_box)
-        self.nertags_box.setEnabled(False)
+        # self.controlArea.layout().addWidget(self.nertags_box)
+        # self.nertags_box.setEnabled(False)
 
         # Prominence score slider
-        self.main_agents_box = gui.vBox(self.controlArea, "Filter entities by prominence score:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        self.metric_name_combo = gui.comboBox(self.main_agents_box, self, 'agent_prominence_metric',
-                                             items=self.agent_prominence_metrics,
-                                             sendSelectedValue=True,
-                                             callback=self.prominence_metric_change)
+        # self.main_agents_box = gui.vBox(self.controlArea, "Filter entities by prominence score:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # self.metric_name_combo = gui.comboBox(self.main_agents_box, self, 'agent_prominence_metric',
+        #                                      items=self.agent_prominence_metrics,
+        #                                      sendSelectedValue=True,
+        #                                      callback=self.prominence_metric_change)
 
-        self.main_agents_box.setEnabled(True)
+        # self.main_agents_box.setEnabled(True)
 
-        gui.hSlider(
-            self.main_agents_box,
-            self,
-            "agent_prominence_score_min",
-            minValue=0.,
-            maxValue=100.,
-            # step=.01,
-            ticks=True,
-            callback=self.slider_callback,
-            label='Min:',
-            labelFormat="%.1f",
-            intOnly=False,
-        )
+        # gui.hSlider(
+        #     self.main_agents_box,
+        #     self,
+        #     "agent_prominence_score_min",
+        #     minValue=0.,
+        #     maxValue=100.,
+        #     # step=.01,
+        #     ticks=True,
+        #     callback=self.slider_callback,
+        #     label='Min:',
+        #     labelFormat="%.1f",
+        #     intOnly=False,
+        # )
 
-        self.controlArea.layout().addWidget(self.main_agents_box)
+        # self.controlArea.layout().addWidget(self.main_agents_box)
 
-        gui.spin(
-            self.main_agents_box, self, "agent_prominence_score_min", minv=0., maxv=100.,
-            controlWidth=60, alignment=Qt.AlignRight,
-            callback=self.slider_callback)
+        # gui.spin(
+        #     self.main_agents_box, self, "agent_prominence_score_min", minv=0., maxv=100.,
+        #     controlWidth=60, alignment=Qt.AlignRight,
+        #     callback=self.slider_callback)
 
         # Auto-commit box
         gui.auto_commit(self.controlArea, self, "autocommit", "Send data", "Auto send is on", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
@@ -812,14 +819,9 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                 value = str(self.corpus[c_index, feature.name])
 
                 if feature.name == 'content':
-                    if (self.tag_type == 1):
-                        if (slider_engaged):
-                            value = self.filter_entities()
-                        else:
-                            value = self.__postag_text(value)
-                    else:
-                        value = self.__nertag_text(value)
-
+                    value = self._generate_network(value)
+                    # value = self.filter_entities()
+                        
                 if feature in self.search_features:
                     value = self.__mark_text(value)
                 
@@ -845,13 +847,28 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                     f"<td>{tokens_}</td></tr>"
                 )
             parts.append(text)
-            parts.append(self.get_word_prominence_bar_chart_html())
+            # parts.append(self.get_word_prominence_bar_chart_html())
 
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
         self.doc_webview.setHtml(HTML.format(html), base)
 
+    def _generate_network(self, text):
+        # break text up into sentences
+
+        # extract all subjects, verbs and nouns (that are not subjects)
+
+        # if there is somesort of dependency between the verb and noun then add a link between them
+
+        # generate network data
+
+        # render network using networkX as html data
+
+        # return html data
+
+        return text
+    
     def get_word_prominence_bar_chart_html(self):
         import matplotlib.pyplot as plt
         import base64

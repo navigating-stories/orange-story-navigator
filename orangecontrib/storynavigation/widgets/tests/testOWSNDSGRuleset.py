@@ -1,12 +1,12 @@
 import unittest
 # import scipy.sparse as sp
 
-from orangecontrib.storynavigation.widgets.OWSNDSGRuleset import OWSNDSGRuleset
+from orangecontrib.storynavigation.widgets.OWSNNarrativeNetwork import OWSNNarrativeNetwork
 from orangewidget.tests.base import WidgetTest
 
-class TestOWSNDSGRuleset(WidgetTest):
+class TestOWSNNarrativeNetwork(WidgetTest):
     def setUp(self):
-        self.widget = self.create_widget(OWSNDSGRuleset)
+        self.widget = self.create_widget(OWSNNarrativeNetwork)
         # self.small_undir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5)
         # self.small_dir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5, directed=True)
         # self.empty_net = Network([], UndirectedEdges(sp.coo_matrix((0, 0))))

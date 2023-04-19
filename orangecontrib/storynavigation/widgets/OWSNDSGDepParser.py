@@ -36,7 +36,7 @@ import re
 import sys
 
 class OWSNDSGDepParser(OWWidget):
-    name = 'DSG dep-parser'
+    name = 'Anthology Network Analysis'
     description = 'Digital Story Grammer: Dutch dependency parsing with Stanza'
     icon = 'icons/dsg_stanzadep_icon.png'
     priority = 6430
@@ -197,7 +197,7 @@ def main():
     # network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'lastfm.net'))
     #network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'Erdos02.net'))
     #transform_data_to_orange_table(network)
-    # WidgetPreview(OWSNDSGRuleset).run(set_graph=network)
+    # WidgetPreview(OWSNDSGDepParser).run(set_graph=network)
     WidgetPreview(OWSNDSGDepParser).run()
 
 if __name__ == "__main__":
