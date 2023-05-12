@@ -37,6 +37,7 @@ from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
 
 from orangecontrib.text.corpus import Corpus
+
 import spacy
 from spacy import displacy
 import nltk
@@ -407,7 +408,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         ConcurrentWidgetMixin.__init__(self)
 
         # loads list of Dutch stopwords
-        with open('orangecontrib/storynavigation/widgets/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
+        with open('orangecontrib/storynavigation/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
             self.nl_stopwords = [line.rstrip() for line in f]
 
         self.corpus = None # initialise list of documents (corpus)
