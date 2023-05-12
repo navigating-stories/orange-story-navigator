@@ -2,7 +2,7 @@ Orange3 Story Navigator
 =======================
 
 Orange3-Story-Navigator is an add-on for the Orange data mining software package. It
-provides story textual analysis features based on principles in [narrative psychology](https://web.lemoyne.edu/~hevern/narpsych/nr-basic.html). The aim of the widgets in the Story Navigator Orange module are to support human analysis of stories represented in digital texts with a main focus on identifying and describing the following components of the narrative (see [[1]](http://www.communicationcache.com/uploads/1/0/8/8/10887248/kenneth_burke_-_a_grammar_of_motives_1945.pdf) and [[2]](https://www.semanticscholar.org/paper/Qualitative-Research-in-Clinical-and-Health-Murray-Sools/8db3916fcd1593086f0a62d78d15eacc2d3236e6) for definitions):
+provides story textual analysis features based on principles in [narrative psychology](https://web.lemoyne.edu/~hevern/narpsych/nr-basic.html). The aim of the widgets in the Story Navigator Orange module are to support human analysis of stories represented in digital texts with a main focus on identifying and describing the following components of the narrative (see [[1]](http://www.communicationcache.com/uploads/1/0/8/8/10887248/kenneth_burke_-_a_grammar_of_motives_1945.pdf), [[2]](https://www.semanticscholar.org/paper/Qualitative-Research-in-Clinical-and-Health-Murray-Sools/8db3916fcd1593086f0a62d78d15eacc2d3236e6) and [[3]](https://www.tandfonline.com/doi/abs/10.1080/13645579.2020.1723205?journalCode=tsrm20) for definitions and theory):
 
 1. Setting
 2. Main agent
@@ -13,30 +13,37 @@ provides story textual analysis features based on principles in [narrative psych
 
 [1] Burke, K. (1969). The grammar of motives. Prentice Hall, New York. Originally published in 1945.
 [2] M. Murray and A. Sools, P. Rohleder, A.C. Lyons (Eds.), Qualitative research in clinical and health psychology, Palgrave MacMillan, Houndmills Basingstoke (2015), pp. 133-154
+[3] Andrade, S. B., & Andersen, D. (2020). Digital story grammar: a quantitative methodology for narrative analysis. International Journal of Social Research Methodology, 23(4), 405-421.
 
-[Story Navigator documentation]().
+[Story Navigator documentation](http://orange-story-navigator.readthedocs.org/).
 
-Documentation is found at: http://orange3-storynavigator.readthedocs.org/
+Documentation is found at: http://orange-story-navigator.readthedocs.org/
 
 Installation:
 -------------
 
+Requirements:
+
+1. Orange3 v3.34+
+2. Orange3-text v1.12+
+
 This section is for those who just want to install and use the add-on in Orange3.
 
-Install from Orange add-on installer through Options - Add-ons.
+Install from Orange add-on installer through Options - Add-ons. **Note:** the add-on requires [Orange3-text](https://github.com/biolab/orange3-text), so first install this library before installing orange-story-navigator.
 
 To install the add-on with [pip](https://pypi.org/project/pip/) use
 
-    pip install Orange-Story-Navigator
+    pip install orange-story-navigator
 
 Development:
 ------------
 
 This section is for those who want to build the add-on from source and extend, customise, or fix bugs in it.
+**Note:** Mac M1 (Apple silicon) users may encounter problems with building ``orange-story-navigator`` using certain Python 3.8.x or 3.9.x versions and / or actually building or running these specific Python versions at all on your Mac. If you encounter such issues, it is recommended to install [Rosetta 2](https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/) and always run the terminal using Rosetta 2 (see how to do the latter [here](https://www.courier.com/blog/tips-and-tricks-to-setup-your-apple-m1-for-development/)) for development tasks.
 
 Requirements:
 
-1. A tool for checking out a [Git]() repository
+1. A tool for checking out a [Git](https://git-scm.com/) repository
 2. Python 3.9.16+
 
 Steps to build and test from source:
@@ -69,4 +76,4 @@ or
 
 ```python -m Orange.canvas```
 
-The Orange3 application should start up after a few seconds and you can test the ```story-navigator``` widget.
+The Orange3 application should start up after a few seconds and you can test the ```orange-story-navigator``` widgets.

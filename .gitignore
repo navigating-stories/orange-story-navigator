@@ -2,6 +2,7 @@
 build
 dist
 Orange3_Network.egg-info
+Orange_Story_Navigator.egg-info
 doc/_build
 *.so
 *.pyd
@@ -10,6 +11,7 @@ MANIFEST
 
 # virtual environment
 nv
+venv
 
 # Cython generated files
 __pycache__

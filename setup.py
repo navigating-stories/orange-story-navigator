@@ -16,17 +16,17 @@ try:
 except ImportError:
     have_cython = False
 
-NAME = 'Orange-Story-Navigator'
+NAME = 'orange-story-navigator'
 DOCUMENTATION_NAME = 'Orange Story Navigator'
 
-VERSION = '1.7.0'
+VERSION = '0.0.1'
 
 DESCRIPTION = 'Narrative analysis add-on for the Orange 3 data mining software package.'
 LONG_DESCRIPTION  = open(os.path.join(os.path.dirname(__file__),
                                       'README.pypi')).read()
 AUTHOR = 'Kody Moodley, The Netherlands eScience Center'
 AUTHOR_EMAIL = 'k.moodley@esciencecenter.nl'
-URL = 'https://github.com/biolab/orange3-network'
+URL = 'https://github.com/navigating-stories/orange-story-navigator'
 LICENSE = 'GPLv3'
 
 KEYWORDS = (
@@ -76,7 +76,8 @@ SETUP_REQUIRES = (
 
 INSTALL_REQUIRES = (
     'anyqt',
-    'Orange3>=3.31',
+    'Orange3>=3.32',
+    'Orange3-text>=1.7',
     'orange-widget-base',
     'scikit-learn',
 ),

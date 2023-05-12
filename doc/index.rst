@@ -1,5 +1,5 @@
-Orange3 Networks Add-on
-=======================
+Orange3 Story Navigator Add-on
+==============================
 
 Widgets
 -------
@@ -7,15 +7,11 @@ Widgets
 .. toctree::
    :maxdepth: 1
 
-   widgets/networkfile
-   widgets/networkexplorer
-   widgets/networkgenerator
-   widgets/networkanalysis
-   widgets/networkclustering
-   widgets/networkofgroups
-   widgets/networkfromdistances
-   widgets/singlemode
-
+   widgets/dsgdepparser
+   widgets/dsgruleset
+   widgets/dsgsrl
+   widgets/dsgtagger
+   
 Indices and tables
 ==================
 
