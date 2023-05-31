@@ -15,17 +15,14 @@ provides story textual analysis features based on principles in [narrative psych
 [2] M. Murray and A. Sools, P. Rohleder, A.C. Lyons (Eds.), Qualitative research in clinical and health psychology, Palgrave MacMillan, Houndmills Basingstoke (2015), pp. 133-154
 [3] Andrade, S. B., & Andersen, D. (2020). Digital story grammar: a quantitative methodology for narrative analysis. International Journal of Social Research Methodology, 23(4), 405-421.
 
-[Story Navigator documentation](http://orange-story-navigator.readthedocs.org/).
-
-Documentation is found at: http://orange-story-navigator.readthedocs.org/
-
 Installation:
 -------------
 
 Requirements:
 
-1. Orange3 v3.34+
-2. Orange3-text v1.12+
+1. Orange3
+2. Orange3-text
+3. Orange3-network
 
 This section is for those who just want to install and use the add-on in Orange3.
 
