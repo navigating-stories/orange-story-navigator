@@ -151,6 +151,79 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
 
         return result, node_df.to_numpy().tolist()
 
+    def _traverse_ancestors_recursive(self, token, results_s, results_o):
+        # Base case: No more ancestors to traverse
+        if not token.ancestors:
+            return
+        
+        # Traverse ancestors recursively until 'nsubj' is found or no more ancestors are left
+        for ancestor in token.ancestors:
+            # print('ancestor: ', ancestor, ' dep: ', ancestor.dep_, ' pos: ', ancestor.pos_)
+            if ancestor.dep_ == 'nsubj' or ancestor.dep_ == 'nsubj:pass' or ancestor.dep_ == 'csubj':
+                results_s.append(ancestor.text)
+            elif ancestor.dep_ == 'obj' or ancestor.dep_ == 'iobj' or ancestor.dep_ == 'obl' or ancestor.dep_ == 'obl:agent':
+                results_o.append(ancestor.text)
+            self._traverse_ancestors_recursive(ancestor, results_s, results_o)
+
+    def _traverse_children_recursive(self, token, results_s, results_o):
+        # Base case: No more ancestors to traverse
+        if not token.children:
+            return
+            
+        # Traverse ancestors recursively until 'nsubj' is found or no more ancestors are left
+        for child in token.children:
+            # print('child: ', child, ' dep: ', child.dep_, ' pos: ', child.pos_)
+            if child.dep_ == 'nsubj' or child.dep_ == 'nsubj:pass' or child.dep_ == 'csubj':
+                results_s.append(child.text)
+            elif child.dep_ == 'obj' or child.dep_ == 'iobj' or child.dep_ == 'obl' or child.dep_ == 'obl:agent':
+                results_o.append(child.text)
+            self._traverse_children_recursive(child, results_s, results_o)
+
+    def _get_tuples(self, doc, input_word):
+        """
+        Traverses dependency tree to find subjects or objects associated with input deontic (for the legal obligation)
+        """
+        verb = input_word #extract_verb_with_aux(sentence, input_word)
+        
+        # Find the input word in the sentence
+        token = None
+        for t in doc:
+            if t.text == verb.text.lower():
+                token = t
+                break
+        
+        if token is None:
+            return [], []
+        
+        results_s_a = []
+        results_o_a = []
+        results_s_c = []
+        results_o_c = []
+        self._traverse_ancestors_recursive(token, results_s_a, results_o_a)
+        self._traverse_children_recursive(token, results_s_c, results_o_c)
+
+        sv_tuples = []
+        vo_tuples = []
+        for item in results_s_a + results_s_c:
+            sv_tuples.append((item, verb.text))
+        for item in results_o_a + results_o_c:
+            vo_tuples.append((verb.text, item))
+
+        return sv_tuples, vo_tuples
+    
+    def _merge_binary_tuplelsts_into_ternary_tuplelst(self, list1, list2):
+        merged_list = []
+        for tuple1 in list1:
+            foundMatch = False
+            for tuple2 in list2:
+                if tuple1[1] == tuple2[0]:
+                    foundMatch = True
+                    merged_list.append((tuple1[0], tuple1[1], tuple2[1]))
+            if not foundMatch:
+                merged_list.append((tuple1[0], tuple1[1], 'O'))
+
+        return merged_list
+
     def _generate_network(self, texts):
         text_id = 0
         tmp_data = []
@@ -158,33 +231,17 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
             txt = str(texts[i, 'content'])
             print(len(str(txt)))
             sents = sent_tokenize(txt, language='dutch')
+
             for sent in sents:
                 tagged_sentence = self.nlp_nl(sent)
-
-                actions = []
-                subjects = []
-                objects = []
-
-                subject = 'O'
-                action = 'O'
-                object = 'O'
             
                 for token in tagged_sentence:
                     if ('WW' in token.tag_.split('|')):
-                        actions.append(token.text)
-                    if ('N' in token.tag_.split('|')) and token.dep_ in ['nsubj']:
-                        subjects.append(token.text)
-                    if ('N' in token.tag_.split('|')) and token.dep_ not in ['nsubj']:
-                        objects.append(token.text)
+                        sv_tuples, vo_tuples = self._get_tuples(tagged_sentence, token)
+                        svo_tuples = self._merge_binary_tuplelsts_into_ternary_tuplelst(sv_tuples, vo_tuples)
 
-                if len(subjects) > 0:
-                    subject = subjects[0]
-                if len(actions) > 0:
-                    action = actions[0]
-                if len(objects) > 0:
-                    object = objects[0]
-
-                tmp_data.append([text_id, "'" + sent + "'", subject, action, object])
+                for item in svo_tuples:
+                    tmp_data.append([text_id, "'" + sent + "'", item[0], item[1], item[2]])
 
             text_id += 1
 
