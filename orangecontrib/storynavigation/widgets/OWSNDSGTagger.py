@@ -1145,6 +1145,8 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             sentence = sentence.replace('.', '')
 
             tagged_sentence = self.nlp_nl(sentence)
+            for token in tagged_sentence:
+                self.count_per_word[token.text.lower().strip()] = 0
             # tagged_sentence = self.merge_punct(tagged_sentence)
             sentence_nlp_models.append(tagged_sentence)
 

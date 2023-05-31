@@ -12,6 +12,7 @@ MANIFEST
 # virtual environment
 nv
 venv
+flenv/
 
 # Cython generated files
 __pycache__
