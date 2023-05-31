@@ -37,12 +37,14 @@ from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
 
 from orangecontrib.text.corpus import Corpus
+
 import spacy
 from spacy import displacy
 import nltk
 nltk.download('perluniprops')
 from nltk.tokenize import sent_tokenize, word_tokenize
 import dhtmlparser3
+# import neuralcoref
 
 HTML = """
 <!doctype html>
@@ -117,10 +119,10 @@ img {{
 </body>
 </html>
 """
+
 SEPARATOR = (
     '<tr class="line separator"><td/><td/></tr><tr class="separator"><td/><td/></tr>'
 )
-
 
 def _count_matches(content: List[str], search_string: str, state: TaskState) -> int:
     """
@@ -291,11 +293,10 @@ class VisibleDomainModel(DomainModel):
             )
         super().set_domain(domain)
 
-
 class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
-    name = "Word Highlighter"
-    description = "Identifies named entities and part-of-speech tokens (nouns, adjectives, verbs etc.) in text"
-    icon = "icons/dsgtagger.svg"
+    name = "1) Actor Analysis"
+    description = "Provides tools to support basic narrative analysis for actors in stories."
+    icon = "icons/dsgtagger.png"
     priority = 500
 
     NL_SPACY_MODEL = "nl_core_news_lg" 
@@ -310,16 +311,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
-    
-    agent_prominence_score_max = 0.
-    agent_prominence_score_min = 0.
-    agent_prominence_metrics = ['Unique nouns', 'Unique words', 'Sentence subjects', 'Sentence subjects norm']
-    agent_prominence_metric = 'Unique nouns'
-
-    word_prominence_scores = {}
-    html_result = ''
-
-    tag_type = Setting(1)
     search_features: List[Variable] = ContextSetting([])
     display_features: List[Variable] = ContextSetting([])
     selected_documents: Set[int] = Setting({0}, schema_only=True)
@@ -327,7 +318,22 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     show_tokens = Setting(False)
     autocommit = Setting(True)
     
-    # POS
+    # Scoring related to agent prominence score
+    agent_prominence_score_max = 0.
+    agent_prominence_score_min = 0.
+    agent_prominence_metrics = ['Raw frequency', 'Subject frequency', 'Subject frequency (normalized)', 'Subject agency', 'Subject agency prominence']
+    agent_prominence_metric = 'Subject frequency'
+
+    # Index of word prominence scores for each word in story
+    word_prominence_scores = {}
+    
+    # HTML string rendering of story document
+    html_result = ''
+
+    # POS or NER? radiobutton selection of entity type to highlight
+    tag_type = Setting(1)
+
+    # Parts of speech (POS) checkbox selected initialization
     vbz = Setting(True)
     nouns = Setting(True)
     adj = Setting(True)
@@ -342,7 +348,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     all_pos = Setting(True)
     zero_pos = Setting(False)
 
-    # NER
+    # Named entity recognition (NER) types checkbox selected initialization
     per = Setting(True)
     loc = Setting(True)
     gpe = Setting(True)
@@ -362,24 +368,42 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     ordinal = Setting(True)
     cardinal = Setting(True)
         
-    # panels for pos and ner tag selection
+    # Panels for POS and NER tag types or lists
     postags_box = None
     nertags_box = None
     main_agents_box = None
+
+    # list of Dutch stopwords
     nl_stopwords = []
 
-    # pos counts
+    # POS counts initialisation
     noun_count = 0
     verb_count = 0
     adjective_count = 0
+
+    # Other counts initialisation
     word_count = 0
     word_count_nostops = 0
     sentence_count = 0
     sentence_count_per_word = {}
     count_per_word = {}
+    count_per_word_passive = {}
+    count_per_word_active = {}
+    noun_action_dict = {}
+
+    # original text (not tagged)
+    original_text = ''
+
     sli = None
+
+    # list of colour values for the background highlight for each entity type
     highlight_colors = {}
+
+    # list of punctuation characters
     punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
+
+    # list of POS checkboxes for each POS type
+    pos_checkboxes = []
     
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
@@ -389,35 +413,26 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
 
-        with open('orangecontrib/storynavigation/widgets/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
+        # loads list of Dutch stopwords
+        with open('orangecontrib/storynavigation/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
             self.nl_stopwords = [line.rstrip() for line in f]
-    
-        # print()
-        # print()
-        # print(self.nl_stopwords)
-        # print()
-        # print()
 
-        self.corpus = None  # Corpus
-        self.nlp_nl = None
+        self.corpus = None # initialise list of documents (corpus)
+        self.nlp_nl = None # initialise spacy model 
         self.__pending_selected_documents = self.selected_documents
 
         # Search features
         ex_sel = QListView.ExtendedSelection
-        # search_box = gui.widgetBox(self.controlArea, "Search features")
         self.search_listbox = sl = VariableListViewSearch(selectionMode=ex_sel)
-        # search_box.layout().addWidget(sl)
         sl.setModel(VisibleDomainModel(separators=False))
         sl.selectionModel().selectionChanged.connect(self.search_features_changed)
 
         # Display features
-        # display_box = gui.widgetBox(self.controlArea, "Display features")
         self.display_listbox = dl = VariableListViewSearch(selectionMode=ex_sel)
-        # display_box.layout().addWidget(dl)
         dl.setModel(VisibleDomainModel(separators=False))
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
 
-        # Tag type selection
+        # Tag type selection panel
         tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:", orientation=Qt.Horizontal,sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         self.tagtype_box = box = gui.radioButtonsInBox(self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
         self.named_entities = gui.appendRadioButton(box, "Named Entities")
@@ -426,42 +441,46 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
         # POS tag list
         self.postags_box = gui.vBox(self.controlArea, "Parts of Speech to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        gui.checkBox(self.postags_box, self, "vbz", "Verbs",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "nouns", "Nouns",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "propn", "Proper nouns",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "adj", "Adjectives",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "adp", "Prepositions / Postpositions",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "adv", "Adverbs",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "conj", "Conjunctives",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "det", "Determinative",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "all_pos", "All",callback=self.pos_selection_changed)
-        gui.checkBox(self.postags_box, self, "zero_pos", "None",callback=self.pos_selection_changed)
-        
+        self.vc = gui.checkBox(self.postags_box, self, "vbz", "Actions",callback=self.pos_selection_changed)
+        self.nc = gui.checkBox(self.postags_box, self, "nouns", "Entities",callback=self.pos_selection_changed)
+        # self.propnc = gui.checkBox(self.postags_box, self, "propn", "Proper nouns",callback=self.pos_selection_changed)
+        self.adjc = gui.checkBox(self.postags_box, self, "adj", "Descriptives",callback=self.pos_selection_changed)
+        # self.adpc = gui.checkBox(self.postags_box, self, "adp", "Prepositions / Postpositions",callback=self.pos_selection_changed)
+        # self.advc = gui.checkBox(self.postags_box, self, "adv", "Adverbs",callback=self.pos_selection_changed)
+        # self.conjc = gui.checkBox(self.postags_box, self, "conj", "Conjunctives",callback=self.pos_selection_changed)
+        # self.detc = gui.checkBox(self.postags_box, self, "det", "Determinative",callback=self.pos_selection_changed)
+        # self.numc = gui.checkBox(self.postags_box, self, "num", "Numericals",callback=self.pos_selection_changed)
+        # self.prtc = gui.checkBox(self.postags_box, self, "prt", "Particles",callback=self.pos_selection_changed)
+        # self.pronc = gui.checkBox(self.postags_box, self, "pron", "Personal pronouns",callback=self.pos_selection_changed)
+        self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
+        self.allc.setChecked(False)
+        self.allc.stateChanged.connect(self.on_state_changed_pos)
+
+        # self.pos_checkboxes = [self.vc, self.nc, self.propnc, self.adjc, self.adpc, self.advc, self.conjc, self.detc, self.numc, self.prtc, self.pronc]        
+        self.pos_checkboxes = [self.vc, self.nc, self.adjc]        
+        # gui.checkBox(self.postags_box, self, "zero_pos", "None",callback=self.pos_selection_changed)
         self.controlArea.layout().addWidget(self.postags_box)
 
         # NER tag list
         self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         gui.checkBox(self.nertags_box, self, "per", "People",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "gpe", "Countries, cities, regions",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "loc", "Other kinds of locations",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "norp", "Nationalities and religious or political groups",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "fac", "Buildings, airports, highways, bridges etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "org", "Companies, agencies, institutions, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "product", "Objects, vehicles, foods, etc. (Not services)",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "eventner", "Named hurricanes, battles, wars, sports events, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "work_of_art", "Titles of books, songs, etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "law", "Named documents made into laws",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "language", "Any named language",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "date", "Absolute or relative dates or periods",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "time", "Times smaller than a day",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "percent", "Percentages",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "money", "Monetary values",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "quantity", "Measurements, as of weight or distance",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "ordinal", "'first', 'second', etc.",callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "cardinal", "Numerals that do not fall under another category",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "gpe", "Countries, cities, regions",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "loc", "Places",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "norp", "Nationalities and religious or political groups",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "fac", "Buildings, airports, highways, bridges etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "org", "Companies, agencies, institutions, etc.",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "product", "Other entities",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "eventner", "Named hurricanes, battles, wars, sports events, etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "work_of_art", "Titles of books, songs, etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "law", "Named documents made into laws",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "language", "Any named language",callback=self.ner_selection_changed)
+        gui.checkBox(self.nertags_box, self, "date", "Temporals",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "time", "Times smaller than a day",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "percent", "Percentages",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "money", "Monetary values",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "quantity", "Measurements, as of weight or distance",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "ordinal", "'first', 'second', etc.",callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "cardinal", "Numerals that do not fall under another category",callback=self.ner_selection_changed)
         
         self.controlArea.layout().addWidget(self.nertags_box)
         self.nertags_box.setEnabled(False)
@@ -520,7 +539,12 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.selectionModel().selectionChanged.connect(self.selection_changed)
         # Document contents
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
+        # self.doc_webview.setStyleSheet("QWidget {background-color:   #0ff}")
         self.mainArea.layout().addWidget(self.splitter)
+
+    def on_state_changed_pos(self, state):
+        for checkBox in self.pos_checkboxes:
+            checkBox.setCheckState(state)
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
@@ -541,9 +565,16 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         else:
             os.system(f"spacy download {name}")
             nlp = spacy.load(name)
+            nlp.add_pipe("merge_noun_chunks")
+            nlp.add_pipe("merge_entities")
         return nlp
 
     def _tagtype_changed(self):
+        """ Toggles the disabling and enabling of the list of checkboxes associated with 
+        Parts of Speech vs. Named Entities. The user cannot highlight entities of both
+         categories. When POS tags are selected, the list of NER checkboxes are disabled
+        and vice versa. This function takes care of this.
+        """
         if self.tag_type == 1:
             self.postags_box.setEnabled(True)
             self.main_agents_box.setEnabled(True)
@@ -571,6 +602,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     @Inputs.corpus
     def set_data(self, corpus=None):
         self.nlp_nl = self.load_spacy_pipeline(self.NL_SPACY_MODEL)
+        
         self.closeContext()
         self.reset_widget()
         self.corpus = corpus
@@ -679,6 +711,9 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def filter_entities(self):
+        # print()
+        # print("got here!!!!!!!!!!!!")
+        # print()
         if ((len(self.word_prominence_scores) == 0) or (self.html_result == '')):
             self.show_docs(slider_engaged=False)
             self.commit.deferred()
@@ -716,37 +751,34 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     def calculate_prominence_score(self, word, list_of_sentences, tags):
         score = 0 
     
-        if (self.agent_prominence_metric == "Sentence subjects"):
+        if (self.agent_prominence_metric == "Subject frequency"):
             as_subj_count = 0
             for tag in tags:
-                if tag[3] == 'nsubj':
+                if tag[3] == 'nsubj' or tag[3] == 'nsubj:pass':
                     as_subj_count += 1
 
             score = (as_subj_count / len(list_of_sentences)) * 100
-            # print("subjects score: ", score)
 
-        elif (self.agent_prominence_metric == "Sentence subjects norm"):
+        elif (self.agent_prominence_metric == "Subject frequency (normalized)"):
             as_subj_count = 0
             for tag in tags:
-                if tag[3] == 'nsubj':
+                if tag[3] == 'nsubj' or tag[3] == 'nsubj:pass':
                     as_subj_count += 1
 
             score = (as_subj_count / self.sentence_count_per_word[word]) * 100
-            # print("norm score: ", score)
 
-        elif (self.agent_prominence_metric == "Unique nouns"):
-            score = (self.count_per_word[word] / self.noun_count) * 100
-            # print("unique nouns score: ", score)
-        elif (self.agent_prominence_metric == "Unique words"):
-            score = (self.count_per_word[word] / self.word_count_nostops) * 100
-            # print("unique words score: ", score)
+        elif (self.agent_prominence_metric == "Raw frequency"):
+            score = self.count_per_word[word]
+        elif (self.agent_prominence_metric == "Subject agency"):
+            if (self.count_per_word_active[word] + self.count_per_word_passive[word]) > 0:
+                score = (self.count_per_word_active[word] - self.count_per_word_passive[word])/(self.count_per_word_active[word] + self.count_per_word_passive[word])
+        elif (self.agent_prominence_metric == "Subject agency prominence"):
+            if (self.count_per_word_active[word] + self.count_per_word_passive[word]) > 0:
+                score = self.count_per_word[word] * ((self.count_per_word_active[word] - self.count_per_word_passive[word])/(self.count_per_word_active[word] + self.count_per_word_passive[word]))
         elif (self.agent_prominence_metric == "Persons only"):
-            
             score = 0
-            # print("persons only score: ", score)
         else:
             score = 0
-            # print("other score: ", score)
 
         return score
 
@@ -771,9 +803,6 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged = False):
-        # print()
-        # print(self.agent_prominence_metric)
-        # print()
         """Show the selected documents in the right area"""
         if self.corpus is None:
             return
@@ -782,14 +811,20 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         if len(self.display_features) == 0:
             self.Warning.no_feats_display()
 
-        if self.show_tokens:
-            tokens = list(self.corpus.ngrams_iterator(include_postags=True))
+        # if self.show_tokens:
+        #     tokens = list(self.corpus.ngrams_iterator(include_postags=True))
 
         parts = []
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
             text = ""
             for feature in self.display_features:
                 value = str(self.corpus[c_index, feature.name])
+                self.original_text = str(value)
+                # print()
+                # print()
+                # print(value)
+                # print()
+                # print()
 
                 if feature.name == 'content':
                     if (self.tag_type == 1):
@@ -797,16 +832,42 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                             value = self.filter_entities()
                         else:
                             value = self.__postag_text(value)
+                            # print()
+                            # print()
+                            # print(value)
+                            # print()
+                            # print()
+
                     else:
                         value = self.__nertag_text(value)
 
-                if feature in self.search_features:
-                    value = self.__mark_text(value)
+                # print()
+                # print("feature: ", feature)
+                # print()
+                # print()
+                # print("self.search_features: ", self.search_features)
+                # print()
+                # print()
+                if feature in self.search_features and (len(self.regexp_filter) > 0):
+                    value = self.__mark_text(self.original_text)
+                    # print()
+                    # print()
+                    # print("marking text???? why????")
+                    # print()
+                    # print(value)
+                    # print()
+                    # print()
                 
                 if feature.name != 'content':
                     value = value.replace("\n", "<br/>")
+                    # print()
+                    # print()
+                    # print("doing replace!")
+                    # print()
+                    # print()
 
                 is_image = feature.attributes.get("type", "") == "image"
+
                 if is_image and value != "?":
                     value = os.path.join(feature.attributes.get("origin", ""), value)
                     value = '<img src="{}"></img>'.format(value)
@@ -816,17 +877,20 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                     f'<td class="content">{value}</td></tr>'
                 )
 
-            if self.show_tokens:
-                tokens_ = "".join(
-                    f'<span class="token">{token}</span>' for token in tokens[c_index]
-                )
-                text += (
-                    f'<tr><td class="variables"><strong>Tokens & Tags:</strong></td>'
-                    f"<td>{tokens_}</td></tr>"
-                )
+            # if self.show_tokens:
+            #     tokens_ = "".join(
+            #         f'<span class="token">{token}</span>' for token in tokens[c_index]
+            #     )
+            #     text += (
+            #         f'<tr><td class="variables"><strong>Tokens & Tags:</strong></td>'
+            #         f"<td>{tokens_}</td></tr>"
+            #     )
+
             parts.append(text)
             parts.append(self.get_word_prominence_bar_chart_html())
-
+            parts.append(self.generate_noun_action_table(self.noun_action_dict))
+            # parts.append(text)
+            
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
@@ -847,15 +911,15 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         plt.bar(range(len(res)), values, tick_label=names)
         plt.xticks(rotation=45)
         # Option 1
-        plt.rcParams['font.size'] = 8
+        plt.rcParams['font.size'] = 12
         # Option 2
         # plt.rcParams.update({'font.size': 18})
         tmpfile = BytesIO()
         plt.savefig(tmpfile, format='png')
         plt.tight_layout(rect=[0.05, 0.05, 1, 0.75])
         encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-
-        html = '<img src=\'data:image/png;base64,{}\'>'.format(encoded)
+        html = """<style>caption {{font-weight: bold;font-size: 1em;text-indent: 0;padding-top: 1em;caption-side: bottom;}} .dataframe {{float: center;width: 100%;text-align: center;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} figure {{float: center;width: 100%;text-align: center;font-weight: bold;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} img.scaled {{width: 50%;}}</style> <figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(encoded)
+        # html = """<figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(encoded)
 
         plt.figure().clear()
         plt.close()
@@ -863,6 +927,37 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         plt.clf()
 
         return html
+    
+    def generate_noun_action_table(self, noun_action_dict, ):
+        import pandas as pd
+        from operator import itemgetter
+        
+        n=10
+        res = dict(sorted(self.word_prominence_scores.items(), key = itemgetter(1), reverse = True)[:n]) 
+        names = list(res.keys())
+
+        rows = []
+        for item in noun_action_dict:
+            if len(noun_action_dict[item]) > 0 and (item in names):
+                curr_row = []
+                curr_row.append(item)
+                curr_row.append(', '.join(list(set(noun_action_dict[item]))))
+                rows.append(curr_row)
+
+        df = pd.DataFrame(rows, columns = ['actor', 'actions'])
+        
+        # html = """<style>figure {{float: center;width: 100%;text-align: center;font-weight: bold;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} img.scaled {{width: 50%;}}</style> <figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(encoded)
+        # styles = [dict(selector="caption", props=[("background-color", "cyan")])]
+        
+        # df.style.set_caption('Top 10 most prominent actors and their associated actions')
+        test_html = df.to_html(index=False, justify='center')
+        test_html = test_html.replace('</table>', '<caption>Top 10 most prominent actors and their associated actions</caption></table>')
+        # print()
+        # print()
+        # print(test_html)
+        # print()
+        # print()
+        return test_html
 
     def calculate_word_type_count(self, sent_models):
         n = set()
@@ -880,7 +975,8 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                         nopunct_token += ele
 
                 if ((token.text.lower().strip() not in self.nl_stopwords) and (len(nopunct_token) == len(token.text.strip()))):
-                    self.count_per_word[token.text] += 1
+                    self.count_per_word[token.text.lower().strip()] += 1
+                    
                     w.add(token.text)
                     if token.pos_ in ['NOUN', 'PRON', 'PROPN']:
                         n.add(token.text)
@@ -888,6 +984,17 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                         a.add(token.text)
                     if token.pos_ in ['VERB']:
                         v.add(token.text)
+
+                if token.dep_ == 'nsubj' or (token.text.lower().strip() == 'ik'):
+                    if token.text.lower().strip() in self.count_per_word_active:
+                        self.count_per_word_active[token.text.lower().strip()] += 1
+                    else:
+                        self.count_per_word_active[token.text.lower().strip()] = 1
+                if token.dep_ in ['nsubj:pass', 'obj', 'iobj', 'obl:agent', 'obl', 'parataxis']:
+                    if token.text.lower().strip() in self.count_per_word_passive:
+                        self.count_per_word_passive[token.text.lower().strip()] += 1
+                    else:
+                        self.count_per_word_passive[token.text.lower().strip()] = 1
                     
         self.noun_count = len(n)
         self.word_count = len(w)
@@ -903,38 +1010,18 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             ner_tags.append("PERSON")
         if (self.loc):
             ner_tags.append("LOC")
-        if (self.gpe):
             ner_tags.append("GPE")
-        if (self.norp):
             ner_tags.append("NORP")
-        if (self.fac):
             ner_tags.append("FAC")
-        if (self.org):
             ner_tags.append("ORG")
         if (self.product):
+            ner_tags.append("ORG")
             ner_tags.append("PRODUCT")
-        if (self.eventner):
             ner_tags.append("EVENT")
-        if (self.work_of_art):
             ner_tags.append("WORK_OF_ART")
-        if (self.law):
-            ner_tags.append("LAW")
-        if (self.language):
-            ner_tags.append("LANGUAGE")
         if (self.date):
             ner_tags.append("DATE")
-        if (self.time):
             ner_tags.append("TIME")
-        if (self.percent):
-            ner_tags.append("PERCENT")
-        if (self.money):
-            ner_tags.append("MONEY")
-        if (self.quantity):
-            ner_tags.append("QUANTITY")
-        if (self.ordinal):
-            ner_tags.append("ORDINAL")
-        if (self.cardinal):
-            ner_tags.append("CARDINAL")
 
         options = {"ents" : ner_tags, "colors" : {}}
 
@@ -946,6 +1033,39 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             html += displacy.render(tagged_sentence, style="ent", options = options)
         
         return html
+    
+    # Function to recursively traverse ancestors
+    def find_verb_ancestor(self, token):
+        # Check if the token is a verb
+        if token.pos_ == 'VERB':
+            return token
+        
+        # Traverse the token's ancestors recursively
+        for ancestor in token.ancestors:
+            # Recursive call to find the verb ancestor
+            verb_ancestor = self.find_verb_ancestor(ancestor)
+            if verb_ancestor:
+                return verb_ancestor
+        
+        # If no verb ancestor found, return None
+        return None
+
+    def merge_punct(self, doc):
+        spans = []
+        for word in doc[:-1]:
+            if word.is_punct or not word.nbor(1).is_punct:
+                continue
+            start = word.i
+            end = word.i + 1
+            while end < len(doc) and doc[end].is_punct:
+                end += 1
+            span = doc[start:end]
+            spans.append((span, word.tag_, word.lemma_, word.ent_type_))
+        with doc.retokenize() as retokenizer:
+            for span, tag, lemma, ent_type in spans:
+                attrs = {"tag": tag, "lemma": lemma, "ent_type": ent_type}
+                retokenizer.merge(span, attrs=attrs)
+        return doc
 
     def __postag_text(self, text):
         # pos tags that the user wants to highlight
@@ -956,23 +1076,10 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             pos_tags.append("VERB")
         if (self.adj):
             pos_tags.append("ADJ")
+            pos_tags.append("ADV")
         if (self.nouns):
             pos_tags.append("NOUN")
-        if (self.pron):
             pos_tags.append("PRON")
-        if (self.adp):
-            pos_tags.append("ADP")
-        if (self.adv):
-            pos_tags.append("ADV")
-        if (self.conj):
-            pos_tags.append("CONJ")
-        if (self.det):
-            pos_tags.append("DET")
-        if (self.num):
-            pos_tags.append("NUM")
-        if (self.prt):
-            pos_tags.append("PRT")
-        if (self.propn):
             pos_tags.append("PROPN")
 
         # tokenize input text into sentences
@@ -985,10 +1092,15 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
         from spacy.lang.nl import Dutch
         nlp = Dutch()
         tokenizer = nlp.tokenizer
+
+        for i in range(0, len(sents)):
+            sents[i] = sents[i].replace('.', '')
+
         for sentence in sents:
             sentence = sentence.replace("\n"," ")
             sentence = sentence.replace("  "," ")
             sentence = re.sub('\s+',' ',sentence)
+            sentence = sentence.replace('.', '')
             
             # tokens = word_tokenize(sentence, language='dutch')
             tokens_doc = tokenizer(sentence)
@@ -998,8 +1110,11 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
             self.word_count += len(tokens)
             for token in tokens:
-                self.sentence_count_per_word[token] = 0
-                self.count_per_word[token] = 0
+                self.sentence_count_per_word[token.lower().strip()] = 0
+                self.count_per_word[token.lower().strip()] = 0
+                self.count_per_word_active[token.lower().strip()] = 0
+                self.count_per_word_passive[token.lower().strip()] = 0
+                self.noun_action_dict[token.lower().strip()] = []
                 if token.lower().strip() not in self.nl_stopwords:
                     self.word_count_nostops += 1
 
@@ -1008,6 +1123,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             sentence = sentence.replace("\n"," ")
             sentence = sentence.replace("  "," ")
             sentence = re.sub('\s+',' ',sentence)
+            sentence = sentence.replace('.', '')
             # tokens = word_tokenize(sentence, language='dutch')
             tokens_doc = tokenizer(sentence)
             tokens = []
@@ -1015,7 +1131,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                 tokens.append(d.text)
 
             for token in tokens:
-                self.sentence_count_per_word[token] += 1
+                self.sentence_count_per_word[token.lower().strip()] += 1
 
         # output of this function
         html = ""
@@ -1026,18 +1142,23 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             sentence = sentence.replace("\n"," ")
             sentence = sentence.replace("  "," ")
             sentence = re.sub('\s+',' ',sentence)
+            sentence = sentence.replace('.', '')
 
             tagged_sentence = self.nlp_nl(sentence)
+            # tagged_sentence = self.merge_punct(tagged_sentence)
             sentence_nlp_models.append(tagged_sentence)
 
         # calculate the number of unique nouns in the text
         self.calculate_word_type_count(sentence_nlp_models)
 
-        # loop through model to filter out those words that need to be tagged (bsaed on user selection and prominence score)
+        # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
         for sentence, tagged_sentence in zip(sents, sentence_nlp_models):
             tags = []
             for token in tagged_sentence:
                 tags.append((token.text, token.pos_, token.tag_, token.dep_))
+
+            # for ent in tagged_sentence.ents:
+            #     print(ent, " : ", ent._.coref_cluster)
             
             from nltk.tokenize import RegexpTokenizer
             tokenizer = RegexpTokenizer(r'\w+|\$[\d\.]+|\S+')
@@ -1045,6 +1166,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
             ents = []
             for tag, span in zip(tags, spans):
+
                 if tag[0].lower().strip() not in self.nl_stopwords:
                     if tag[1] in pos_tags:
                         if tag[1] == 'PRON':
@@ -1052,13 +1174,22 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
                                 tmp_tags = tag[2].split('|')
                                 if ((tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'pr' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'bez' and tmp_tags[2] == 'det')):
                                     p_score = 0
-                                    p_score = self.calculate_prominence_score(tag[0], sents, tags)
-                                    self.word_prominence_scores[tag[0].lower()] = p_score
+                                    p_score = self.calculate_prominence_score(tag[0].lower().strip(), sents, tags)
+                                    self.word_prominence_scores[tag[0].lower().strip()] = p_score
                                     
                                     if (p_score >= self.agent_prominence_score_min):
+                                        print("word: ", tag[0])
+                                        print("tag: ", tag[1])
                                         ents.append({"start" : span[0], 
                                                 "end" : span[1], 
                                                 "label" : tag[1] })
+                                        
+                                    # print("noun: ", token.text)
+                                    # print("sentence: ", sentence)
+                                    # # print("testing: ", self.find_verb_ancestor(token).text)
+                                    vb = self.find_verb_ancestor(token)
+                                    if vb is not None:
+                                        self.noun_action_dict[tag[0].lower().strip()].append(vb.text)
 
                                     # ents.append({"start" : span[0], 
                                     #         "end" : span[1], 
@@ -1066,15 +1197,32 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
                         elif ((tag[1] == 'NOUN') or (tag[1] == 'PROPN')):
                             p_score = 0
-                            p_score = self.calculate_prominence_score(tag[0], sents, tags)
-                            self.word_prominence_scores[tag[0].lower()] = p_score
+                            p_score = self.calculate_prominence_score(tag[0].lower().strip(), sents, tags)
+                            self.word_prominence_scores[tag[0].lower().strip()] = p_score
                             
                             if (p_score >= self.agent_prominence_score_min):
+                                print("word: ", tag[0])
+                                print("tag: ", tag[1])
                                 ents.append({"start" : span[0], 
                                         "end" : span[1], 
                                         "label" : tag[1] })
+                                
+                            # print()
+                            # print('t: ', tag[1])
+                            # print()
+
+
+                            # print("noun2: ", token.text)
+                            # print("sentence2: ", sentence)
+                            # # print("testing2: ", self.find_verb_ancestor(token).text)
+                            vb = self.find_verb_ancestor(token)
+                            if vb is not None:
+                                self.noun_action_dict[tag[0].lower().strip()].append(vb.text)
                             
                         else:
+                            # print()
+                            # print('t2: ', tag[1])
+                            # print()
                             ents.append({"start" : span[0], 
                                         "end" : span[1], 
                                         "label" : tag[1] })
@@ -1102,8 +1250,12 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
             html += displacy.render(doc, style = "ent", options = options, manual = True)
         
         # print()
+        # print("noun action dict:")
         # print()
-        # print(html)
+        # for item in self.noun_action_dict:
+        #     if len(self.noun_action_dict[item]) > 0:
+        #         print(item, " : ", self.noun_action_dict[item])
+        # print()
         # print()
         # print()
 

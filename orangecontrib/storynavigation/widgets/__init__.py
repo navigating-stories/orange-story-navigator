@@ -15,7 +15,7 @@ DESCRIPTION = "Textual story narrative theory analysis tools for Orange."
 
 BACKGROUND = "#C0FF97"
 
-ICON = "icons/Category-NavigatingStories.jpg"
+ICON = "icons/Category-NavigatingStories.png"
 
 # Location of widget help files.
 WIDGET_HELP_PATH = (
@@ -28,7 +28,7 @@ WIDGET_HELP_PATH = (
     # Documentation included in wheel
     # Correct DATA_FILES entry is needed in setup.py and documentation has to be built
     # before the wheel is created.
-    ("{}/help/orange3-network/index.html".format(sysconfig.get_path("data")), None),
+    ("{}/help/orange3-storynavigator/index.html".format(sysconfig.get_path("data")), None),
 
     # Online documentation url, used when the local documentation is available.
     # Url should point to a page with a section Widgets. This section should

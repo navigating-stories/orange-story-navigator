@@ -78,6 +78,7 @@ INSTALL_REQUIRES = (
     'anyqt',
     'Orange3>=3.32',
     'Orange3-text>=1.7',
+    'Orange3-network>=1.7',
     'orange-widget-base',
     'scikit-learn',
 ),
