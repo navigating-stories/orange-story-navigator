@@ -38,7 +38,7 @@ import sys
 class OWSNDSGDepParser(OWWidget):
     name = 'Anthology Network Analysis'
     description = 'Digital Story Grammer: Dutch dependency parsing with Stanza'
-    icon = 'icons/dsg_stanzadep_icon.png'
+    icon = 'icons/anthology_network_icon.png'
     priority = 6430
 
     run_nlp = None

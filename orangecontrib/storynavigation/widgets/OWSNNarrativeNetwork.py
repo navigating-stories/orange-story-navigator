@@ -13,12 +13,15 @@ from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from Orange.data.pandas_compat import table_from_frame
 from orangecontrib.text.corpus import Corpus
 from orangecontrib.network.network import Network
+import random
 
 import spacy
 import nltk
 nltk.download('perluniprops')
 from nltk.tokenize import sent_tokenize, word_tokenize
 import pandas as pd
+from textblob import TextBlob
+from textblob_nl import PatternTagger, PatternAnalyzer
 
 class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     name = 'Generate Narrative Network'
@@ -34,7 +37,9 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     class Outputs:
         edge_data = Output('Edge Data', Table)
         node_data = Output('Node Data', Table)
+        sentiment_data = Output('Sentiment Data', Table)
         network = Output('Network', Network)
+
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -67,7 +72,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     @Inputs.corpus
     def set_data(self, corpus=None):
         self.nlp_nl = self.load_spacy_pipeline(self.NL_SPACY_MODEL)
-        # self.nlp_nl.add_pipe("merge_noun_chunks")
+        self.nlp_nl.add_pipe("merge_noun_chunks")
         self.corpus = corpus
         self._generate_network(self.corpus)
 
@@ -127,14 +132,17 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         # encode strings
         idx = 0
         vals = []
+        prominence_scores = []
         for item in list_of_strings:
             identifiers[item] = idx
             vals.append(idx)
+            prominence_scores.append(random.randint(1, 100))
             idx += 1
 
         node_df['node_id'] = vals
         print("node: ", len(vals))
-        
+        node_df['prominence_score'] = prominence_scores
+
         result = []
         node_labels = []
         for row in data:
@@ -223,25 +231,59 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
                 merged_list.append((tuple1[0], tuple1[1], 'O'))
 
         return merged_list
+    
+    def sort_tuple(self, tup):
+        lst = len(tup)
+        for i in range(0, lst):
+            for j in range(0, lst-i-1):
+                if (tup[j][1] > tup[j + 1][1]):
+                    temp = tup[j]
+                    tup[j] = tup[j + 1]
+                    tup[j + 1] = temp
+        return tup
 
     def _generate_network(self, texts):
         text_id = 0
         tmp_data = []
+        sentiment_network_tuples = []
         for i in range(0, len(texts)):
             txt = str(texts[i, 'content'])
-            print(len(str(txt)))
+            # print(len(str(txt)))
             sents = sent_tokenize(txt, language='dutch')
-
             for sent in sents:
+                # blob = TextBlob(sent)
+                blob = TextBlob(sent, pos_tagger=PatternTagger(), analyzer=PatternAnalyzer())
+                sentiment_scores = blob.sentiment
                 tagged_sentence = self.nlp_nl(sent)
-            
+                verbs = []
+                nouns = []
                 for token in tagged_sentence:
                     if ('WW' in token.tag_.split('|')):
+                        verbs.append(token)
                         sv_tuples, vo_tuples = self._get_tuples(tagged_sentence, token)
                         svo_tuples = self._merge_binary_tuplelsts_into_ternary_tuplelst(sv_tuples, vo_tuples)
+                    elif ('N' in token.tag_.split('|')) or ('pron' in token.tag_.split('|')) or ('ik' in token.text.lower()):
+                        print('here!! ', token.text)
+                        print(token.tag_)
+                        nouns.append((token, token.idx))
+                    else:
+                        print('sdasds:', token.text)
+                        print(token.tag_)
 
                 for item in svo_tuples:
                     tmp_data.append([text_id, "'" + sent + "'", item[0], item[1], item[2]])
+
+                print()
+                print(nouns)
+                print()
+                nouns = self.sort_tuple(nouns)
+                print(nouns)
+                print()
+                if len(nouns) > 0:
+                    sentiment_subject = nouns[0][0].text
+                    sentiment_object = nouns[len(nouns)-1][0].text
+                    sentiment_network_tuple = [sentiment_subject, sentiment_object, sentiment_scores[0], sentiment_scores[1]]
+                    sentiment_network_tuples.append(sentiment_network_tuple)
 
             text_id += 1
 
@@ -252,12 +294,14 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         # create a datafame out of the data
         edge_data_tmp = pd.DataFrame(tmp_data, columns = ['story_id', 'sentence', 'subject', 'action', 'object'])
         # edge_data_tmp = pd.DataFrame(tmp_data_e, columns = ['story_id', 'sentence_id', 'subject_id', 'action_id', 'object_id'])
-        node_data_tmp = pd.DataFrame(tmp_data_n, columns = ['label', 'types', 'node_id'])
+        node_data_tmp = pd.DataFrame(tmp_data_n, columns = ['label', 'types', 'node_id', 'prominence_score'])
+        sentiment_data_tmp = pd.DataFrame(sentiment_network_tuples, columns = ['source_entity', 'target_entity', 'polarity', 'subjectivity'])
 
         # all_data = pd.DataFrame(tmp_data)
         # convert the dataframe to orange table format and set outputs of widget
         self.Outputs.edge_data.send(table_from_frame(edge_data_tmp))
         self.Outputs.node_data.send(table_from_frame(node_data_tmp))
+        self.Outputs.sentiment_data.send(table_from_frame(sentiment_data_tmp))
         # print()
         # print("handoff: ", node_data_tmp['label'].tolist())
         # print()

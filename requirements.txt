@@ -1,4 +1,4 @@
-PyQt5
+PyQt6
 PyQtWebEngine
 Orange3
 Orange3-Text
@@ -9,3 +9,4 @@ sphinx
 recommonmark
 sphinx-rtd-theme
 dhtmlparser3
+textblob

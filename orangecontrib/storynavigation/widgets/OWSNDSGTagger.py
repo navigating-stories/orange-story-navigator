@@ -296,7 +296,7 @@ class VisibleDomainModel(DomainModel):
 class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
     name = "1) Actor Analysis"
     description = "Provides tools to support basic narrative analysis for actors in stories."
-    icon = "icons/dsgtagger.png"
+    icon = "icons/actor_analysis_icon.png"
     priority = 500
 
     NL_SPACY_MODEL = "nl_core_news_lg" 
