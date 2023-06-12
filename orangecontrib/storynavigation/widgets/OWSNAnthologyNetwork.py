@@ -35,7 +35,7 @@ import stanza
 import re
 import sys
 
-class OWSNDSGDepParser(OWWidget):
+class OWSNAnthologyNetwork(OWWidget):
     name = 'Anthology Network Analysis'
     description = 'Digital Story Grammer: Dutch dependency parsing with Stanza'
     icon = 'icons/anthology_network_icon.png'
@@ -198,7 +198,7 @@ def main():
     #network = read_pajek(join(dirname(dirname(__file__)), 'networks', 'Erdos02.net'))
     #transform_data_to_orange_table(network)
     # WidgetPreview(OWSNDSGDepParser).run(set_graph=network)
-    WidgetPreview(OWSNDSGDepParser).run()
+    WidgetPreview(OWSNAnthologyNetwork).run()
 
 if __name__ == "__main__":
     main()

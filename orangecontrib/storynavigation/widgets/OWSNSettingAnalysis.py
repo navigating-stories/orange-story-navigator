@@ -24,10 +24,10 @@ from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
 class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
-    name = '7) Generate Narrative Network'
-    description = 'Generates a network of entities and story units for visualisation'
-    icon = 'icons/narrative_network_icon.png'
-    priority = 6430
+    name = '3) Setting Analysis'
+    description = "Provides tools to help identify the main setting of a story."
+    icon = "icons/setting_analysis_icon.png"
+    priority = 6424
 
     NL_SPACY_MODEL = "nl_core_news_lg" 
 
@@ -303,7 +303,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
             text_id += 1
 
         # filter only for top 10 prominence scores for subjects
-        sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 7)
+        sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 5)
 
 
         print()

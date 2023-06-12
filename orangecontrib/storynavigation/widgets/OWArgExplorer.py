@@ -35,9 +35,10 @@ limitations under the License."""
 GRAPH_LAYOUT = ('spring', 'multipartite', 'kamada kawai', 'spectral')
 
 class OWArgExplorer(OWDataProjectionWidget):
-    name = 'Narrative Network Explorer'
+    name = '8) Narrative Network Explorer'
     description = 'Enables visual plotting and exploration of entities anf their relationships in narrative texts'
     icon = 'icons/OWArgExplorer.svg'
+    priority = 6431
     
     class Inputs:
         edge_data = Input('Edge Data', Table)
