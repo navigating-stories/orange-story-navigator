@@ -8,6 +8,7 @@ doc/_build
 *.pyd
 *.pyc
 MANIFEST
+.vscode/
 
 # virtual environment
 nv
