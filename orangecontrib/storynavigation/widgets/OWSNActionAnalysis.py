@@ -23,7 +23,7 @@ import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
-class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
+class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = '2) Action Analysis'
     description = "Provides tools to support basic narrative analysis for actions in stories."
     icon = "icons/action_analysis_icon.png"

@@ -23,10 +23,10 @@ import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
-class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
+class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = '3) Setting Analysis'
     description = "Provides tools to help identify the main setting of a story."
-    icon = "icons/setting_analysis_icon.png"
+    icon = "icons/setting_analysis_icon.svg"
     priority = 6424
 
     NL_SPACY_MODEL = "nl_core_news_lg" 

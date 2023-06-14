@@ -296,7 +296,7 @@ class VisibleDomainModel(DomainModel):
         super().set_domain(domain)
 
 
-class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
+class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = "1) Actor Analysis"
     description = "Provides tools to support basic narrative analysis for actors in stories."
     icon = "icons/actor_analysis_icon.png"
@@ -761,7 +761,7 @@ class OWSNDSGTagger(OWWidget, ConcurrentWidgetMixin):
 
         if (self.agent_prominence_metric == "Subject frequency (normalized)"):
             print('word: ', word, ' - ', 's: ', self.count_per_subject[word], ' - ', ' c: ',  self.count_per_word[word])
-            score = (1 - ((self.count_per_word[word] - self.count_per_subject[word]) / self.count_per_word[word])) * (self.count_per_word[word]/ word_count) * 100
+            score = (1 - ((self.count_per_word[word] - self.count_per_subject[word]) / self.count_per_word[word])) * (self.count_per_word[word] / word_count) * 100
         elif (self.agent_prominence_metric == "Subject frequency"):
             score = self.count_per_subject[word]
         else:
@@ -1442,4 +1442,4 @@ if __name__ == "__main__":
     corpus_ = Corpus.from_file("book-excerpts")
     corpus_ = corpus_[:3]
     corpus_ = BASE_TOKENIZER(corpus_)
-    WidgetPreview(OWSNDSGTagger).run(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(corpus_)

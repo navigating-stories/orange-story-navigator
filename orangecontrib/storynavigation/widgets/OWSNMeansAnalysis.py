@@ -23,10 +23,10 @@ import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
-class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
+class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = '5) Means Analysis'
     description = "Provides tools to help identify the means with which the goals or purpose of the story are pursued."
-    icon = "icons/means_analysis_icon.png"
+    icon = "icons/means_analysis_icon.svg"
     priority = 6427
 
     NL_SPACY_MODEL = "nl_core_news_lg" 

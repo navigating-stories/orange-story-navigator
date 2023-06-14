@@ -26,7 +26,7 @@ from textblob_nl import PatternTagger, PatternAnalyzer
 class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = '4) Purpose Analysis'
     description = "Provides tools to help identify the purpose or goals of the story or main characters."
-    icon = "icons/purpose_analysis_icon.png"
+    icon = "icons/purpose_analysis_icon.svg"
     priority = 6425
 
     NL_SPACY_MODEL = "nl_core_news_lg" 

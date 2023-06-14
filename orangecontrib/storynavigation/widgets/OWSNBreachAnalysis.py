@@ -23,11 +23,11 @@ import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
-class OWSNAnthologyNetwork(OWWidget, ConcurrentWidgetMixin):
-    name = '9) Anthology Network'
-    description = 'Tools for analysing a collection of stories.'
-    icon = 'icons/anthology_network_icon.png'
-    priority = 6431
+class OWSNBreachAnalysis(OWWidget, ConcurrentWidgetMixin):
+    name = '6) Breach Analysis'
+    description = "Provides tools to help identify the breach of the story."
+    icon = "icons/breach_analysis_icon.png"
+    priority = 6428
 
     NL_SPACY_MODEL = "nl_core_news_lg" 
 
@@ -286,7 +286,7 @@ class OWSNAnthologyNetwork(OWWidget, ConcurrentWidgetMixin):
                         print(token.tag_)
 
                 for item in svo_tuples:
-                    tmp_data.append([text_id, "'" + sent + "'", item[0].lower().strip()+'_subj', item[1].lower().strip(), item[2].lower().strip()+'_obj'])
+                    tmp_data.append([text_id, "'" + sent + "'", item[0], item[1], item[2]])
 
                 print()
                 print(nouns)
@@ -303,7 +303,7 @@ class OWSNAnthologyNetwork(OWWidget, ConcurrentWidgetMixin):
             text_id += 1
 
         # filter only for top 10 prominence scores for subjects
-        # sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 7)
+        sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 5)
 
 
         print()

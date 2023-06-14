@@ -315,11 +315,11 @@ class OWScatterPlotGraph(OWScatterPlotBase):
 class OWSNSentimentAnalyzer(OWDataProjectionWidget):
     """Network visualisation of the general sentiment of the context in which pairs of actors are mentioned in a story."""
 
-    name = "6) Actor Sentiment Network"
+    name = "7) Sentiment Network"
     description = "Network visualisation of the general sentiment " \
                   "of the context in which pairs of actors " \
                   "are mentioned in a story."
-    icon = "icons/OWArgExplorer.svg"
+    icon = "icons/sentiment_analysis_icon.png"
     priority = 6429
     keywords = "network sentiment"
 
@@ -642,14 +642,26 @@ class OWSNSentimentAnalyzer(OWDataProjectionWidget):
         edge_colors = [G[u][v]['color'] for u, v in G.edges()]
 
         # Draw the graph
-        pos = nx.spring_layout(G, k=0.15, iterations=20)
-        nx.draw_networkx(G, pos, with_labels=False, node_color='lightblue', node_size=500, font_size=5, font_color='black', edge_color=edge_colors, width=2.0)
+        pos = nx.spring_layout(G, k=0.5, iterations=20)
+        h2 = nx.draw_networkx(G, pos, with_labels=False, node_color='lightblue', node_size=500, font_size=5, font_color='black', edge_color=edge_colors, width=2.0)
         nx.draw_networkx_labels(G, pos, labels=node_labels)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
 
         # Draw edge labels
-        edge_labels = nx.get_edge_attributes(G, 'weight')
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        # edge_labels = nx.get_edge_attributes(G, 'weight')
+        # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
+        from matplotlib.lines import Line2D
+        #https://stackoverflow.com/questions/19877666/add-legends-to-linecollection-plot - uses plotted data to define the color but here we already have colors defined, so just need a Line2D object.
+        def make_proxy(clr, mappable, **kwargs):
+            return Line2D([0, 1], [0, 1], color=clr, **kwargs)
+
+        # generate proxies with the above function
+        proxies = [make_proxy(clr, h2, lw=5) for clr in ['red', 'green', 'blue']]
+        # and some text for the legend -- you should use something from df.
+        # labels = ["{}->{}".format(fr, to) for (fr, to) in G.edges()]
+        labels = ["negative", "neutral", "positive"]
+        plt.legend(proxies, labels)
 
         # Show the graph
         plt.axis('off')
