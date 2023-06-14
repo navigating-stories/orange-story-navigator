@@ -27,7 +27,7 @@ from AnyQt.QtWidgets import (
     QTableView,
     QLabel,
 )
-from Orange.data import Variable
+from Orange.data import Variable, Table
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
@@ -37,9 +37,12 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
+from Orange.data.pandas_compat import table_from_frame
 
 from orangecontrib.text.corpus import Corpus
+from operator import itemgetter
 
+import pandas as pd
 import spacy
 from spacy import displacy
 import nltk
@@ -311,6 +314,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         matching_docs = Output("Matching Docs", Corpus, default=True)
         other_docs = Output("Other Docs", Corpus)
         corpus = Output("Corpus", Corpus)
+        agency_table = Output("Actor agency ratios", Table)
+        actor_action_table = Output("Actor action table", Table)
+        
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -711,9 +717,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def filter_entities(self):
-        # print()
-        # print("got here!!!!!!!!!!!!")
-        # print()
         if ((len(self.word_prominence_scores) == 0) or (self.html_result == '')):
             self.show_docs(slider_engaged=False)
             self.commit.deferred()
@@ -759,8 +762,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             items = sent.split()
             word_count+= len(items)
 
+        print(word, ' - ', word_count, ' - ', self.count_per_word[word])
         if (self.agent_prominence_metric == "Subject frequency (normalized)"):
-            print('word: ', word, ' - ', 's: ', self.count_per_subject[word], ' - ', ' c: ',  self.count_per_word[word])
+            # print('word: ', word, ' - ', 's: ', self.count_per_subject[word], ' - ', ' c: ',  self.count_per_word[word])
             score = (1 - ((self.count_per_word[word] - self.count_per_subject[word]) / self.count_per_word[word])) * (self.count_per_word[word] / word_count) * 100
         elif (self.agent_prominence_metric == "Subject frequency"):
             score = self.count_per_subject[word]
@@ -798,9 +802,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if len(self.display_features) == 0:
             self.Warning.no_feats_display()
 
-        # if self.show_tokens:
-        #     tokens = list(self.corpus.ngrams_iterator(include_postags=True))
-
         parts = []
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
             text = ""
@@ -814,7 +815,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             value = self.filter_entities()
                         else:
                             value = self.__postag_text(value)
-
+                            self.Outputs.agency_table.send(table_from_frame(self.calculate_agency_table()))
+                            self.Outputs.actor_action_table.send(table_from_frame(self.generate_noun_action_table()))
                     else:
                         value = self.__nertag_text(value)
 
@@ -836,86 +838,44 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                     f'<td class="content">{value}</td></tr>'
                 )
 
-            # if self.show_tokens:
-            #     tokens_ = "".join(
-            #         f'<span class="token">{token}</span>' for token in tokens[c_index]
-            #     )
-            #     text += (
-            #         f'<tr><td class="variables"><strong>Tokens & Tags:</strong></td>'
-            #         f"<td>{tokens_}</td></tr>"
-            #     )
-
             parts.append(text)
-            parts.append(self.get_word_prominence_bar_chart_html())
-            parts.append(self.generate_noun_action_table(
-                self.noun_action_dict))
+            # parts.append(self.get_word_prominence_bar_chart_html())
+            # parts.append(self.generate_noun_action_table(
+                # self.noun_action_dict))
 
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
         self.doc_webview.setHtml(HTML.format(html), base)
 
-    def get_word_prominence_bar_chart_html(self):
-        import matplotlib.pyplot as plt
-        import base64
-        from io import BytesIO
-        from operator import itemgetter
-
+    def calculate_agency_table(self):
+        rows = []
         n = 10
-
-        res = dict(sorted(self.word_prominence_scores.items(),
+        res = dict(sorted(self.count_per_subject.items(),
                    key=itemgetter(1), reverse=True)[:n])
-        names = list(res.keys())
-        values = list(res.values())
+        words = list(res.keys())
+        subj_count_values = list(res.values())
 
-        plt.bar(range(len(res)), values, tick_label=names)
-        plt.xticks(rotation=45)
-        # Option 1
-        plt.rcParams['font.size'] = 12
-        # Option 2
-        # plt.rcParams.update({'font.size': 18})
-        tmpfile = BytesIO()
-        plt.savefig(tmpfile, format='png')
-        plt.tight_layout(rect=[0.05, 0.05, 1, 0.75])
-        encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-        html = """<style>caption {{font-weight: bold;font-size: 1em;text-indent: 0;padding-top: 1em;caption-side: bottom;}} .dataframe {{float: center;width: 100%;text-align: center;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} figure {{float: center;width: 100%;text-align: center;font-weight: bold;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} img.scaled {{width: 50%;}}</style> <figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(
-            encoded)
-        # html = """<figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(encoded)
+        for word in words:
+            rows.append([word, self.count_per_subject[word], self.count_per_word[word]])
+        return pd.DataFrame(rows, columns=['actor', 'subject_frequency', 'raw_frequency'])
 
-        plt.figure().clear()
-        plt.close()
-        plt.cla()
-        plt.clf()
-
-        return html
-
-    def generate_noun_action_table(self, noun_action_dict, ):
-        import pandas as pd
-        from operator import itemgetter
-
+    def generate_noun_action_table(self):
         n = 10
         res = dict(sorted(self.word_prominence_scores.items(),
                    key=itemgetter(1), reverse=True)[:n])
+        
         names = list(res.keys())
 
         rows = []
-        for item in noun_action_dict:
-            if len(noun_action_dict[item]) > 0 and (item in names):
+        for item in self.noun_action_dict:
+            if len(self.noun_action_dict[item]) > 0 and (item in names):
                 curr_row = []
                 curr_row.append(item)
-                curr_row.append(', '.join(list(set(noun_action_dict[item]))))
+                curr_row.append(', '.join(list(set(self.noun_action_dict[item]))))
                 rows.append(curr_row)
 
-        df = pd.DataFrame(rows, columns=['actor', 'actions'])
-
-        # html = """<style>figure {{float: center;width: 100%;text-align: center;font-weight: bold;font-size: 1em;text-indent: 0;border: thin silver solid;margin: 0.5em;padding: 0.5em;}} img.scaled {{width: 50%;}}</style> <figure><img src=\'data:image/png;base64,{}\' class=\'scaled\'><figcaption>Top 10 entity prominence scores</figcaption></figure>""".format(encoded)
-        # styles = [dict(selector="caption", props=[("background-color", "cyan")])]
-
-        # df.style.set_caption('Top 10 most prominent actors and their associated actions')
-        test_html = df.to_html(index=False, justify='center')
-        test_html = test_html.replace(
-            '</table>', '<caption>Top 10 most prominent actors and their associated actions</caption></table>')
-        return test_html
+        return pd.DataFrame(rows, columns=['actor', 'actions'])
 
     def calculate_word_type_count(self, sent_models):
         n = set()
@@ -927,26 +887,28 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             subjs = []
             
             for token in sent_model:
-                if (token.dep_ == 'nsubj' and token.pos_ in ['PRON', 'NOUN', 'PROPN']) or token.text.lower().strip() == 'ik':
-                    subjs.append((token, token.idx, token.idx+len(token)))
-
-                nopunct_token = ''
-                # Removing punctuations in string
-                for ele in token.text.strip():
-                    if ele not in self.punc:
-                        nopunct_token += ele
-
                 if (token.text.lower().strip() not in self.nl_stopwords):
-                    # if (len(nopunct_token) == len(token.text.strip())):
+                    if (token.dep_ == 'nsubj' and token.pos_ in ['PRON', 'NOUN', 'PROPN']) or token.text.lower().strip() == 'ik':
+                        subjs.append((token, token.idx, token.idx+len(token)))
+                    else:
                         self.count_per_word[token.text.lower().strip()] += 1
+                # nopunct_token = ''
+                # # Removing punctuations in string
+                # for ele in token.text.strip():
+                #     if ele not in self.punc:
+                #         nopunct_token += ele
 
-                        w.add(token.text)
-                        if token.pos_ in ['NOUN', 'PRON', 'PROPN']:
-                            n.add(token.text)
-                        if token.pos_ in ['ADJ']:
-                            a.add(token.text)
-                        if token.pos_ in ['VERB']:
-                            v.add(token.text)
+                # if (token.text.lower().strip() not in self.nl_stopwords):
+                    # if (len(nopunct_token) == len(token.text.strip())):
+                        
+
+                    # w.add(token.text)
+                    # if token.pos_ in ['NOUN', 'PRON', 'PROPN']:
+                    #     n.add(token.text)
+                    # if token.pos_ in ['ADJ']:
+                    #     a.add(token.text)
+                    # if token.pos_ in ['VERB']:
+                    #     v.add(token.text)
                     # else:
                     #     self.count_per_word[token.text.lower().strip()] += 1
 
@@ -964,7 +926,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 #     else:
                 #         self.count_per_word_passive[token.text.lower(
                 #         ).strip()] = 1
-
 
             subjs = self.sort_tuple(subjs)
             main_subject = ''
@@ -1175,7 +1136,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                     if tag[1] == 'PRON':
                         if ('|' in tag[2]):
                             tmp_tags = tag[2].split('|')
-                            if ((tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'pr' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'bez' and tmp_tags[2] == 'det')):
+                            # if ((tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'pr' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'bez' and tmp_tags[2] == 'det')):
+                            if (tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tag[0].lower().strip() == 'ik'):
                                 p_score = 0
                                 p_score = self.calculate_prominence_score(
                                     tag[0].lower().strip(), sents, tags)
