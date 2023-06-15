@@ -43,9 +43,12 @@ from orangecontrib.text.corpus import Corpus
 from operator import itemgetter
 
 import pandas as pd
+import json
 import spacy
 from spacy import displacy
 import nltk
+import matplotlib.pyplot as plt
+import numpy as np
 nltk.download('perluniprops')
 # import neuralcoref
 
@@ -762,9 +765,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             items = sent.split()
             word_count+= len(items)
 
-        print(word, ' - ', word_count, ' - ', self.count_per_word[word])
         if (self.agent_prominence_metric == "Subject frequency (normalized)"):
-            # print('word: ', word, ' - ', 's: ', self.count_per_subject[word], ' - ', ' c: ',  self.count_per_word[word])
             score = (1 - ((self.count_per_word[word] - self.count_per_subject[word]) / self.count_per_word[word])) * (self.count_per_word[word] / word_count) * 100
         elif (self.agent_prominence_metric == "Subject frequency"):
             score = self.count_per_subject[word]
@@ -815,6 +816,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             value = self.filter_entities()
                         else:
                             value = self.__postag_text(value)
+                            # self.generate_halliday_polar_area_chart(dim_type='realm', text=self.original_text)
+                            self.generate_halliday_polar_area_chart(dim_type='process', text=self.original_text)
+                            # self.generate_halliday_polar_area_chart(dim_type='prosub', text=self.original_text)
+                            # self.generate_halliday_polar_area_chart(dim_type='sub', text=self.original_text)
                             self.Outputs.agency_table.send(table_from_frame(self.calculate_agency_table()))
                             self.Outputs.actor_action_table.send(table_from_frame(self.generate_noun_action_table()))
                     else:
@@ -839,9 +844,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 )
 
             parts.append(text)
-            # parts.append(self.get_word_prominence_bar_chart_html())
-            # parts.append(self.generate_noun_action_table(
-                # self.noun_action_dict))
 
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
@@ -876,12 +878,61 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 rows.append(curr_row)
 
         return pd.DataFrame(rows, columns=['actor', 'actions'])
+    
+    def as_list(self, dw):
+        res = []
+        for item in dw:
+            if (type(item) == str and item != 'N/A'):
+                words = item.split(' | ')
+                if len(words) > 0:
+                    for word in words:
+                        res.append(word.lower().strip())
+
+        return list(set(res))
+    
+    def generate_halliday_polar_area_chart(self, text, dim_type='realm'):
+        # Valid values for 'dim_type' parameter: realm, process, prosub, sub
+        with open('orangecontrib/storynavigation/utils/halliday_dimensions_' + dim_type + '.json') as json_file:
+            halliday_dict = json.load(json_file)
+
+        # Calculate the number of story words in each halliday dimension
+        words = text.split()
+        halliday_counts = {}
+        for item in halliday_dict:
+            halliday_counts[item] = 0
+
+        for word in words:
+            processed_word = word.lower().strip()
+            for item in halliday_dict:
+                if processed_word in halliday_dict[item]:
+                    halliday_counts[item] += 1
+
+        # Prepare data for the sectors and their values in the polar area chart
+        categories = list(halliday_counts.keys())
+        values = list(halliday_counts.values())
+
+        # Create the polar area chart
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        ax.set_theta_direction(-1)  # Rotate the plot clockwise
+        ax.set_theta_zero_location('N')  # Set the zero angle at the north
+
+        # Plot the sectors
+        ax.bar(
+            [i * (2 * np.pi / len(categories)) for i in range(len(categories))],
+            values,
+            width=(2 * np.pi / len(categories)),
+            align='edge',
+            color='skyblue',
+        )
+
+        # Set the sector labels
+        ax.set_xticks([i * (2 * np.pi / len(categories)) for i in range(len(categories))])
+        ax.set_xticklabels(categories)
+
+        # Display the plot
+        plt.show()
 
     def calculate_word_type_count(self, sent_models):
-        n = set()
-        a = set()
-        v = set()
-        w = set()
         for sent_model in sent_models:
             tags = []
             subjs = []
@@ -892,40 +943,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         subjs.append((token, token.idx, token.idx+len(token)))
                     else:
                         self.count_per_word[token.text.lower().strip()] += 1
-                # nopunct_token = ''
-                # # Removing punctuations in string
-                # for ele in token.text.strip():
-                #     if ele not in self.punc:
-                #         nopunct_token += ele
-
-                # if (token.text.lower().strip() not in self.nl_stopwords):
-                    # if (len(nopunct_token) == len(token.text.strip())):
-                        
-
-                    # w.add(token.text)
-                    # if token.pos_ in ['NOUN', 'PRON', 'PROPN']:
-                    #     n.add(token.text)
-                    # if token.pos_ in ['ADJ']:
-                    #     a.add(token.text)
-                    # if token.pos_ in ['VERB']:
-                    #     v.add(token.text)
-                    # else:
-                    #     self.count_per_word[token.text.lower().strip()] += 1
-
-                # if token.dep_ == 'nsubj' or (token.text.lower().strip() == 'ik'):
-                #     if token.text.lower().strip() in self.count_per_word_active:
-                #         self.count_per_word_active[token.text.lower(
-                #         ).strip()] += 1
-                #     else:
-                #         self.count_per_word_active[token.text.lower(
-                #         ).strip()] = 1
-                # if token.dep_ in ['nsubj:pass', 'obj', 'iobj', 'obl:agent', 'obl', 'parataxis']:
-                #     if token.text.lower().strip() in self.count_per_word_passive:
-                #         self.count_per_word_passive[token.text.lower(
-                #         ).strip()] += 1
-                #     else:
-                #         self.count_per_word_passive[token.text.lower(
-                #         ).strip()] = 1
 
             subjs = self.sort_tuple(subjs)
             main_subject = ''
@@ -934,11 +951,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 main_subject = subjs[0][0].text
                 self.count_per_subject[main_subject.lower().strip()] += 1
                 self.count_per_word[main_subject.lower().strip()] += 1
-
-        self.noun_count = len(n)
-        self.word_count = len(w)
-        self.adjective_count = len(a)
-        self.verb_count = len(v)
 
     def __nertag_text(self, text):
         sents = sent_tokenize(text, language='dutch')
@@ -1132,11 +1144,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             for tag, span in zip(tags, spans):
 
                 if tag[0].lower().strip() not in self.nl_stopwords:
-                    # if tag[1] in pos_tags:
                     if tag[1] == 'PRON':
                         if ('|' in tag[2]):
                             tmp_tags = tag[2].split('|')
-                            # if ((tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'pr' and tmp_tags[2] == 'pron') or (tmp_tags[1] == 'bez' and tmp_tags[2] == 'det')):
                             if (tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tag[0].lower().strip() == 'ik'):
                                 p_score = 0
                                 p_score = self.calculate_prominence_score(
@@ -1145,15 +1155,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                                 ).strip()] = p_score
 
                                 if (p_score >= self.agent_prominence_score_min):
-                                    # print("word: ", tag[0])
-                                    # print("tag: ", tag[1])
                                     if tag[0].lower().strip() == main_subject.lower().strip():
-                                        # print()
-                                        # print(span[0], ' - ', span[1], ' - ',  "SUBJ")
-                                        # s = tagged_sentence.char_span(span[0], span[1], "SUBJ")
-                                        # print(s, ' - ', tag[0])
-                                        # print()
-                                        # ents.append(s)
                                         ents.append({"start": span[0],
                                                      "end": span[1],
                                                      "label": "SUBJ"})
@@ -1175,15 +1177,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         ).strip()] = p_score
 
                         if (p_score >= self.agent_prominence_score_min):
-                            # print("word: ", tag[0])
-                            # print("tag: ", tag[1])
                             if tag[0].lower().strip() == main_subject.lower().strip():
-                                # print()
-                                # print(span[0], ' - ', span[1], ' - ',  "SUBJ")
-                                # s = tagged_sentence.char_span(span[0], span[1], "SUBJ")
-                                # print(s, ' - ', tag[0])
-                                # print()
-                                # ents.append(s)
                                 ents.append({"start": span[0],
                                              "end": span[1],
                                              "label": "SUBJ"})
@@ -1202,8 +1196,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                                     "end": span[1],
                                      "label": tag[1]})
 
-            # tagged_sentence.ents = ents
-
             # specify sentences and filtered entities to tag / highlight
             doc = {"text": sentence, "ents": ents}
 
@@ -1221,18 +1213,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 colors["ADJ"] = "lime"
                 colors["ADP"] = "khaki"
                 colors["ADV"] = "orange"
-
-                # and self.subjs:
-                # colors = {"PRON": "#BB4CBA",
-                #     "VERB": "lightpink",
-                #     "NOUN": "turquoise",
-
-                #     "CONJ" : "cornflowerblue",
-                #     "DET" : "forestgreen",
-                #     "NUM" : "salmon",
-                #     "PRT" : "yellow",
-                #     "PROPN" : "#259100",
-                #     "SUBJ" : "#FFEB26"}
 
             self.agent_prominence_score_max = self.get_max_prominence_score()
             # collect the above config params together
