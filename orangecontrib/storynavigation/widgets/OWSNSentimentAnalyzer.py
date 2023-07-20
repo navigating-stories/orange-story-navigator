@@ -642,7 +642,11 @@ class OWSNSentimentAnalyzer(OWDataProjectionWidget):
         edge_colors = [G[u][v]['color'] for u, v in G.edges()]
 
         # Draw the graph
-        pos = nx.spring_layout(G, k=0.5, iterations=20)
+        import pydot
+        from networkx.drawing.nx_pydot import graphviz_layout
+        pos = graphviz_layout(G, prog="twopi")
+
+        # pos = nx.spring_layout(G, k=0.5, iterations=20)
         h2 = nx.draw_networkx(G, pos, with_labels=False, node_color='lightblue', node_size=500, font_size=5, font_color='black', edge_color=edge_colors, width=2.0)
         nx.draw_networkx_labels(G, pos, labels=node_labels)
         # nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)

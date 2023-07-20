@@ -318,6 +318,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         other_docs = Output("Other Docs", Corpus)
         corpus = Output("Corpus", Corpus)
         agency_table = Output("Actor agency ratios", Table)
+        halliday_actions_table = Output("Halliday action counts", Table)
         actor_action_table = Output("Actor action table", Table)
         
 
@@ -817,11 +818,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         else:
                             value = self.__postag_text(value)
                             # self.generate_halliday_polar_area_chart(dim_type='realm', text=self.original_text)
-                            self.generate_halliday_polar_area_chart(dim_type='process', text=self.original_text)
+                            # self.generate_halliday_polar_area_chart(dim_type='process', text=self.original_text)
                             # self.generate_halliday_polar_area_chart(dim_type='prosub', text=self.original_text)
                             # self.generate_halliday_polar_area_chart(dim_type='sub', text=self.original_text)
                             self.Outputs.agency_table.send(table_from_frame(self.calculate_agency_table()))
                             self.Outputs.actor_action_table.send(table_from_frame(self.generate_noun_action_table()))
+                            self.Outputs.halliday_actions_table.send(table_from_frame(self.generate_halliday_action_counts_table(text=self.original_text)))
                     else:
                         value = self.__nertag_text(value)
 
@@ -890,7 +892,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         return list(set(res))
     
-    def generate_halliday_polar_area_chart(self, text, dim_type='realm'):
+    def generate_halliday_action_counts_table(self, text, dim_type='realm'):
+        rows = []
+        
         # Valid values for 'dim_type' parameter: realm, process, prosub, sub
         with open('orangecontrib/storynavigation/utils/halliday_dimensions_' + dim_type + '.json') as json_file:
             halliday_dict = json.load(json_file)
@@ -911,26 +915,31 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         categories = list(halliday_counts.keys())
         values = list(halliday_counts.values())
 
-        # Create the polar area chart
-        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-        ax.set_theta_direction(-1)  # Rotate the plot clockwise
-        ax.set_theta_zero_location('N')  # Set the zero angle at the north
+        for item in halliday_dict:
+            rows.append([item, halliday_counts[item]])
 
-        # Plot the sectors
-        ax.bar(
-            [i * (2 * np.pi / len(categories)) for i in range(len(categories))],
-            values,
-            width=(2 * np.pi / len(categories)),
-            align='edge',
-            color='skyblue',
-        )
+        return pd.DataFrame(rows, columns=['action', 'frequency'])
 
-        # Set the sector labels
-        ax.set_xticks([i * (2 * np.pi / len(categories)) for i in range(len(categories))])
-        ax.set_xticklabels(categories)
+        # # Create the polar area chart
+        # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        # ax.set_theta_direction(-1)  # Rotate the plot clockwise
+        # ax.set_theta_zero_location('N')  # Set the zero angle at the north
 
-        # Display the plot
-        plt.show()
+        # # Plot the sectors
+        # ax.bar(
+        #     [i * (2 * np.pi / len(categories)) for i in range(len(categories))],
+        #     values,
+        #     width=(2 * np.pi / len(categories)),
+        #     align='edge',
+        #     color='skyblue',
+        # )
+
+        # # Set the sector labels
+        # ax.set_xticks([i * (2 * np.pi / len(categories)) for i in range(len(categories))])
+        # ax.set_xticklabels(categories)
+
+        # # Display the plot
+        # plt.show()
 
     def calculate_word_type_count(self, sent_models):
         for sent_model in sent_models:
