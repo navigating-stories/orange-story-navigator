@@ -10,3 +10,6 @@ recommonmark
 sphinx-rtd-theme
 dhtmlparser3
 textblob
+textblob-nl
+pydot
+graphviz
