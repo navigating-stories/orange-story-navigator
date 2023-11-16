@@ -1,0 +1,48 @@
+name: Build and publish orange-story-navigator release to TEST PyPI
+
+on:
+  push:
+    branches:
+      - 'test-release'
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repo checkout
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9.13'
+      - name: Install build
+        run: python3 -m pip install build
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact
+          path: dist/
+
+  publish-to-test_pypi:
+    name: Publish distribution to Test PyPI
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/orangestorynavigator
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+    steps:
+      - name: Download the distribution packages
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist/
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
