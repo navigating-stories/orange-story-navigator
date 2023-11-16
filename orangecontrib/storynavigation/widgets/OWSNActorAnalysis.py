@@ -1,5 +1,5 @@
 import dhtmlparser3
-from nltk.tokenize import sent_tokenize, word_tokenize
+# from nltk.tokenize import sent_tokenize, word_tokenize
 import os
 import re
 import sre_constants
@@ -46,10 +46,12 @@ import pandas as pd
 import json
 import spacy
 from spacy import displacy
-import nltk
+# import nltk
 import matplotlib.pyplot as plt
 import numpy as np
-nltk.download('perluniprops')
+# nltk.download('punkt')
+# nltk.download('perluniprops')
+
 # import neuralcoref
 
 HTML = """
@@ -962,7 +964,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.count_per_word[main_subject.lower().strip()] += 1
 
     def __nertag_text(self, text):
-        sents = sent_tokenize(text, language='dutch')
+        from spacy.lang.nl import Dutch
+        nlp = Dutch()
+        nlp.add_pipe("sentencizer")
+        doc = nlp(text)
+        sents = list(doc.sents)
+        # sents = sent_tokenize(text, language='dutch')
         html = ""
 
         ner_tags = []
@@ -1056,7 +1063,16 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             pos_tags.append("SUBJ")
 
         # tokenize input text into sentences
-        sents = sent_tokenize(text, language='dutch')
+        from spacy.lang.nl import Dutch
+        nlp = Dutch()
+        nlp.add_pipe("sentencizer")
+        doc = nlp(text)
+        sents_spans = list(doc.sents)
+        sents = []
+        for span in sents_spans:
+            sents.append(span.text)
+
+        # sents = sent_tokenize(text, language='dutch')
 
         # count no. of sents
         sentence_count = len(sents)
@@ -1389,6 +1405,7 @@ if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
 
     from orangecontrib.text.preprocess import BASE_TOKENIZER
+    
 
     corpus_ = Corpus.from_file("book-excerpts")
     corpus_ = corpus_[:3]

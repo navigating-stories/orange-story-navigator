@@ -1,9 +1,9 @@
 [run]
 source = 
-    orangecontrib/network
+    orangecontrib/storynavigation
 omit =
-    orangecontrib/network/tests/*
-    orangecontrib/network/widgets/tests/*
+    orangecontrib/storynavigation/tests/*
+    orangecontrib/storynavigation/widgets/tests/*
 
 [report]
 exclude_lines =

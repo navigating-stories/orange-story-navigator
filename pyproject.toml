@@ -1,3 +1,18 @@
 [build-system]
 requires = ["setuptools", "wheel", "cython", "oldest-supported-numpy"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore",
+    "default:::orangecontrib.storynavigation"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["orangecontrib/storynavigation"]
+relative_files = true
+
+[tool.coverage.report]
+show_missing = true
