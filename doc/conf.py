@@ -57,7 +57,7 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = 'orange-story-navigator'
+project = 'storynavigator'
 copyright = '2023, The Netherlands eScience Center'
 author = 'Kody Moodley'
 
