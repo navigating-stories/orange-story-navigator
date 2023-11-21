@@ -33,7 +33,7 @@ jobs:
     if: github.event_name == 'push'
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/orangestorynavigator
+      url: https://test.pypi.org/p/teststorynavigator
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
