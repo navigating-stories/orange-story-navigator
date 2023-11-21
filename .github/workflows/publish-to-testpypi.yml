@@ -33,7 +33,7 @@ jobs:
     if: github.event_name == 'push'
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/teststorynavigator
+      url: https://test.pypi.org/p/teststorynavigator # should match trusted publisher name on pypi
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
