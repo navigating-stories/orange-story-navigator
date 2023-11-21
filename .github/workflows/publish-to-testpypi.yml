@@ -35,6 +35,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/p/teststorynavigator # should match trusted publisher name on pypi
     permissions:
+      contents: read
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
       - name: Download the distribution packages
