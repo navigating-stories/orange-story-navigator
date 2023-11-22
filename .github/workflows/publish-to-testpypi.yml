@@ -45,5 +45,5 @@ jobs:
           path: dist/
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-        #   repository-url: https://test.pypi.org/legacy/
+        with:
+          repository-url: https://test.pypi.org/legacy/
