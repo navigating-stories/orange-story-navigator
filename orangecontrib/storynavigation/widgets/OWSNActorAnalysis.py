@@ -819,10 +819,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             value = self.filter_entities()
                         else:
                             value = self.__postag_text(value)
-                            # self.generate_halliday_polar_area_chart(dim_type='realm', text=self.original_text)
-                            # self.generate_halliday_polar_area_chart(dim_type='process', text=self.original_text)
-                            # self.generate_halliday_polar_area_chart(dim_type='prosub', text=self.original_text)
-                            # self.generate_halliday_polar_area_chart(dim_type='sub', text=self.original_text)
                             self.Outputs.agency_table.send(table_from_frame(self.calculate_agency_table()))
                             self.Outputs.actor_action_table.send(table_from_frame(self.generate_noun_action_table()))
                             self.Outputs.halliday_actions_table.send(table_from_frame(self.generate_halliday_action_counts_table(text=self.original_text)))
