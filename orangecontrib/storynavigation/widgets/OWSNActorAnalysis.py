@@ -49,6 +49,11 @@ from spacy import displacy
 # import nltk
 import matplotlib.pyplot as plt
 import numpy as np
+
+from importlib.resources import files
+from importlib.resources import open_text
+
+
 # nltk.download('punkt')
 # nltk.download('perluniprops')
 
@@ -431,8 +436,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         ConcurrentWidgetMixin.__init__(self)
 
         # loads list of Dutch stopwords
-        with open('orangecontrib/storynavigation/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
-            self.nl_stopwords = [line.rstrip() for line in f]
+        data_text = files('orangecontrib.storynavigation.utils').joinpath('dutchstopwords.txt').read_text()
+        # with open('orangecontrib/storynavigation/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
+        self.nl_stopwords = [line.rstrip() for line in data_text]
 
         self.corpus = None  # initialise list of documents (corpus)
         self.nlp_nl = None  # initialise spacy model
@@ -893,9 +899,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def generate_halliday_action_counts_table(self, text, dim_type='realm'):
         rows = []
         
-        # Valid values for 'dim_type' parameter: realm, process, prosub, sub
-        with open('orangecontrib/storynavigation/utils/halliday_dimensions_' + dim_type + '.json') as json_file:
-            halliday_dict = json.load(json_file)
+        # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
+        # data_text = files('orangecontrib.storynavigation.utils').joinpath('dutchstopwords.txt').read_text()
+        halliday_fname = "halliday_dimensions_" + dim_type + ".json"
+        with open_text("orangecontrib.storynavigation.utils", halliday_fname) as json_file:
+            halliday_dict = json.load(json_file)  
+        # with open('orangecontrib/storynavigation/utils/halliday_dimensions_' + dim_type + '.json') as json_file:
+            # halliday_dict = json.load(json_file)
 
         # Calculate the number of story words in each halliday dimension
         words = text.split()
