@@ -26,22 +26,22 @@ Requirements:
 
 This section is for those who just want to install and use the add-on in Orange3.
 
-Install from Orange add-on installer through Options - Add-ons. **Note:** the add-on requires [Orange3-text](https://github.com/biolab/orange3-text), so first install this library before installing orange-story-navigator.
+Install from Orange add-on installer through Options - Add-ons. **Note:** the add-on requires [Orange3-text](https://github.com/biolab/orange3-text), so first install this library before installing ``storynavigator``.
 
 To install the add-on with [pip](https://pypi.org/project/pip/) use
 
-    pip install orange-story-navigator
+    pip install storynavigator
 
 Development:
 ------------
 
 This section is for those who want to build the add-on from source and extend, customise, or fix bugs in it.
-**Note:** Mac M1 (Apple silicon) users may encounter problems with building ``orange-story-navigator`` using certain Python 3.8.x or 3.9.x versions and / or actually building or running these specific Python versions at all on your Mac. If you encounter such issues, it is recommended to install [Rosetta 2](https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/) and always run the terminal using Rosetta 2 (see how to do the latter [here](https://www.courier.com/blog/tips-and-tricks-to-setup-your-apple-m1-for-development/)) for development tasks.
+**Note:** Mac M1 (Apple silicon) users may encounter problems with building ``storynavigator`` using certain Python 3.8.x or 3.9.x versions and / or actually building or running these specific Python versions at all on your Mac. If you encounter such issues, it is recommended to install [Rosetta 2](https://osxdaily.com/2020/12/04/how-install-rosetta-2-apple-silicon-mac/) and always run the terminal using Rosetta 2 (see how to do the latter [here](https://www.courier.com/blog/tips-and-tricks-to-setup-your-apple-m1-for-development/)) for development tasks.
 
 Requirements:
 
 1. A tool for checking out a [Git](https://git-scm.com/) repository
-2. Python 3.9.16+
+2. Python 3.9.12+
 
 Steps to build and test from source:
 
@@ -73,4 +73,4 @@ or
 
 ```python -m Orange.canvas```
 
-The Orange3 application should start up after a few seconds and you can test the ```orange-story-navigator``` widgets.
+The Orange3 application should start up after a few seconds and you can test the ```storynavigator``` widgets.
