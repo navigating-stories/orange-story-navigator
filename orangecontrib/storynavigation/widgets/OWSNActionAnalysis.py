@@ -38,7 +38,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         edge_data = Output('Edge Data', Table)
         node_data = Output('Node Data', Table)
         sentiment_data = Output('Sentiment Data', Table)
-        network = Output('Network', Network)
+        network = Output('Network', Network, auto_summary=False)
 
 
     settingsHandler = DomainContextHandler()
@@ -362,12 +362,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.Outputs.network.send(Network(items, edges))
         
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
 
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNDSGTagger).run(corpus_)
+    corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = corpus_[:3]
+    corpus_ = BASE_TOKENIZER(corpus_)
+    WidgetPreview(OWSNActionAnalysis).run(corpus_)

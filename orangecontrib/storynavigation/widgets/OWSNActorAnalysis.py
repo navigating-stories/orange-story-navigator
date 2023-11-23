@@ -1,5 +1,4 @@
 import dhtmlparser3
-# from nltk.tokenize import sent_tokenize, word_tokenize
 import os
 import re
 import sre_constants
@@ -41,23 +40,28 @@ from Orange.data.pandas_compat import table_from_frame
 
 from orangecontrib.text.corpus import Corpus
 from operator import itemgetter
-
 import pandas as pd
 import json
 import spacy
 from spacy import displacy
-# import nltk
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
-from importlib.resources import files
-from importlib.resources import open_text
+if sys.version_info < (3, 9):
+    # importlib.resources either doesn't exist or lacks the files()
+    # function, so use the PyPI version:
+    import importlib_resources
+else:
+    import importlib.resources as importlib_resources
 
+MAIN_PACKAGE = "storynavigation"
+UTILS_SUBPACKAGE = "utils"
+NL_STOPWORDS_FILENAME = "dutchstopwords.txt"
+HALLIDAY_FILENAME = "halliday_dimensions_{}.json"
 
-# nltk.download('punkt')
-# nltk.download('perluniprops')
-
-# import neuralcoref
+PKG = importlib_resources.files(MAIN_PACKAGE)
+NL_STOPWORDS_FILE = PKG / UTILS_SUBPACKAGE / NL_STOPWORDS_FILENAME
 
 HTML = """
 <!doctype html>
@@ -315,7 +319,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     icon = "icons/actor_analysis_icon.png"
     priority = 6422
 
-    NL_SPACY_MODEL = "nl_core_news_lg"
+    NL_SPACY_MODEL = "nl_core_news_sm"
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
@@ -435,11 +439,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
 
-        # loads list of Dutch stopwords
-        data_text = files('orangecontrib.storynavigation.utils').joinpath('dutchstopwords.txt').read_text()
-        # with open('orangecontrib/storynavigation/utils/dutchstopwords.txt', 'r', encoding='utf8') as f:
-        self.nl_stopwords = [line.rstrip() for line in data_text]
-
+        s = NL_STOPWORDS_FILE.read_text(encoding="utf-8")
+        self.nl_stopwords = [line.rstrip() for line in s]
         self.corpus = None  # initialise list of documents (corpus)
         self.nlp_nl = None  # initialise spacy model
         self.__pending_selected_documents = self.selected_documents
@@ -900,12 +901,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         rows = []
         
         # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
-        # data_text = files('orangecontrib.storynavigation.utils').joinpath('dutchstopwords.txt').read_text()
-        halliday_fname = "halliday_dimensions_" + dim_type + ".json"
-        with open_text("orangecontrib.storynavigation.utils", halliday_fname) as json_file:
-            halliday_dict = json.load(json_file)  
-        # with open('orangecontrib/storynavigation/utils/halliday_dimensions_' + dim_type + '.json') as json_file:
-            # halliday_dict = json.load(json_file)
+        halliday_fname = HALLIDAY_FILENAME.format(dim_type)
+        # halliday_fname = "halliday_dimensions_" + dim_type + ".json"
+        UTILS = PKG / UTILS_SUBPACKAGE
+        json_file = UTILS.joinpath(halliday_fname).open('r', encoding='utf8')
+        halliday_dict = json.load(json_file)  
 
         # Calculate the number of story words in each halliday dimension
         words = text.split()
@@ -1407,13 +1407,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-if __name__ == "__main__":
-    from orangewidget.utils.widgetpreview import WidgetPreview
+# if __name__ == "__main__":
+#     from orangewidget.utils.widgetpreview import WidgetPreview
 
-    from orangecontrib.text.preprocess import BASE_TOKENIZER
+#     from orangecontrib.text.preprocess import BASE_TOKENIZER
     
 
-    corpus_ = Corpus.from_file("book-excerpts")
-    corpus_ = corpus_[:3]
-    corpus_ = BASE_TOKENIZER(corpus_)
-    WidgetPreview(OWSNActorAnalysis).run(corpus_)
+#     corpus_ = Corpus.from_file("book-excerpts")
+#     corpus_ = corpus_[:3]
+#     corpus_ = BASE_TOKENIZER(corpus_)
+#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
