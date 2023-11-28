@@ -43,6 +43,7 @@ from operator import itemgetter
 import pandas as pd
 import json
 import spacy
+spacy.cli.download("nl_core_news_sm")
 from spacy import displacy
 import matplotlib.pyplot as plt
 import numpy as np
