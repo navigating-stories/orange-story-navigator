@@ -1,10 +1,18 @@
+# General imports
 import dhtmlparser3
 import os
 import re
+import sys
 import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
+import pandas as pd
+import json
+import spacy
+from spacy import displacy
+import matplotlib.pyplot as plt
 
+# Imports from Qt
 from AnyQt.QtCore import (
     QAbstractListModel,
     QEvent,
@@ -26,6 +34,8 @@ from AnyQt.QtWidgets import (
     QTableView,
     QLabel,
 )
+
+# Imports from Orange3
 from Orange.data import Variable, Table
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
@@ -38,31 +48,14 @@ from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
 from Orange.data.pandas_compat import table_from_frame
 
+# Imports from other Orange3 add-ons
 from orangecontrib.text.corpus import Corpus
-from operator import itemgetter
-import pandas as pd
-import json
-import spacy
-spacy.cli.download("nl_core_news_sm")
-from spacy import displacy
-import matplotlib.pyplot as plt
-import numpy as np
-import sys
 
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    import importlib.resources as importlib_resources
-
-MAIN_PACKAGE = "storynavigation"
-UTILS_SUBPACKAGE = "utils"
-NL_STOPWORDS_FILENAME = "dutchstopwords.txt"
-HALLIDAY_FILENAME = "halliday_dimensions_{}.json"
-
-PKG = importlib_resources.files(MAIN_PACKAGE)
-NL_STOPWORDS_FILE = PKG / UTILS_SUBPACKAGE / NL_STOPWORDS_FILENAME
+# Imports from this add-on
+from storynavigation.modules import actoranalysis
+from storynavigation.modules.actoranalysis import ActorTagger
+import storynavigation.modules.constants as constants
+spacy.cli.download(constants.NL_SPACY_MODEL)
 
 HTML = """
 <!doctype html>
@@ -141,7 +134,6 @@ img {{
 SEPARATOR = (
     '<tr class="line separator"><td/><td/></tr><tr class="separator"><td/><td/></tr>'
 )
-
 
 def _count_matches(content: List[str], search_string: str, state: TaskState) -> int:
     """
@@ -320,8 +312,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     icon = "icons/actor_analysis_icon.png"
     priority = 6422
 
-    NL_SPACY_MODEL = "nl_core_news_sm"
-
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
 
@@ -333,7 +323,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         halliday_actions_table = Output("Halliday action counts", Table)
         actor_action_table = Output("Actor action table", Table)
         
-
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -343,17 +332,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     show_tokens = Setting(False)
     autocommit = Setting(True)
 
-    # Scoring related to agent prominence score
-    agent_prominence_score_max = 0.
-    agent_prominence_score_min = 0.
-    agent_prominence_metrics = ['Subject frequency', 'Subject frequency (normalized)']
-    agent_prominence_metric = 'Subject frequency'
-
-    # Index of word prominence scores for each word in story
-    word_prominence_scores = {}
-
-    # HTML string rendering of story document
-    html_result = ''
+    # # HTML string rendering of story document
+    # html_result = ''
 
     # POS or NER? radiobutton selection of entity type to highlight
     tag_type = Setting(1)
@@ -399,35 +379,22 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     nertags_box = None
     main_agents_box = None
 
-    # list of Dutch stopwords
-    nl_stopwords = []
-
-    # POS counts initialisation
-    noun_count = 0
-    verb_count = 0
-    adjective_count = 0
-
-    # Other counts initialisation
-    word_count = 0
-    word_count_nostops = 0
-    sentence_count = 0
-    sentence_count_per_word = {}
-    count_per_word = {}
-    count_per_subject = {}
-    # count_per_word_passive = {}
-    # count_per_word_active = {}
-    noun_action_dict = {}
-
     # original text (not tagged)
     original_text = ''
+
+    # currently selected agent prominence metric
+    agent_prominence_metric = constants.SELECTED_PROMINENCE_METRIC
+    # minimum possible score for agent prominence
+    agent_prominence_score_min = 0.
+    # maximum possible score for agent prominence
+    agent_prominence_score_max = 20.
+
+    word_prominence_scores = {}
 
     sli = None
 
     # list of colour values for the background highlight for each entity type
     highlight_colors = {}
-
-    # list of punctuation characters
-    punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
 
     # list of POS checkboxes for each POS type
     pos_checkboxes = []
@@ -440,10 +407,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
 
-        s = NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        self.nl_stopwords = [line.rstrip() for line in s]
+        self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         self.corpus = None  # initialise list of documents (corpus)
-        self.nlp_nl = None  # initialise spacy model
         self.__pending_selected_documents = self.selected_documents
 
         # Search features
@@ -504,7 +469,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.main_agents_box = gui.vBox(self.controlArea, "Filter entities by prominence score:", sizePolicy=QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         self.metric_name_combo = gui.comboBox(self.main_agents_box, self, 'agent_prominence_metric',
-                                              items=self.agent_prominence_metrics,
+                                              items=constants.AGENT_PROMINENCE_METRICS,
                                               sendSelectedValue=True,
                                               callback=self.prominence_metric_change)
 
@@ -515,7 +480,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self,
             "agent_prominence_score_min",
             minValue=0.,
-            maxValue=100.,
+            maxValue=20.,
             # step=.01,
             ticks=True,
             callback=self.slider_callback,
@@ -569,25 +534,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         text = self.doc_webview.selectedText()
         QApplication.clipboard().setText(text)
 
-    def load_spacy_pipeline(self, name):
-        """Check if the spacy language pipeline was downloaded and load it.
-        Downloads the language pipeline if not available.
-
-        Args:
-            name (string): Name of the spacy language.
-
-        Returns:
-            spacy.language.Language: The spacy language pipeline
-        """
-        if spacy.util.is_package(name):
-            nlp = spacy.load(name)
-        else:
-            os.system(f"spacy download {name}")
-            nlp = spacy.load(name)
-            nlp.add_pipe("merge_noun_chunks")
-            nlp.add_pipe("merge_entities")
-        return nlp
-
     def _tagtype_changed(self):
         """ Toggles the disabling and enabling of the list of checkboxes associated with 
         Parts of Speech vs. Named Entities. The user cannot highlight entities of both
@@ -620,8 +566,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.corpus
     def set_data(self, corpus=None):
-        self.nlp_nl = self.load_spacy_pipeline(self.NL_SPACY_MODEL)
-
+        self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         self.closeContext()
         self.reset_widget()
         self.corpus = corpus
@@ -721,26 +666,25 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
-
         self.agent_prominence_score_min = 0.
-        self.word_prominence_scores = {}
-        self.html_result = ''
+        self.actortagger.word_prominence_scores = {}
+        self.actortagger.html_result = ''
 
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
         self.commit.deferred()
 
     def filter_entities(self):
-        if ((len(self.word_prominence_scores) == 0) or (self.html_result == '')):
+        if ((len(self.actortagger.word_prominence_scores) == 0) or (self.actortagger.html_result == '')):
             self.show_docs(slider_engaged=False)
             self.commit.deferred()
         else:
             entities = set()
-            for item in self.word_prominence_scores:
-                if self.word_prominence_scores[item] >= self.agent_prominence_score_min:
+            for item in self.actortagger.word_prominence_scores:
+                if self.actortagger.word_prominence_scores[item] >= self.agent_prominence_score_min:
                     entities.add(item)
 
-            dom = dhtmlparser3.parse(self.html_result)
+            dom = dhtmlparser3.parse(self.actortagger.html_result)
             for mark in dom.find("mark"):
                 current_mark_style = mark.parameters["style"]
                 current_mark_bgcolor_str = current_mark_style.split(';')[0]
@@ -750,6 +694,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 newbg_parts.extend(current_mark_style.split(';')[1:])
                 whitebg_current_mark_style = ';'.join(newbg_parts)
 
+                # stri = str(mark)
                 stri = mark.content_without_tags().strip()
                 stri = re.sub(r'\s+', '.', stri)
                 parts = stri.split('.')
@@ -769,33 +714,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         return str(dom)
 
-    def calculate_prominence_score(self, word, list_of_sentences, tags):
-        score = 0
-        word_count = 0
-        for sent in list_of_sentences:
-            items = sent.split()
-            word_count+= len(items)
-
-        if (self.agent_prominence_metric == "Subject frequency (normalized)"):
-            score = (1 - ((self.count_per_word[word] - self.count_per_subject[word]) / self.count_per_word[word])) * (self.count_per_word[word] / word_count) * 100
-        elif (self.agent_prominence_metric == "Subject frequency"):
-            score = self.count_per_subject[word]
-        else:
-            score = 0
-
-        return score
-
-    def get_max_prominence_score(self):
-        highest_score = 0
-        for item in self.word_prominence_scores:
-            if self.word_prominence_scores[item] > highest_score:
-                highest_score = self.word_prominence_scores[item]
-        return highest_score
-
     def prominence_metric_change(self):
         self.agent_prominence_score_min = 0.
-        self.word_prominence_scores = {}
-        self.html_result = ''
+        self.actortagger.word_prominence_scores = {}
         self.show_docs(slider_engaged=False)
         self.commit.deferred()
 
@@ -806,6 +727,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
+        if not hasattr(self, "actortagger"):
+            self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
+
         """Show the selected documents in the right area"""
         if self.corpus is None:
             return
@@ -826,12 +750,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         if (slider_engaged):
                             value = self.filter_entities()
                         else:
-                            value = self.__postag_text(value)
-                            self.Outputs.agency_table.send(table_from_frame(self.calculate_agency_table()))
-                            self.Outputs.actor_action_table.send(table_from_frame(self.generate_noun_action_table()))
+                            value = self.actortagger.postag_text(value, self.vbz, self.adj, self.nouns, self.subjs, self.actortagger.nlp, self.actortagger.stopwords, self.agent_prominence_metric, self.agent_prominence_score_min)
+                            self.Outputs.agency_table.send(table_from_frame(self.actortagger.calculate_agency_table()))
+                            self.Outputs.actor_action_table.send(table_from_frame(self.actortagger.generate_noun_action_table()))
                             self.Outputs.halliday_actions_table.send(table_from_frame(self.generate_halliday_action_counts_table(text=self.original_text)))
                     else:
-                        value = self.__nertag_text(value)
+                        value = self.actortagger.nertag_text(value, self.per, self.loc, self.product, self.date, self.actortagger.nlp)
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
@@ -857,35 +781,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
         self.doc_webview.setHtml(HTML.format(html), base)
-
-    def calculate_agency_table(self):
-        rows = []
-        n = 10
-        res = dict(sorted(self.count_per_subject.items(),
-                   key=itemgetter(1), reverse=True)[:n])
-        words = list(res.keys())
-        subj_count_values = list(res.values())
-
-        for word in words:
-            rows.append([word, self.count_per_subject[word], self.count_per_word[word]])
-        return pd.DataFrame(rows, columns=['actor', 'subject_frequency', 'raw_frequency'])
-
-    def generate_noun_action_table(self):
-        n = 10
-        res = dict(sorted(self.word_prominence_scores.items(),
-                   key=itemgetter(1), reverse=True)[:n])
-        
-        names = list(res.keys())
-
-        rows = []
-        for item in self.noun_action_dict:
-            if len(self.noun_action_dict[item]) > 0 and (item in names):
-                curr_row = []
-                curr_row.append(item)
-                curr_row.append(', '.join(list(set(self.noun_action_dict[item]))))
-                rows.append(curr_row)
-
-        return pd.DataFrame(rows, columns=['actor', 'actions'])
     
     def as_list(self, dw):
         res = []
@@ -902,10 +797,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         rows = []
         
         # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
-        halliday_fname = HALLIDAY_FILENAME.format(dim_type)
+        halliday_fname = constants.HALLIDAY_FILENAME.format(dim_type)
         # halliday_fname = "halliday_dimensions_" + dim_type + ".json"
-        UTILS = PKG / UTILS_SUBPACKAGE
-        json_file = UTILS.joinpath(halliday_fname).open('r', encoding='utf8')
+        RESOURCES = ActorTagger.PKG / constants.RESOURCES_SUBPACKAGE
+        json_file = RESOURCES.joinpath(halliday_fname).open('r', encoding='utf8')
         halliday_dict = json.load(json_file)  
 
         # Calculate the number of story words in each halliday dimension
@@ -929,102 +824,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         return pd.DataFrame(rows, columns=['action', 'frequency'])
 
-        # # Create the polar area chart
-        # fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-        # ax.set_theta_direction(-1)  # Rotate the plot clockwise
-        # ax.set_theta_zero_location('N')  # Set the zero angle at the north
-
-        # # Plot the sectors
-        # ax.bar(
-        #     [i * (2 * np.pi / len(categories)) for i in range(len(categories))],
-        #     values,
-        #     width=(2 * np.pi / len(categories)),
-        #     align='edge',
-        #     color='skyblue',
-        # )
-
-        # # Set the sector labels
-        # ax.set_xticks([i * (2 * np.pi / len(categories)) for i in range(len(categories))])
-        # ax.set_xticklabels(categories)
-
-        # # Display the plot
-        # plt.show()
-
-    def calculate_word_type_count(self, sent_models):
-        for sent_model in sent_models:
-            tags = []
-            subjs = []
-            
-            for token in sent_model:
-                if (token.text.lower().strip() not in self.nl_stopwords):
-                    if (token.dep_ == 'nsubj' and token.pos_ in ['PRON', 'NOUN', 'PROPN']) or token.text.lower().strip() == 'ik':
-                        subjs.append((token, token.idx, token.idx+len(token)))
-                    else:
-                        self.count_per_word[token.text.lower().strip()] += 1
-
-            subjs = self.sort_tuple(subjs)
-            main_subject = ''
-            
-            if len(subjs) > 0:
-                main_subject = subjs[0][0].text
-                self.count_per_subject[main_subject.lower().strip()] += 1
-                self.count_per_word[main_subject.lower().strip()] += 1
-
-    def __nertag_text(self, text):
-        from spacy.lang.nl import Dutch
-        nlp = Dutch()
-        nlp.add_pipe("sentencizer")
-        doc = nlp(text)
-        sents = list(doc.sents)
-        # sents = sent_tokenize(text, language='dutch')
-        html = ""
-
-        ner_tags = []
-        if (self.per):
-            ner_tags.append("PERSON")
-        if (self.loc):
-            ner_tags.append("LOC")
-            ner_tags.append("GPE")
-            ner_tags.append("NORP")
-            ner_tags.append("FAC")
-            ner_tags.append("ORG")
-        if (self.product):
-            ner_tags.append("ORG")
-            ner_tags.append("PRODUCT")
-            ner_tags.append("EVENT")
-            ner_tags.append("WORK_OF_ART")
-        if (self.date):
-            ner_tags.append("DATE")
-            ner_tags.append("TIME")
-
-        options = {"ents": ner_tags, "colors": {}}
-
-        for sentence in sents:
-            sentence = sentence.replace("\n", " ")
-            sentence = sentence.replace("  ", " ")
-            sentence = re.sub('\s+', ' ', sentence)
-            tagged_sentence = self.nlp_nl(sentence)
-            html += displacy.render(tagged_sentence,
-                                    style="ent", options=options)
-
-        return html
-
-    # Function to recursively traverse ancestors
-    def find_verb_ancestor(self, token):
-        # Check if the token is a verb
-        if token.pos_ == 'VERB':
-            return token
-
-        # Traverse the token's ancestors recursively
-        for ancestor in token.ancestors:
-            # Recursive call to find the verb ancestor
-            verb_ancestor = self.find_verb_ancestor(ancestor)
-            if verb_ancestor:
-                return verb_ancestor
-
-        # If no verb ancestor found, return None
-        return None
-
     def merge_punct(self, doc):
         spans = []
         for word in doc[:-1]:
@@ -1041,221 +840,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 attrs = {"tag": tag, "lemma": lemma, "ent_type": ent_type}
                 retokenizer.merge(span, attrs=attrs)
         return doc
-
-    def sort_tuple(self, tup):
-        lst = len(tup)
-        for i in range(0, lst):
-            for j in range(0, lst-i-1):
-                if (tup[j][1] > tup[j + 1][1]):
-                    temp = tup[j]
-                    tup[j] = tup[j + 1]
-                    tup[j + 1] = temp
-        return tup
-
-    def __postag_text(self, text):
-        # pos tags that the user wants to highlight
-        pos_tags = []
-
-        # add pos tags to highlight according to whether the user has selected them or not
-        if (self.vbz):
-            pos_tags.append("VERB")
-        if (self.adj):
-            pos_tags.append("ADJ")
-            pos_tags.append("ADV")
-        if (self.nouns):
-            pos_tags.append("NOUN")
-            pos_tags.append("PRON")
-            pos_tags.append("PROPN")
-        if (self.subjs):
-            pos_tags.append("SUBJ")
-
-        # tokenize input text into sentences
-        from spacy.lang.nl import Dutch
-        nlp = Dutch()
-        nlp.add_pipe("sentencizer")
-        doc = nlp(text)
-        sents_spans = list(doc.sents)
-        sents = []
-        for span in sents_spans:
-            sents.append(span.text)
-
-        # sents = sent_tokenize(text, language='dutch')
-
-        # count no. of sents
-        sentence_count = len(sents)
-
-        # count no. of words and words not considering stopwords
-        from spacy.lang.nl import Dutch
-        nlp = Dutch()
-        tokenizer = nlp.tokenizer
-
-        for i in range(0, len(sents)):
-            sents[i] = sents[i].replace('.', '')
-
-        for sentence in sents:
-            sentence = sentence.replace("\n", " ")
-            sentence = sentence.replace("  ", " ")
-            sentence = re.sub('\s+', ' ', sentence)
-            sentence = sentence.replace('.', '')
-
-            # tokens = word_tokenize(sentence, language='dutch')
-            tokens_doc = tokenizer(sentence)
-            tokens = []
-            for d in tokens_doc:
-                tokens.append(d.text)
-
-            self.word_count += len(tokens)
-            for token in tokens:
-                self.sentence_count_per_word[token.lower().strip()] = 0
-                self.count_per_word[token.lower().strip()] = 0
-                self.count_per_subject[token.lower().strip()] = 0
-                # self.count_per_word_active[token.lower().strip()] = 0
-                # self.count_per_word_passive[token.lower().strip()] = 0
-                self.noun_action_dict[token.lower().strip()] = []
-                if token.lower().strip() not in self.nl_stopwords:
-                    self.word_count_nostops += 1
-
-        # count no. of sents that each word appears in
-        for sentence in sents:
-            sentence = sentence.replace("\n", " ")
-            sentence = sentence.replace("  ", " ")
-            sentence = re.sub('\s+', ' ', sentence)
-            sentence = sentence.replace('.', '')
-            # tokens = word_tokenize(sentence, language='dutch')
-            tokens_doc = tokenizer(sentence)
-            tokens = []
-            for d in tokens_doc:
-                tokens.append(d.text)
-
-            for token in tokens:
-                self.sentence_count_per_word[token.lower().strip()] += 1
-
-        # output of this function
-        html = ""
-
-        # generate and store nlp tagged models for each sentence
-        sentence_nlp_models = []
-        for sentence in sents:
-            sentence = sentence.replace("\n", " ")
-            sentence = sentence.replace("  ", " ")
-            sentence = re.sub('\s+', ' ', sentence)
-            sentence = sentence.replace('.', '')
-
-            tagged_sentence = self.nlp_nl(sentence)
-            for token in tagged_sentence:
-                self.count_per_word[token.text.lower().strip()] = 0
-                self.count_per_subject[token.text.lower().strip()] = 0
-            # tagged_sentence = self.merge_punct(tagged_sentence)
-            sentence_nlp_models.append(tagged_sentence)
-
-        # calculate the number of unique nouns in the text
-        self.calculate_word_type_count(sentence_nlp_models)
-
-        # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
-        for sentence, tagged_sentence in zip(sents, sentence_nlp_models):
-            tags = []
-            subjs = []
-            for token in tagged_sentence:
-                tags.append((token.text, token.pos_, token.tag_, token.dep_))
-                if (token.dep_ == 'nsubj' and token.pos_ in ['PRON', 'NOUN', 'PROPN']) or token.text.lower().strip() == 'ik':
-                    subjs.append((token, token.idx, token.idx+len(token)))
-
-            subjs = self.sort_tuple(subjs)
-            main_subject = ''
-            
-            if len(subjs) > 0:
-                main_subject = subjs[0][0].text
-            # for ent in tagged_sentence.ents:
-            #     print(ent, " : ", ent._.coref_cluster)
-
-            from nltk.tokenize import RegexpTokenizer
-            tokenizer = RegexpTokenizer(r'\w+|\$[\d\.]+|\S+')
-            spans = list(tokenizer.span_tokenize(sentence))
-
-            ents = []
-            for tag, span in zip(tags, spans):
-
-                if tag[0].lower().strip() not in self.nl_stopwords:
-                    if tag[1] == 'PRON':
-                        if ('|' in tag[2]):
-                            tmp_tags = tag[2].split('|')
-                            if (tmp_tags[1] == 'pers' and tmp_tags[2] == 'pron') or (tag[0].lower().strip() == 'ik'):
-                                p_score = 0
-                                p_score = self.calculate_prominence_score(
-                                    tag[0].lower().strip(), sents, tags)
-                                self.word_prominence_scores[tag[0].lower(
-                                ).strip()] = p_score
-
-                                if (p_score >= self.agent_prominence_score_min):
-                                    if tag[0].lower().strip() == main_subject.lower().strip():
-                                        ents.append({"start": span[0],
-                                                     "end": span[1],
-                                                     "label": "SUBJ"})
-                                    else:
-                                        ents.append({"start": span[0],
-                                                     "end": span[1],
-                                                     "label": tag[1]})
-
-                                vb = self.find_verb_ancestor(token)
-                                if vb is not None:
-                                    self.noun_action_dict[tag[0].lower().strip()].append(
-                                        vb.text)
-
-                    elif ((tag[1] == 'NOUN') or (tag[1] == 'PROPN')):
-                        p_score = 0
-                        p_score = self.calculate_prominence_score(
-                            tag[0].lower().strip(), sents, tags)
-                        self.word_prominence_scores[tag[0].lower(
-                        ).strip()] = p_score
-
-                        if (p_score >= self.agent_prominence_score_min):
-                            if tag[0].lower().strip() == main_subject.lower().strip():
-                                ents.append({"start": span[0],
-                                             "end": span[1],
-                                             "label": "SUBJ"})
-                            else:
-                                ents.append({"start": span[0],
-                                             "end": span[1],
-                                             "label": tag[1]})
-
-                        vb = self.find_verb_ancestor(token)
-                        if vb is not None:
-                            self.noun_action_dict[tag[0].lower().strip()].append(
-                                vb.text)
-
-                    else:
-                        ents.append({"start": span[0],
-                                    "end": span[1],
-                                     "label": tag[1]})
-
-            # specify sentences and filtered entities to tag / highlight
-            doc = {"text": sentence, "ents": ents}
-
-            # specify colors for highlighting each entity type
-            colors = {}
-            if self.nouns:
-                colors["NOUN"] = "turquoise"
-                colors["PRON"] = "#BB4CBA"
-                colors["PROPN"] = "#259100"
-            if self.subjs:
-                colors["SUBJ"] = "#FFEB26"
-            if self.vbz:
-                colors["VERB"] = "lightpink"
-            if self.adj:
-                colors["ADJ"] = "lime"
-                colors["ADP"] = "khaki"
-                colors["ADV"] = "orange"
-
-            self.agent_prominence_score_max = self.get_max_prominence_score()
-            # collect the above config params together
-            options = {"ents": pos_tags, "colors": colors}
-            # give all the params to displacy to generate HTML code of the text with highlighted tags
-            html += displacy.render(doc, style="ent",
-                                    options=options, manual=True)
-
-        self.html_result = html
-
-        return html
 
     def __mark_text(self, text):
         search_keyword = self.regexp_filter.strip("|")
@@ -1408,13 +992,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
     
 
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
+    corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = corpus_[:3]
+    corpus_ = BASE_TOKENIZER(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(corpus_)
