@@ -668,6 +668,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Function is called every time the selection changes"""
         self.agent_prominence_score_min = 0.
         self.actortagger.word_prominence_scores = {}
+        self.actortagger.noun_action_dict = {}
+        self.actortagger.num_occurences_as_subject = {}
+        self.actortagger.num_occurences = {}
+        self.actortagger.sentence_count = 0
+        self.actortagger.word_count = 0
+        self.actortagger.word_count_nostops = 0
         self.actortagger.html_result = ''
 
         self.selected_documents = self.get_selected_indexes()
