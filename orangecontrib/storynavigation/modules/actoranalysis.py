@@ -13,6 +13,7 @@ import string
 from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
+from bs4 import BeautifulSoup
 
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -465,8 +466,8 @@ class ActorTagger:
             html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
-
-        return html
+        # return html
+        return self.__remove_span_tags(html)
 
     def __get_normalized_token(self, token):
         """cleans punctuation from token and verifies length is more than one character
@@ -803,6 +804,15 @@ class ActorTagger:
                     tup[j] = tup[j + 1]
                     tup[j + 1] = temp
         return tup
+    
+    def __remove_span_tags(self, html_string):
+        soup = BeautifulSoup(html_string, 'html.parser')
+        
+        # Remove all <span> tags
+        for span_tag in soup.find_all('span'):
+            span_tag.decompose()
+
+        return str(soup)
 
 
 class ActorMetricCalculator:

@@ -129,19 +129,15 @@ img {{
 <div class="entities" style="line-height: 2.5; direction: ltr">
 <mark class="entity" style="background: #87CEFA; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
     Subject | pronoun
-    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">SP</span>
 </mark>
 <mark class="entity" style="background: #ADD8E6; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
     Subject | not pronoun
-    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">SNP</span>
 </mark>
 <mark class="entity" style="background: #FFA500; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
     Not subject | pronoun
-    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">NSP</span>
 </mark>
 <mark class="entity" style="background: #FFE4B5; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
     Not subject | not pronoun
-    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">NSNP</span>
 </mark>
 </div>
 <br/>
