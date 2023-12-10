@@ -126,6 +126,25 @@ img {{
 </style>
 </head>
 <body>
+<div class="entities" style="line-height: 2.5; direction: ltr">
+<mark class="entity" style="background: #87CEFA; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
+    Subject | pronoun
+    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">SP</span>
+</mark>
+<mark class="entity" style="background: #ADD8E6; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
+    Subject | not pronoun
+    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">SNP</span>
+</mark>
+<mark class="entity" style="background: #FFA500; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
+    Not subject | pronoun
+    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">NSP</span>
+</mark>
+<mark class="entity" style="background: #FFE4B5; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
+    Not subject | not pronoun
+    <span style="font-size: 0.8em; font-weight: bold; line-height: 1; border-radius: 0.35em; vertical-align: middle; margin-left: 0.5rem">NSNP</span>
+</mark>
+</div>
+<br/>
 {}
 </body>
 </html>
@@ -319,7 +338,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         matching_docs = Output("Matching Docs", Corpus, default=True)
         other_docs = Output("Other Docs", Corpus)
         corpus = Output("Corpus", Corpus)
-        agency_table = Output("Actor agency ratios", Table)
+        metrics_freq_table = Output("Frequency", Table)
+        metrics_subfreq_table = Output("Frequency as subject", Table)
+        metrics_agency_table = Output("Agency", Table)
         halliday_actions_table = Output("Halliday action counts", Table)
         actor_action_table = Output("Actor action table", Table)
         
@@ -387,7 +408,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     # minimum possible score for agent prominence
     agent_prominence_score_min = 0.
     # maximum possible score for agent prominence
-    agent_prominence_score_max = 20.
+    agent_prominence_score_max = 15.
 
     word_prominence_scores = {}
 
@@ -424,49 +445,50 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
 
         # Tag type selection panel
-        tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:",
-                                       orientation=Qt.Horizontal, sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        self.tagtype_box = box = gui.radioButtonsInBox(
-            self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
-        self.named_entities = gui.appendRadioButton(box, "Named Entities")
-        self.pos_tags = gui.appendRadioButton(box, "Parts of Speech")
-        tag_type_panel.layout().addWidget(box)
+        # tag_type_panel = gui.widgetBox(self.controlArea, "Category of words to highlight:",
+        #                                orientation=Qt.Horizontal, sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # self.tagtype_box = box = gui.radioButtonsInBox(
+        #     self.controlArea, self, "tag_type", [], callback=self._tagtype_changed)
+        # self.named_entities = gui.appendRadioButton(box, "Named Entities")
+        # self.pos_tags = gui.appendRadioButton(box, "Parts of Speech")
+        # tag_type_panel.layout().addWidget(box)
 
         # POS tag list
-        self.postags_box = gui.vBox(self.controlArea, "Parts of Speech to highlight:", sizePolicy=QSizePolicy(
+        self.postags_box = gui.vBox(self.controlArea, "Story elements to highlight:", sizePolicy=QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         self.sc = gui.checkBox(self.postags_box, self, "subjs",
-                               "Subjects", callback=self.pos_selection_changed)
-        self.vc = gui.checkBox(self.postags_box, self, "vbz",
-                               "Actions", callback=self.pos_selection_changed)
+                               "Sentence subjects", callback=self.pos_selection_changed)
+        # self.vc = gui.checkBox(self.postags_box, self, "vbz",
+        #                        "Actions", callback=self.pos_selection_changed)
         self.nc = gui.checkBox(self.postags_box, self, "nouns",
-                               "Entities", callback=self.pos_selection_changed)
-        self.adjc = gui.checkBox(
-            self.postags_box, self, "adj", "Descriptives", callback=self.pos_selection_changed)
+                               "Other potential actors", callback=self.pos_selection_changed)
+        # self.adjc = gui.checkBox(
+        #     self.postags_box, self, "adj", "Descriptives", callback=self.pos_selection_changed)
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
         self.allc.setChecked(False)
         self.allc.stateChanged.connect(self.on_state_changed_pos)
 
-        self.pos_checkboxes = [self.sc, self.vc, self.nc, self.adjc]
+        # self.pos_checkboxes = [self.sc, self.vc, self.nc, self.adjc]
+        self.pos_checkboxes = [self.sc, self.nc]
         self.controlArea.layout().addWidget(self.postags_box)
 
         # NER tag list
-        self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
-        gui.checkBox(self.nertags_box, self, "per", "People",
-                     callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "loc", "Places",
-                     callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "product",
-                     "Other entities", callback=self.ner_selection_changed)
-        gui.checkBox(self.nertags_box, self, "date", "Temporals",
-                     callback=self.ner_selection_changed)
+        # self.nertags_box = gui.vBox(self.controlArea, "Named entities to highlight:", sizePolicy=QSizePolicy(
+        #     QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
+        # gui.checkBox(self.nertags_box, self, "per", "People",
+        #              callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "loc", "Places",
+        #              callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "product",
+        #              "Other entities", callback=self.ner_selection_changed)
+        # gui.checkBox(self.nertags_box, self, "date", "Temporals",
+        #              callback=self.ner_selection_changed)
 
-        self.controlArea.layout().addWidget(self.nertags_box)
-        self.nertags_box.setEnabled(False)
+        # self.controlArea.layout().addWidget(self.nertags_box)
+        # self.nertags_box.setEnabled(False)
 
         # Prominence score slider
-        self.main_agents_box = gui.vBox(self.controlArea, "Filter entities by prominence score:", sizePolicy=QSizePolicy(
+        self.main_agents_box = gui.vBox(self.controlArea, "Filter actors by prominence score:", sizePolicy=QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Fixed))
         self.metric_name_combo = gui.comboBox(self.main_agents_box, self, 'agent_prominence_metric',
                                               items=constants.AGENT_PROMINENCE_METRICS,
@@ -480,8 +502,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self,
             "agent_prominence_score_min",
             minValue=0.,
-            maxValue=20.,
-            # step=.01,
+            maxValue=1.,
+            step=.01,
             ticks=True,
             callback=self.slider_callback,
             label='Min:',
@@ -666,6 +688,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
+        print()
+        print('selection changed')
+        print()
         self.agent_prominence_score_min = 0.
         self.actortagger.word_prominence_scores = {}
         self.actortagger.noun_action_dict = {}
@@ -675,6 +700,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actortagger.word_count = 0
         self.actortagger.word_count_nostops = 0
         self.actortagger.html_result = ''
+        self.actortagger.sentence_nlp_models = []
 
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
@@ -721,8 +747,22 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         return str(dom)
 
     def prominence_metric_change(self):
+        print()
+        print('prominence metric changed')
+        print()
+        print(self.actortagger.num_occurences_as_subject)
+        print()
+
         self.agent_prominence_score_min = 0.
         self.actortagger.word_prominence_scores = {}
+        # self.actortagger.noun_action_dict = {}
+        # self.actortagger.num_occurences_as_subject = {}
+        # self.actortagger.num_occurences = {}
+        # self.actortagger.sentence_count = 0
+        # self.actortagger.word_count = 0
+        # self.actortagger.word_count_nostops = 0
+        # self.actortagger.html_result = ''
+
         self.show_docs(slider_engaged=False)
         self.commit.deferred()
 
@@ -753,13 +793,17 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
                 if feature.name == 'content':
                     if (self.tag_type == 1):
-                        if (slider_engaged):
-                            value = self.filter_entities()
-                        else:
-                            value = self.actortagger.postag_text(value, self.vbz, self.adj, self.nouns, self.subjs, self.actortagger.nlp, self.actortagger.stopwords, self.agent_prominence_metric, self.agent_prominence_score_min)
-                            self.Outputs.agency_table.send(table_from_frame(self.actortagger.calculate_agency_table()))
-                            self.Outputs.actor_action_table.send(table_from_frame(self.actortagger.generate_noun_action_table()))
-                            self.Outputs.halliday_actions_table.send(table_from_frame(self.generate_halliday_action_counts_table(text=self.original_text)))
+                        # if (slider_engaged):
+                            # value = self.filter_entities()
+                        # else:
+                        print('executing pos tagging...')
+                        print()
+                        value = self.actortagger.postag_text(value, self.nouns, self.subjs, self.agent_prominence_metric, self.agent_prominence_score_min)
+                        self.Outputs.metrics_freq_table.send(table_from_frame(self.actortagger.calculate_metrics_freq_table()))
+                        self.Outputs.metrics_subfreq_table.send(table_from_frame(self.actortagger.calculate_metrics_subjfreq_table()))
+                        self.Outputs.metrics_agency_table.send(table_from_frame(self.actortagger.calculate_metrics_agency_table()))
+                        self.Outputs.actor_action_table.send(table_from_frame(self.actortagger.generate_noun_action_table()))
+                        self.Outputs.halliday_actions_table.send(table_from_frame(self.generate_halliday_action_counts_table(text=self.original_text)))
                     else:
                         value = self.actortagger.nertag_text(value, self.per, self.loc, self.product, self.date, self.actortagger.nlp)
 
