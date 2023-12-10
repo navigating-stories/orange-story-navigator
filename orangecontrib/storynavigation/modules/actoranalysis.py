@@ -2,17 +2,16 @@
 """
 
 import sys
-import os
 import pandas as pd
 from operator import itemgetter
-import spacy
 import storynavigation.modules.constants as constants
-import re
+import storynavigation.modules.util as util
 from spacy import displacy
 import string
 from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
+
 
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -54,7 +53,7 @@ class ActorTagger:
         self.num_occurences_as_subject = {}
         self.noun_action_dict = {}
 
-        self.nlp = self.__load_spacy_pipeline(model)
+        self.nlp = util.load_spacy_pipeline(model)
 
         # Scoring related to agent prominence score
         self.agent_prominence_score_max = 0.0
@@ -68,112 +67,6 @@ class ActorTagger:
         self.noun_count = 0
         self.verb_count = 0
         self.adjective_count = 0
-
-    @classmethod
-    def __load_spacy_pipeline(self, name):
-        """Check if the spacy language pipeline was downloaded and load it.
-        Downloads the language pipeline if not available.
-
-        Args:
-            name (string): Name of the spacy language.
-
-        Returns:
-            spacy.language.Language: The spacy language pipeline
-        """
-        if spacy.util.is_package(name):
-            nlp = spacy.load(name)
-        else:
-            os.system(f"spacy download {name}")
-            nlp = spacy.load(name)
-            nlp.add_pipe("merge_noun_chunks")
-            nlp.add_pipe("merge_entities")
-            nlp.add_pipe("sentencizer")
-        return nlp
-
-    def __preprocess_text(self, text):
-        """Preprocesses story text. A lot of stories in the Corona in de stad dataset
-        have sentences with no period at the end followed immediately by newline characters.
-        This function processes these and other issues to make the resulting text suitable for
-        further NLP analysis (e.g. postagging and ner).
-
-        Args:
-            text (string): Story text
-
-        Returns:
-            list: List of processed string sentences in story text
-        """
-        # find all regex matches for a newline character immediately followed by uppercase letter
-        match_indices = []
-        for i in re.finditer("\n[A-Z]", text):
-            startindex = i.start()
-            match_indices.append(startindex + 1)
-        match_indices.append(None)
-        # split the text into clauses (based on regex matches) - clauses can be single or multiple sentences
-        clauses = [
-            text[match_indices[i] : match_indices[i + 1]]
-            for i in range(0, len(match_indices) - 1)
-        ]
-        # clean clauses: remove newlines in the middle of clauses and tokenize them into individual sentences
-        cleaned_sentences = []
-        for clause in clauses:
-            cleaned_clause = clause.replace("\n", " ")
-            # tokenize clause into sentences
-            sentences = cleaned_clause.split(".")
-            for sent in sentences:
-                sent_tmp = sent.strip()
-                if len(sent_tmp) > 1:
-                    if sent_tmp[len(sent_tmp) - 1] != ".":
-                        sent_tmp += "."  # add a period to end of sentence (if there is not one already)
-                    cleaned_sentences.append(sent_tmp)
-
-        return cleaned_sentences
-
-    def nertag_text(self, text, per, loc, product, date, nlp):
-        """Preprocesses story text. A lot of stories in the Corona in de stad dataset
-        have sentences with no period at the end followed immediately by newline characters.
-        This function processes these and other issues to make the resulting text suitable for
-        further NLP analysis (e.g. postagging and ner).
-
-        Args:
-            text (string): Story text
-            per (boolean): whether person tokens should be tagged
-            loc (boolean): whether location tokens should be tagged
-            product (boolean): whether product tokens should be tagged
-            date (boolean): whether date tokens should be tagged
-            nlp (spacy.language.Language): Spacy Language object for NLP parsing
-
-        Returns:
-            string: HTML string representation of NER tagged text
-        """
-
-        sentences = self.__preprocess_text(text)
-        html = ""
-
-        ner_tags = []
-        if per:
-            ner_tags.append("PERSON")
-        if loc:
-            ner_tags.append("LOC")
-            ner_tags.append("GPE")
-            ner_tags.append("NORP")
-            ner_tags.append("FAC")
-            ner_tags.append("ORG")
-            ner_tags.append("EVENT")
-        if product:
-            ner_tags.append("PRODUCT")
-            ner_tags.append("WORK_OF_ART")
-        if date:
-            ner_tags.append("DATE")
-            ner_tags.append("TIME")
-
-        options = {"ents": ner_tags, "colors": {}}
-
-        # NLP tag each sentence and render the result using displacy and build up the HTML output
-        for sent in sentences:
-            tagged_sentence = nlp(sent)
-            html += displacy.render(tagged_sentence, style="ent", options=options)
-
-        return html
 
     def __update_postagging_metrics(
         self, tagtext, selected_prominence_metric, prominence_score_min, token
@@ -192,7 +85,7 @@ class ActorTagger:
         """
 
         # This needs to move to Action Analysis module
-        vb = self.__find_verb_ancestor(token)
+        vb = util.find_verb_ancestor(token)
         if vb is not None:
             if tagtext in self.noun_action_dict:
                 self.noun_action_dict[tagtext].append(vb.text)
@@ -255,8 +148,10 @@ class ActorTagger:
             "NOUN",
             "PROPN",
         ]:
-            if tag[3].lower() in ["nsubj", "csubj"] and self.__find_verb_ancestor(tag[4]) is not None:
-                print('active-noun: ', tag[0].lower(), ' active-verb: ', self.__find_verb_ancestor(tag[4]))
+            if (
+                tag[3].lower() in ["nsubj", "csubj"]
+                and util.find_verb_ancestor(tag[4]) is not None
+            ):
                 if tag[0].lower() in self.active_agency_scores:
                     self.active_agency_scores[tag[0].lower()] += 1
                 else:
@@ -264,7 +159,6 @@ class ActorTagger:
                 if tag[0].lower() not in self.passive_agency_scores:
                     self.passive_agency_scores[tag[0].lower()] = 0
             else:
-                print('pass-noun: ', tag[0].lower(), ' pass-verb: ', self.__find_verb_ancestor(tag[4]))
                 if tag[0].lower() in self.passive_agency_scores:
                     self.passive_agency_scores[tag[0].lower()] += 1
                 else:
@@ -279,7 +173,6 @@ class ActorTagger:
             else:
                 return True, "PROPN"
         else:
-            print('pass-noun: ', tag[0].lower(), ' pass-verb: ', self.__find_verb_ancestor(tag[4]))
             if tag[0].lower() in self.passive_agency_scores:
                 self.passive_agency_scores[tag[0].lower()] += 1
             else:
@@ -348,18 +241,12 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
-        sentences = self.__preprocess_text(text)
+        sentences = util.preprocess_text(text)
         self.__calculate_pretagging_metrics(sentences)
 
         # pos tags that the user wants to highlight
         pos_tags = []
 
-        # add pos tags to highlight according to whether the user has selected them or not
-        # if vbz:
-        #     pos_tags.append("VERB")
-        # if adj:
-        #     pos_tags.append("ADJ")
-        #     pos_tags.append("ADV")
         if nouns:
             pos_tags.append("NOUN")
             pos_tags.append("PRON")
@@ -376,8 +263,6 @@ class ActorTagger:
 
         # generate and store nlp tagged models for each sentence
         if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
-            print("got here!")
-            # sentence_nlp_models = []
             for sentence in sentences:
                 tagged_sentence = self.nlp(sentence)
                 self.sentence_nlp_models.append(tagged_sentence)
@@ -430,7 +315,7 @@ class ActorTagger:
                     first_word_in_sent,
                     selected_prominence_metric,
                     prominence_score_min,
-                    token
+                    token,
                 )
 
                 if p_score_greater_than_min:
@@ -438,7 +323,6 @@ class ActorTagger:
                         {"start": 0, "end": len(first_word_in_sent), "label": "SP"}
                     )
 
-                print('pass-noun: ', first_word_in_sent, ' pass-verb: None')
                 if first_word_in_sent in self.passive_agency_scores:
                     self.passive_agency_scores[first_word_in_sent] += 1
                 else:
@@ -465,30 +349,8 @@ class ActorTagger:
             html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
-
-        return html
-
-    def __get_normalized_token(self, token):
-        """cleans punctuation from token and verifies length is more than one character
-
-        Args:
-            token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
-
-        Returns:
-            string: cleaned token text
-        """
-
-        if type(token) == spacy.tokens.token.Token:
-            normalised_token = token.text.lower().strip()
-        else:
-            normalised_token = token[0].lower().strip()
-        if len(normalised_token) > 1:
-            if normalised_token[len(normalised_token) - 1] in string.punctuation:
-                normalised_token = normalised_token[: len(normalised_token) - 1].strip()
-            if normalised_token[0] in string.punctuation:
-                normalised_token = normalised_token[1:].strip()
-
-        return normalised_token
+        # return html
+        return util.remove_span_tags(html)
 
     def __is_valid_token(self, token):
         """Verifies if token is valid word
@@ -500,13 +362,13 @@ class ActorTagger:
             string, boolean : cleaned token text, True if the input token is a valid word, False otherwise
         """
 
-        word = self.__get_normalized_token(token)
+        word = util.get_normalized_token(token)
         return word, (word not in self.stopwords) and len(word) > 1
 
     def __calculate_word_type_count(self, sents, sent_models):
         """Calculates the frequency of mentions for each word in the story:
             - Number of times word appears as a subject of a sentence
-            - Number of times the word appears period 
+            - Number of times the word appears period
 
         Args:
             sents (list): list of all sentences (strings) from the input story
@@ -520,7 +382,6 @@ class ActorTagger:
                 if is_valid_token:
                     is_subj, subj_type = self.__is_subject(tag)
                     if is_subj:
-                        print('test: ', token.text.lower().strip())
                         if token.text.lower().strip() in self.num_occurences_as_subject:
                             self.num_occurences_as_subject[
                                 token.text.lower().strip()
@@ -545,18 +406,6 @@ class ActorTagger:
                     self.num_occurences_as_subject[word] += 1
                 else:
                     self.num_occurences_as_subject[word] = 1
-
-        print()
-        print("subj dict now: ", self.num_occurences_as_subject)
-        print()
-
-        print()
-        print("active agency dict: ", self.active_agency_scores)
-        print()
-
-        print()
-        print("passive agency dict: ", self.passive_agency_scores)
-        print()
 
     def __find_closest_match(self, word, dictionary):
         """Uses fuzzy string matching to find the closest match in a given dictionary (dict) for an input string
@@ -600,37 +449,16 @@ class ActorTagger:
         )
 
         if selected_prominence_metric == "Subject frequency (normalized)":
-            score = (
-                self.num_occurences_as_subject[closest_match_word] / median(list(self.num_occurences_as_subject.values()))
+            score = self.num_occurences_as_subject[closest_match_word] / median(
+                list(self.num_occurences_as_subject.values())
             )
         elif selected_prominence_metric == "Subject frequency":
-            score = self.num_occurences_as_subject[closest_match_word] / self.word_count_nostops
+            score = (
+                self.num_occurences_as_subject[closest_match_word]
+                / self.word_count_nostops
+            )
 
         return score
-
-    # Function to recursively traverse ancestors
-    def __find_verb_ancestor(self, token):
-        """Finds the main verb associated with a token (mostly nouns) in a sentence
-
-        Args:
-            token (spacy.tokens.token.Token): input token
-
-        Returns:
-            verb: the verb text if any, otherwise None
-        """
-        # Check if the token is a verb
-        if token.pos_ == "VERB":
-            return token
-
-        # Traverse the token's ancestors recursively
-        for ancestor in token.ancestors:
-            # Recursive call to find the verb ancestor
-            verb_ancestor = self.__find_verb_ancestor(ancestor)
-            if verb_ancestor:
-                return verb_ancestor
-
-        # If no verb ancestor found, return None
-        return None
 
     def __get_max_prominence_score(self):
         """Finds the word in the story with the highest prominence score and returns this score
@@ -662,14 +490,16 @@ class ActorTagger:
             passive_freq += self.passive_agency_scores[item]
 
         if active_freq > 0 and passive_freq > 0:
-            return (self.active_agency_scores[word]/active_freq) - (self.passive_agency_scores[word]/passive_freq)
+            return (self.active_agency_scores[word] / active_freq) - (
+                self.passive_agency_scores[word] / passive_freq
+            )
         elif active_freq == 0 and passive_freq > 0:
-            return 0 - (self.passive_agency_scores[word]/passive_freq)
+            return 0 - (self.passive_agency_scores[word] / passive_freq)
         elif active_freq > 0 and passive_freq == 0:
-            return (self.active_agency_scores[word]/active_freq)
+            return self.active_agency_scores[word] / active_freq
         else:
             return 0
-        
+
     def calculate_metrics_freq_table(self):
         """Prepares data table for piping to Output variable of widget: frequency of words in story
 
@@ -679,26 +509,17 @@ class ActorTagger:
 
         rows = []
         n = 10
-        res = dict(
-            sorted(
-                self.num_occurences.items(), key=itemgetter(1), reverse=True
-            )
-        )
+        res = dict(sorted(self.num_occurences.items(), key=itemgetter(1), reverse=True))
 
         words = list(res.keys())
 
         for word in words:
-            rows.append(
-                    [
-                        word,
-                        self.num_occurences[word]
-                    ]
-                )
-            
+            rows.append([word, self.num_occurences[word]])
+
         rows.sort(key=lambda x: x[1])
 
         return pd.DataFrame(rows[-n:], columns=constants.FREQ_TABLE_HEADER)
-    
+
     def calculate_metrics_subjfreq_table(self):
         """Prepares data table for piping to Output variable of widget: frequencies as subjects of words in story
 
@@ -716,17 +537,11 @@ class ActorTagger:
         words = list(res.keys())
 
         for word in words:
-            rows.append(
-                    [
-                        word,
-                        self.num_occurences_as_subject[word]
-                    ]
-                )
-    
+            rows.append([word, self.num_occurences_as_subject[word]])
+
         rows.sort(key=lambda x: x[1])
 
         return pd.DataFrame(rows[-n:], columns=constants.SUBFREQ_TABLE_HEADER)
-
 
     def calculate_metrics_agency_table(self):
         """Prepares data table for piping to Output variable of widget: agency scores of words in story
@@ -746,68 +561,16 @@ class ActorTagger:
 
         for word in words:
             agency = self.__calculate_agency(word)
-            rows.append(
-                    [
-                        word,
-                        agency
-                    ]
-                )
+            rows.append([word, agency])
 
         rows.sort(key=lambda x: x[1])
 
         return pd.DataFrame(rows[-n:], columns=constants.AGENCY_TABLE_HEADER)
 
 
-    def generate_noun_action_table(self):
-        """Prepares data table for piping to Output variable of widget: 
-        - list of actors in story (1st column), 
-        - comma-separated list of verbs that each actor is involved in (2nd column)
-
-        Returns:
-            data table (pandas dataframe)
-        """
-        n = 10
-        res = dict(
-            sorted(
-                self.word_prominence_scores.items(), key=itemgetter(1), reverse=True
-            )[:n]
-        )
-
-        names = list(res.keys())
-
-        rows = []
-        for item in self.noun_action_dict:
-            if len(self.noun_action_dict[item]) > 0 and (item in names):
-                curr_row = []
-                curr_row.append(item)
-                curr_row.append(", ".join(list(set(self.noun_action_dict[item]))))
-                rows.append(curr_row)
-
-        return pd.DataFrame(rows, columns=["actor", "actions"])
-
-    @staticmethod
-    def sort_tuple(tup):
-        """Sorts a tuple of numerical items in ascending order
-
-        Args:
-            tup (Tuple) : n-dimensional tuple
-
-        Returns:
-            tuple with each element sorted in ascending order
-        """
-        lst = len(tup)
-        for i in range(0, lst):
-            for j in range(0, lst - i - 1):
-                if tup[j][1] > tup[j + 1][1]:
-                    temp = tup[j]
-                    tup[j] = tup[j + 1]
-                    tup[j + 1] = temp
-        return tup
-
-
 class ActorMetricCalculator:
-    """Unused class / code so far...
-    """
+    """Unused class / code so far..."""
+
     def __init__(self, text, listofwords):
         s = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
         self.stopwords = s
