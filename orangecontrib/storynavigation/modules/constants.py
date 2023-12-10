@@ -16,23 +16,18 @@ NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
 SELECTED_PROMINENCE_METRIC = 'Subject frequency'
 # column names for agency table
 FREQ_TABLE_HEADER = ['actor', 'raw_frequency']
+ACTION_FREQ_TABLE_HEADER = ['action', 'raw_frequency']
+ACTION_TENSEFREQ_TABLE_HEADER = ['tense', 'frequency']
 SUBFREQ_TABLE_HEADER = ['actor', 'subject_frequency']
 AGENCY_TABLE_HEADER = ['actor', 'agency']
 # Halliday dimensions file
 HALLIDAY_FILENAME = "halliday_dimensions_{}.json"
 # dutch spacy model (small)
 NL_SPACY_MODEL = "nl_core_news_sm"
-
 # colors for highlighting words in text
-# NOUN_HIGHLIGHT_COLOR = "turquoise"
-# PRONOUN_HIGHLIGHT_COLOR = "#BB4CBA"
-# PROPERNOUN_HIGHLIGHT_COLOR = "#259100"
 SUBJECT_PRONOUN_HIGHLIGHT_COLOR = "#87CEFA"
 SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR = "#ADD8E6"
 NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR = "#FFA500"
 NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR = "#FFE4B5"
-	#ADD8E6
-# VERB_HIGHLIGHT_COLOR = "lightpink"
-# ADJECTIVE_HIGHLIGHT_COLOR = "lime"
-# ADVERB_HIGHLIGHT_COLOR = "khaki"
-# ADPOSITION_HIGHLIGHT_COLOR = "orange"
+ACTION_PAST_HIGHLIGHT_COLOR = "#FFC0CB"
+ACTION_PRESENT_HIGHLIGHT_COLOR = "#DB7093"
