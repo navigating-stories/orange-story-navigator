@@ -278,7 +278,7 @@ class ActionTagger:
         """
 
         rows = []
-        n = 10
+        n = 20
 
         res_past = dict(
             sorted(self.past_verb_count.items(), key=itemgetter(1), reverse=True)

@@ -508,7 +508,7 @@ class ActorTagger:
         """
 
         rows = []
-        n = 10
+        n = 20
         res = dict(sorted(self.num_occurences.items(), key=itemgetter(1), reverse=True))
 
         words = list(res.keys())
@@ -527,7 +527,7 @@ class ActorTagger:
             data table (pandas dataframe)
         """
         rows = []
-        n = 10
+        n = 20
         res = dict(
             sorted(
                 self.num_occurences_as_subject.items(), key=itemgetter(1), reverse=True
@@ -550,7 +550,7 @@ class ActorTagger:
             data table (pandas dataframe)
         """
         rows = []
-        n = 10
+        n = 20
         words = set()
         for item in list(self.num_occurences_as_subject.keys()):
             words.add(item)
