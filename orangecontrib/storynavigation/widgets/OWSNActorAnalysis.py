@@ -678,7 +678,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         self.nouns,
                         self.subjs,
                         self.agent_prominence_metric,
-                        self.agent_prominence_score_min,
+                        self.agent_prominence_score_min
                     )
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
@@ -719,17 +719,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
         self.doc_webview.setHtml(HTML.format(html), base)
-
-    def as_list(self, dw):
-        res = []
-        for item in dw:
-            if type(item) == str and item != "N/A":
-                words = item.split(" | ")
-                if len(words) > 0:
-                    for word in words:
-                        res.append(word.lower().strip())
-
-        return list(set(res))
 
     def __mark_text(self, text):
         search_keyword = self.regexp_filter.strip("|")
@@ -877,10 +866,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
+    corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = corpus_[:3]
+    corpus_ = BASE_TOKENIZER(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(corpus_)

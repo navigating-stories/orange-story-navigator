@@ -34,7 +34,7 @@ jobs:
     if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: pypi
-      url: https://pypi.org/p/orangestorynavigator
+      url: https://pypi.org/p/storynavigator
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
@@ -53,7 +53,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/orangestorynavigator
+      url: https://test.pypi.org/p/storynavigator
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:

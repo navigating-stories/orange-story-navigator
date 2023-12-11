@@ -351,7 +351,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     # original text (not tagged)
     original_text = ""
-    word_prominence_scores = {}
     sli = None
 
     # list of colour values for the background highlight for each entity type
@@ -569,8 +568,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
-        self.agent_prominence_score_min = 0.0
-        self.actiontagger.word_prominence_scores = {}
         self.actiontagger.noun_action_dict = {}
         self.actiontagger.num_occurences_as_subject = {}
         self.actiontagger.num_occurences = {}
@@ -584,19 +581,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.show_docs()
         self.commit.deferred()
 
-    def prominence_metric_change(self):
-        self.agent_prominence_score_min = 0.0
-        self.actiontagger.word_prominence_scores = {}
-        self.show_docs(slider_engaged=False)
-        self.commit.deferred()
-
-    def slider_callback(self):
-        if self.agent_prominence_score_min > self.agent_prominence_score_max:
-            self.agent_prominence_score_min = self.agent_prominence_score_max
-        self.show_docs(slider_engaged=True)
-        self.commit.deferred()
-
-    def show_docs(self, slider_engaged=False):
+    def show_docs(self):
         if not hasattr(self, "actiontagger"):
             self.actiontagger = ActionTagger(constants.NL_SPACY_MODEL)
 
