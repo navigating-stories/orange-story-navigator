@@ -234,9 +234,9 @@ class ActorTagger:
         result = []
         for token in custom_word_dict:
                 for word in custom_word_dict[token]:
-                    matches = [match.start() for match in re.finditer(word.lower(), sentence.lower())]
+                    matches = [match.start() for match in re.finditer(r'\b{}\b'.format(re.escape(word)), sentence, flags=re.IGNORECASE)]
                     for match in matches:
-                        current_tag = {"start": match, "end": match+len(word), "label": "CUST"}
+                        current_tag = {"start": match, "end": match+len(word), "label": token.upper()}
                         result.append(current_tag)
                         if token in self.custom_category_frequencies:
                             self.custom_category_frequencies[token] += 1
@@ -245,6 +245,11 @@ class ActorTagger:
 
         return result
 
+    def __get_custom_tags_list(self, custom_dict):
+        result = []
+        for token in custom_dict:
+            result.append(token.upper())
+        return result
 
     def postag_text(
         self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
@@ -265,7 +270,7 @@ class ActorTagger:
 
         # pos tags that the user wants to highlight
         pos_tags = []
-
+        custom_tag_labels = []
         if nouns:
             pos_tags.append("NOUN")
             pos_tags.append("PRON")
@@ -277,7 +282,9 @@ class ActorTagger:
             pos_tags.append("SP")
             pos_tags.append("SNP")
         if custom:
-            pos_tags.append("CUST")
+            if custom_dict is not None:
+                custom_tag_labels = self.__get_custom_tags_list(custom_dict)
+                pos_tags.extend(custom_tag_labels)
 
         # output of this function
         html = ""
@@ -356,6 +363,9 @@ class ActorTagger:
                 if first_word_in_sent not in self.active_agency_scores:
                     self.active_agency_scores[first_word_in_sent] = 0
 
+            # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
+            # to avoid duplication, only tag each entity using ONE tag category.
+            ents = util.remove_duplicate_tagged_entities(ents)
             # specify sentences and filtered entities to tag / highlight
             doc = {"text": sentence, "ents": ents}
 
@@ -368,7 +378,8 @@ class ActorTagger:
                 colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
                 colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
             if custom:
-                colors["CUST"] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+                for custom_label in custom_tag_labels:
+                    colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
 
             self.agent_prominence_score_max = self.__get_max_prominence_score()
             # collect the above config params together
@@ -378,7 +389,10 @@ class ActorTagger:
 
         self.html_result = html
         # return html
-        return util.remove_span_tags(html)
+        if custom:
+            return util.remove_span_tags_except_custom(html)
+        else:
+            return util.remove_span_tags(html)
 
     def __is_valid_token(self, token):
         """Verifies if token is valid word

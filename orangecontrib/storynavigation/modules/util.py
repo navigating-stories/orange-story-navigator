@@ -5,7 +5,20 @@ import re
 import spacy
 import os
 import string
+import storynavigation.modules.constants as constants
 
+def entity_tag_already_exists(ents, start, end):
+    for ent in ents:
+        if (ent['start'] == start and ent['end'] == end):
+            return True
+    return False
+
+def remove_duplicate_tagged_entities(ents):
+    entities_minus_duplicates = []
+    for entity in ents:
+        if not entity_tag_already_exists(entities_minus_duplicates, entity['start'], entity['end']):
+            entities_minus_duplicates.append(entity)
+    return entities_minus_duplicates
 
 def get_normalized_token(token):
     """cleans punctuation from token and verifies length is more than one character
@@ -104,6 +117,26 @@ def remove_span_tags(html_string):
     # Remove all <span> tags
     for span_tag in soup.find_all("span"):
         span_tag.decompose()
+
+    return str(soup)
+
+def remove_span_tags_except_custom(html_string):
+    """Removes span tags (including content) from an HTML string (except ones for custom tags)
+
+    Args:
+        html_string (string) : HTML string
+
+    Returns:
+        HTML string without span tags and associated content
+    """
+    soup = BeautifulSoup(html_string, "html.parser")
+
+    # Remove all <span> tags
+    for span_tag in soup.find_all("span"):
+        outer_tag = span_tag.find_parent()
+        if 'style' in outer_tag.attrs:
+            if "background: "+constants.CUSTOMTAG_HIGHLIGHT_COLOR not in outer_tag['style']:
+                span_tag.decompose()
 
     return str(soup)
 

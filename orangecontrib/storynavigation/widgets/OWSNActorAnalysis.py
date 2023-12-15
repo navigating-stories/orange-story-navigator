@@ -566,15 +566,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.corpus
     def set_data(self, corpus=None):
-        print()
-        print()
-        print('setting data...')
-        print()
-        print()
         self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         self.closeContext()
         self.reset_widget()
-        # print('corpus: ', corpus)
         self.corpus = corpus
         
         if corpus is not None:
@@ -590,28 +584,15 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.word_dict
     def set_word_dict(self, word_dict=None):
-        # print()
-        # print()
-        # print('setting word dict...')
-        # print()
-        # print()
-        # self.closeContext()
-        # self.reset_widget()
         self.word_dict = word_dict
-        
-        # print('word_dict: ', word_dict)
-        # print()
         rows = []
         if (word_dict is not None):
             for item in word_dict:
-                # print('item: ', item, ' ', type(item))
                 rows.append(item.metas)
 
             self.word_dict = pd.DataFrame(rows[1:], columns=rows[0], index=None)
             self.__create_customtag_checkbox(self.word_dict)
 
-        # print('data frame: ', self.word_dict)
-        # print()
         if self.corpus is not None and word_dict is not None:
             self.setup_controls()
             self.openContext(self.corpus)
@@ -621,15 +602,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.update_info()
             self.set_selection()
             self.show_docs()
-        # if word_dict is not None:
-            # self.setup_controls()
-            # self.openContext(self.corpus)
-            # self.doc_list.model().set_filter_string(self.regexp_filter)
-            # self.select_variables()
-            # self.list_docs()
-            # self.update_info()
-            # self.set_selection()
-            # self.show_docs()
         self.commit.now()
 
     def reset_widget(self):
