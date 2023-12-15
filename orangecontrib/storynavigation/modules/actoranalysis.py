@@ -8,6 +8,7 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from spacy import displacy
 import string
+import re
 from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
@@ -52,6 +53,8 @@ class ActorTagger:
         self.num_occurences = {}
         self.num_occurences_as_subject = {}
         self.noun_action_dict = {}
+
+        self.custom_category_frequencies = {}
 
         self.nlp = util.load_spacy_pipeline(model)
 
@@ -227,8 +230,24 @@ class ActorTagger:
         else:
             return False
 
+    def __find_custom_word_matches(self, custom_word_dict, sentence):
+        result = []
+        for token in custom_word_dict:
+                for word in custom_word_dict[token]:
+                    matches = [match.start() for match in re.finditer(word.lower(), sentence.lower())]
+                    for match in matches:
+                        current_tag = {"start": match, "end": match+len(word), "label": "CUST"}
+                        result.append(current_tag)
+                        if token in self.custom_category_frequencies:
+                            self.custom_category_frequencies[token] += 1
+                        else:
+                            self.custom_category_frequencies[token] = 1
+
+        return result
+
+
     def postag_text(
-        self, text, nouns, subjs, selected_prominence_metric, prominence_score_min
+        self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
     ):
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -257,6 +276,8 @@ class ActorTagger:
             pos_tags.append("SUBJ")
             pos_tags.append("SP")
             pos_tags.append("SNP")
+        if custom:
+            pos_tags.append("CUST")
 
         # output of this function
         html = ""
@@ -280,6 +301,11 @@ class ActorTagger:
                 tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
 
             ents = []
+            if custom_dict is not None:
+                custom_matched_tags = self.__find_custom_word_matches(custom_dict, sentence)
+                for matched_tag in custom_matched_tags:
+                    ents.append(matched_tag)
+
             for tag, span in zip(tags, spans):
                 normalised_token, is_valid_token = self.__is_valid_token(tag)
                 if is_valid_token:
@@ -341,6 +367,8 @@ class ActorTagger:
             if subjs:
                 colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
                 colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+            if custom:
+                colors["CUST"] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
 
             self.agent_prominence_score_max = self.__get_max_prominence_score()
             # collect the above config params together
