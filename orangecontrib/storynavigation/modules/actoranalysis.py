@@ -254,6 +254,14 @@ class ActorTagger:
     def postag_text(
         self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
     ):
+        self.custom_category_frequencies = {}
+
+        print()
+        print()
+        print(custom_dict)
+        print()
+        print()
+
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
         Args:
@@ -584,6 +592,41 @@ class ActorTagger:
         rows.sort(key=lambda x: x[1])
 
         return pd.DataFrame(rows[-n:], columns=constants.SUBFREQ_TABLE_HEADER)
+
+
+    def calculate_metrics_customfreq_table(self, df):
+        """Prepares data table for piping to Output variable of widget: frequencies of custom tokens by user
+
+        Args:
+            df (pandas dataframe): the dataframe of all categories of custom words by the user
+
+        Returns:
+            data table (pandas dataframe)
+        """
+
+        rows = []
+        n = 20
+        res = dict(
+            sorted(
+                self.custom_category_frequencies.items(), key=itemgetter(1), reverse=True
+            )
+        )
+
+        words = list(res.keys())
+
+        for word in words:
+            rows.append([word, self.custom_category_frequencies[word], str(util.get_column(df, word))])
+
+        rows.sort(key=lambda x: x[1])
+
+        print()
+        print()
+        print(rows)
+        print()
+        print()
+
+        return pd.DataFrame(rows[-n:], columns=constants.CUSTOMFREQ_TABLE_HEADER)
+
 
     def calculate_metrics_agency_table(self):
         """Prepares data table for piping to Output variable of widget: agency scores of words in story

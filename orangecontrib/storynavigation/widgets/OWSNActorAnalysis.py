@@ -335,7 +335,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         corpus = Output("Corpus", Corpus)
         metrics_freq_table = Output("Frequency", Table)
         metrics_subfreq_table = Output("Frequency as subject", Table)
+        metrics_customfreq_table = Output("Custom token frequency", Table)
         metrics_agency_table = Output("Agency", Table)
+
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -546,6 +548,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 unique_categories = list(set(wd[column].tolist()))
                 list_of_lists_categories.append(unique_categories)
 
+        print()
+        print()
+        print(list_of_lists_categories)
+        print()
+        print()
+
         self.custom_tag_dictionary = {}
         for lst in list_of_lists_categories:
             for category in lst:
@@ -590,7 +598,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             for item in word_dict:
                 rows.append(item.metas)
 
-            self.word_dict = pd.DataFrame(rows[1:], columns=rows[0], index=None)
+            self.word_dict = pd.DataFrame(rows[1:], index=None)
             self.__create_customtag_checkbox(self.word_dict)
 
         if self.corpus is not None and word_dict is not None:
@@ -755,6 +763,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.actortagger.calculate_metrics_subjfreq_table()
                         )
                     )
+                    self.Outputs.metrics_customfreq_table.send(
+                        table_from_frame(
+                            self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
+                        )
+                    )
                     self.Outputs.metrics_agency_table.send(
                         table_from_frame(
                             self.actortagger.calculate_metrics_agency_table()
@@ -870,6 +883,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @gui.deferred
     def commit(self):
+        self.pos_checkboxes = [self.sc, self.nc]
         matched = unmatched = annotated_corpus = None
         if self.corpus is not None:
             selected_docs = sorted(self.get_selected_indexes())

@@ -19,6 +19,7 @@ FREQ_TABLE_HEADER = ['actor', 'raw_frequency']
 ACTION_FREQ_TABLE_HEADER = ['action', 'raw_frequency']
 ACTION_TENSEFREQ_TABLE_HEADER = ['tense', 'frequency']
 SUBFREQ_TABLE_HEADER = ['actor', 'subject_frequency']
+CUSTOMFREQ_TABLE_HEADER = ['category', 'frequency', 'category-level']
 AGENCY_TABLE_HEADER = ['actor', 'agency']
 # Halliday dimensions file
 HALLIDAY_FILENAME = "halliday_dimensions_{}.json"

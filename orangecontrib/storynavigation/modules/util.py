@@ -13,6 +13,25 @@ def entity_tag_already_exists(ents, start, end):
             return True
     return False
 
+def get_column(df, entity):
+    """Returns the first column number / title in a dataframe in which the given value / item appears
+
+    Args:
+        df (pandas dataframe): the dataframe in which to search for the right column
+        entity (string): the entity we are search for in the dataframe
+
+
+    Returns:
+        string: column name / number
+    """
+
+    for col in df.columns:
+        tmplst = [x.lower() for x in df[col].tolist()]
+        for item in tmplst:
+            if entity.lower() == item:
+                return col
+    return '' # no column contains the given entity (hopefully impossible)
+
 def remove_duplicate_tagged_entities(ents):
     entities_minus_duplicates = []
     for entity in ents:
