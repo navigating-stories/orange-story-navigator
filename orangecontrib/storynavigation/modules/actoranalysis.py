@@ -8,6 +8,7 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from spacy import displacy
 import string
+import re
 from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
@@ -52,6 +53,8 @@ class ActorTagger:
         self.num_occurences = {}
         self.num_occurences_as_subject = {}
         self.noun_action_dict = {}
+
+        self.custom_category_frequencies = {}
 
         self.nlp = util.load_spacy_pipeline(model)
 
@@ -227,9 +230,38 @@ class ActorTagger:
         else:
             return False
 
+    def __find_custom_word_matches(self, custom_word_dict, sentence):
+        result = []
+        for token in custom_word_dict:
+                for word in custom_word_dict[token]:
+                    matches = [match.start() for match in re.finditer(r'\b{}\b'.format(re.escape(word)), sentence, flags=re.IGNORECASE)]
+                    for match in matches:
+                        current_tag = {"start": match, "end": match+len(word), "label": token.upper()}
+                        result.append(current_tag)
+                        if token in self.custom_category_frequencies:
+                            self.custom_category_frequencies[token] += 1
+                        else:
+                            self.custom_category_frequencies[token] = 1
+
+        return result
+
+    def __get_custom_tags_list(self, custom_dict):
+        result = []
+        for token in custom_dict:
+            result.append(token.upper())
+        return result
+
     def postag_text(
-        self, text, nouns, subjs, selected_prominence_metric, prominence_score_min
+        self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
     ):
+        self.custom_category_frequencies = {}
+
+        # print()
+        # print()
+        # print(custom_dict)
+        # print()
+        # print()
+
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
         Args:
@@ -246,7 +278,7 @@ class ActorTagger:
 
         # pos tags that the user wants to highlight
         pos_tags = []
-
+        custom_tag_labels = []
         if nouns:
             pos_tags.append("NOUN")
             pos_tags.append("PRON")
@@ -257,6 +289,10 @@ class ActorTagger:
             pos_tags.append("SUBJ")
             pos_tags.append("SP")
             pos_tags.append("SNP")
+        if custom:
+            if custom_dict is not None:
+                custom_tag_labels = self.__get_custom_tags_list(custom_dict)
+                pos_tags.extend(custom_tag_labels)
 
         # output of this function
         html = ""
@@ -280,6 +316,11 @@ class ActorTagger:
                 tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
 
             ents = []
+            if custom_dict is not None:
+                custom_matched_tags = self.__find_custom_word_matches(custom_dict, sentence)
+                for matched_tag in custom_matched_tags:
+                    ents.append(matched_tag)
+
             for tag, span in zip(tags, spans):
                 normalised_token, is_valid_token = self.__is_valid_token(tag)
                 if is_valid_token:
@@ -330,6 +371,9 @@ class ActorTagger:
                 if first_word_in_sent not in self.active_agency_scores:
                     self.active_agency_scores[first_word_in_sent] = 0
 
+            # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
+            # to avoid duplication, only tag each entity using ONE tag category.
+            ents = util.remove_duplicate_tagged_entities(ents)
             # specify sentences and filtered entities to tag / highlight
             doc = {"text": sentence, "ents": ents}
 
@@ -341,6 +385,9 @@ class ActorTagger:
             if subjs:
                 colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
                 colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+            if custom:
+                for custom_label in custom_tag_labels:
+                    colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
 
             self.agent_prominence_score_max = self.__get_max_prominence_score()
             # collect the above config params together
@@ -350,7 +397,10 @@ class ActorTagger:
 
         self.html_result = html
         # return html
-        return util.remove_span_tags(html)
+        if custom:
+            return util.remove_span_tags_except_custom(html)
+        else:
+            return util.remove_span_tags(html)
 
     def __is_valid_token(self, token):
         """Verifies if token is valid word
@@ -542,6 +592,37 @@ class ActorTagger:
         rows.sort(key=lambda x: x[1])
 
         return pd.DataFrame(rows[-n:], columns=constants.SUBFREQ_TABLE_HEADER)
+
+
+    def calculate_metrics_customfreq_table(self, df):
+        """Prepares data table for piping to Output variable of widget: frequencies of custom tokens by user
+
+        Args:
+            df (pandas dataframe): the dataframe of all categories of custom words by the user
+
+        Returns:
+            data table (pandas dataframe)
+        """
+        if df is None:
+            return pd.DataFrame([], columns=constants.CUSTOMFREQ_TABLE_HEADER)
+
+        rows = []
+        n = 20
+        res = dict(
+            sorted(
+                self.custom_category_frequencies.items(), key=itemgetter(1), reverse=True
+            )
+        )
+
+        words = list(res.keys())
+
+        for word in words:
+            rows.append([word, self.custom_category_frequencies[word], str(util.get_column(df, word))])
+
+        rows.sort(key=lambda x: x[1])
+
+        return pd.DataFrame(rows[-n:], columns=constants.CUSTOMFREQ_TABLE_HEADER)
+
 
     def calculate_metrics_agency_table(self):
         """Prepares data table for piping to Output variable of widget: agency scores of words in story

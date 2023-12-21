@@ -318,6 +318,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
+        corpus = Input("Corpus", Corpus, replaces=["Data"])
 
     class Outputs:
         matching_docs = Output("Matching Docs", Corpus, default=True)

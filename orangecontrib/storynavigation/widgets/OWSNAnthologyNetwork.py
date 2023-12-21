@@ -29,8 +29,6 @@ class OWSNAnthologyNetwork(OWWidget, ConcurrentWidgetMixin):
     icon = 'icons/anthology_network_icon.png'
     priority = 6431
 
-    NL_SPACY_MODEL = "nl_core_news_lg" 
-
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
 
@@ -39,7 +37,6 @@ class OWSNAnthologyNetwork(OWWidget, ConcurrentWidgetMixin):
         node_data = Output('Node Data', Table)
         sentiment_data = Output('Sentiment Data', Table)
         network = Output('Network', Network)
-
 
     settingsHandler = DomainContextHandler()
     settings_version = 2

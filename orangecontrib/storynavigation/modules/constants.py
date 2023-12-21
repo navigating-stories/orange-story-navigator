@@ -19,6 +19,7 @@ FREQ_TABLE_HEADER = ['actor', 'raw_frequency']
 ACTION_FREQ_TABLE_HEADER = ['action', 'raw_frequency']
 ACTION_TENSEFREQ_TABLE_HEADER = ['tense', 'frequency']
 SUBFREQ_TABLE_HEADER = ['actor', 'subject_frequency']
+CUSTOMFREQ_TABLE_HEADER = ['category', 'frequency', 'category-level']
 AGENCY_TABLE_HEADER = ['actor', 'agency']
 # Halliday dimensions file
 HALLIDAY_FILENAME = "halliday_dimensions_{}.json"
@@ -31,3 +32,4 @@ NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR = "#FFA500"
 NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR = "#FFE4B5"
 ACTION_PAST_HIGHLIGHT_COLOR = "#FFC0CB"
 ACTION_PRESENT_HIGHLIGHT_COLOR = "#DB7093"
+CUSTOMTAG_HIGHLIGHT_COLOR = "#98FB98"
