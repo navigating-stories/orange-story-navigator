@@ -389,6 +389,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.corpus = None  # initialise list of documents (corpus)
         self.word_dict = None  # initialise word dictionary
         self.custom_tag_dictionary = None
+        self.custom_tags = None
         self.__pending_selected_documents = self.selected_documents
 
         # Search features
@@ -548,11 +549,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 unique_categories = list(set(wd[column].tolist()))
                 list_of_lists_categories.append(unique_categories)
 
-        print()
-        print()
-        print(list_of_lists_categories)
-        print()
-        print()
+        # print()
+        # print()
+        # print(list_of_lists_categories)
+        # print()
+        # print()
 
         self.custom_tag_dictionary = {}
         for lst in list_of_lists_categories:
@@ -563,14 +564,16 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                     if len(current_dict_values) > 0:
                         self.custom_tag_dictionary[category] = current_dict_values
 
-        self.custom_tags = gui.checkBox(
-            self.postags_box,
-            self,
-            "custom",
-            "Custom tokens",
-            callback=self.pos_selection_changed,
-        )
-        self.pos_checkboxes.append(self.custom_tags)
+        if self.custom_tags not in self.pos_checkboxes:
+            self.custom_tags = gui.checkBox(
+                self.postags_box,
+                self,
+                "custom",
+                "Custom tokens",
+                callback=self.pos_selection_changed,
+            )
+
+            # self.pos_checkboxes.append(self.custom_tags)
 
     @Inputs.corpus
     def set_data(self, corpus=None):
@@ -592,31 +595,108 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.word_dict
     def set_word_dict(self, word_dict=None):
-        self.word_dict = word_dict
-        rows = []
-        if (word_dict is not None):
-            for item in word_dict:
-                rows.append(item.metas)
+        if self.word_dict is None:
+            print('swd None')
+            if word_dict is not None:
+                print('wd not None')
+                self.word_dict = word_dict
+                rows = []
 
-            self.word_dict = pd.DataFrame(rows[1:], index=None)
-            self.__create_customtag_checkbox(self.word_dict)
+                # print()
+                # print()
+                # print('word_dict.domain: ', self.word_dict.domain)
+                # print()
+                # print()
+                # print()
+                # print()
+                # print('word_dict.attributes: ', self.word_dict.attributes)
+                # print()
+                # print()
+                if (word_dict is not None):
+                    for item in word_dict:
+                        # print()
+                        # print()
+                        # print('item: ', item)
+                        # print()
+                        # print()
 
-        if self.corpus is not None and word_dict is not None:
-            self.setup_controls()
-            self.openContext(self.corpus)
-            self.doc_list.model().set_filter_string(self.regexp_filter)
-            self.select_variables()
-            self.list_docs()
-            self.update_info()
-            self.set_selection()
-            self.show_docs()
-        self.commit.now()
+                        rows.append(item.metas)
 
+                    self.word_dict = pd.DataFrame(rows[1:], index=None)
+                    if self.custom_tags is None:
+                        self.__create_customtag_checkbox(self.word_dict)
+
+                if self.corpus is not None and word_dict is not None:
+                    self.setup_controls()
+                    self.openContext(self.corpus)
+                    self.doc_list.model().set_filter_string(self.regexp_filter)
+                    self.select_variables()
+                    self.list_docs()
+                    self.update_info()
+                    self.set_selection()
+                    self.show_docs()
+                self.commit.now()
+
+            else:
+                return
+        else:
+            print('swd not None')
+            if word_dict is not None:
+                print('wd not None')
+                if self.word_dict.equals(word_dict):
+                    print('swd = wd')
+                    return
+                else:
+                    print('swd != wd')
+                    self.word_dict = word_dict
+                    rows = []
+
+                    # print()
+                    # print()
+                    # print('word_dict.domain: ', self.word_dict.domain)
+                    # print()
+                    # print()
+                    # print()
+                    # print()
+                    # print('word_dict.attributes: ', self.word_dict.attributes)
+                    # print()
+                    # print()
+                    for item in self.word_dict:
+                        # print()
+                        # print()
+                        # print('item: ', item)
+                        # print()
+                        # print()
+
+                        rows.append(item.metas)
+
+                    self.word_dict = pd.DataFrame(rows[1:], index=None)
+                    # print()
+                    # print()
+                    # print('hhh!!! - ', self.word_dict)
+                    # print()
+                    # print()
+                    if self.custom_tags is None:
+                        self.__create_customtag_checkbox(self.word_dict)
+
+                    if self.corpus is not None and word_dict is not None:
+                        self.setup_controls()
+                        self.openContext(self.corpus)
+                        self.doc_list.model().set_filter_string(self.regexp_filter)
+                        self.select_variables()
+                        self.list_docs()
+                        self.update_info()
+                        self.set_selection()
+                        self.show_docs()
+                    self.commit.now()
+            
     def reset_widget(self):
         self.word_dict = None
         # Corpus
         self.corpus = None
         self.custom_tag_dictionary = None
+        self.pos_checkboxes = [self.sc, self.nc]
+        self.custom_tags = None
         # self.tagtype_box = None
         # Widgets
         self.search_listbox.model().set_domain(None)
@@ -870,6 +950,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         raise ex
 
     def update_info(self):
+        self.pos_checkboxes = [self.sc, self.nc]
         if self.corpus is not None:
             has_tokens = self.corpus.has_tokens()
             self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.corpus)}"

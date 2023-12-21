@@ -256,11 +256,11 @@ class ActorTagger:
     ):
         self.custom_category_frequencies = {}
 
-        print()
-        print()
-        print(custom_dict)
-        print()
-        print()
+        # print()
+        # print()
+        # print(custom_dict)
+        # print()
+        # print()
 
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -603,6 +603,8 @@ class ActorTagger:
         Returns:
             data table (pandas dataframe)
         """
+        if df is None:
+            return pd.DataFrame([], columns=constants.CUSTOMFREQ_TABLE_HEADER)
 
         rows = []
         n = 20
@@ -618,12 +620,6 @@ class ActorTagger:
             rows.append([word, self.custom_category_frequencies[word], str(util.get_column(df, word))])
 
         rows.sort(key=lambda x: x[1])
-
-        print()
-        print()
-        print(rows)
-        print()
-        print()
 
         return pd.DataFrame(rows[-n:], columns=constants.CUSTOMFREQ_TABLE_HEADER)
 
