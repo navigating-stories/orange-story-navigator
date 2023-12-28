@@ -590,7 +590,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.list_docs()
             self.update_info()
             self.set_selection()
+            print('got here - yay')
             self.show_docs()
+        else:
+            print('got here - noooo')
+
         self.commit.now()
 
     @Inputs.word_dict
@@ -805,25 +809,30 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
+        print('okay getting here at least...')
         if not hasattr(self, "actortagger"):
             self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
 
         """Show the selected documents in the right area"""
         if self.corpus is None:
+            print('please say you are not getting here!')
             return
 
+        print('okay phew...')
         self.Warning.no_feats_display.clear()
         if len(self.display_features) == 0:
             self.Warning.no_feats_display()
 
         parts = []
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+            print('...what about here?? YAAY!')
             text = ""
             for feature in self.display_features:
                 value = str(self.corpus[c_index, feature.name])
                 self.original_text = str(value)
+                print('surely you are getting here at least!')
 
-                if feature.name == "content":
+                if feature.name.lower() == "content" or feature.name.lower() == "text":
                     value = self.actortagger.postag_text(
                         value,
                         self.nouns,
@@ -854,10 +863,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         )
                     )
 
+
+
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
 
-                if feature.name != "content":
+                if feature.name.lower() != "content" and feature.name.lower() != "text":
                     value = value.replace("\n", "<br/>")
 
                 is_image = feature.attributes.get("type", "") == "image"

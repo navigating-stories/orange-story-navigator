@@ -119,6 +119,21 @@ def preprocess_text(text):
                     sent_tmp += "."  # add a period to end of sentence (if there is not one already)
                 cleaned_sentences.append(sent_tmp)
 
+    # Handle the case where input story text is not formatted with newline characters (no newlines at all)
+    if len(cleaned_sentences) == 0:
+        sents = text.split('.')
+        if len(sents) > 0:
+            for sent in sents:
+                cleaned_sentences.append(sent.strip())
+        else:
+            return []
+
+    # # remove quotes because it affects the accuracy of POS tagging
+    # cleaned_sents = []
+    # for item in cleaned_sentences:
+    #     item = item.replace("`", "").replace("'", "").replace("‘", "").replace("’", "")
+    #     item = item.replace("  ", " ")
+    #     cleaned_sents.append(item)
     return cleaned_sentences
 
 

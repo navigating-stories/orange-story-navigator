@@ -10,6 +10,12 @@ MAIN_PACKAGE = "storynavigation"
 RESOURCES_SUBPACKAGE = "resources"
 # filename from which to retrieve a list of dutch stopwords
 NL_STOPWORDS_FILENAME = "dutchstopwords.txt"
+# filename from which to retrieve a list of dutch past tense verbs
+NL_PAST_TENSE_FILENAME = "past_tense_verbs_dutch.txt"
+# filename from which to retrieve a list of dutch present tense verbs
+NL_PRESENT_TENSE_FILENAME = "present_tense_verbs_dutch.txt"
+# filename from which to retrieve a list of dutch false positive verbs
+NL_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs.txt"
 # filename from which to retrieve a list of dutch stopwords
 NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
 # currently selected agent prominence metric

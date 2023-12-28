@@ -32,12 +32,22 @@ class ActionTagger:
     NL_PRONOUNS_FILE = (
         PKG / constants.RESOURCES_SUBPACKAGE / constants.NL_PRONOUNS_FILENAME
     )
+    NL_PAST_TENSE_FILE = (
+        PKG / constants.RESOURCES_SUBPACKAGE / constants.NL_PAST_TENSE_FILENAME
+    )
+    NL_PRESENT_TENSE_FILE = (
+        PKG / constants.RESOURCES_SUBPACKAGE / constants.NL_PRESENT_TENSE_FILENAME
+    )
+    NL_FALSE_POSITIVE_VERB_FILE = (
+        PKG / constants.RESOURCES_SUBPACKAGE / constants.NL_FALSE_POSITIVE_VERB_FILENAME
+    )
 
     def __init__(self, model):
-        s = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        pr = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
-        self.pronouns = pr
-        self.stopwords = s
+        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
+        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
+        self.past_tense_verbs = self.NL_PAST_TENSE_FILE.read_text(encoding="utf-8")
+        self.present_tense_verbs = self.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8")
+        self.false_positive_verbs = self.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8")
         self.html_result = ""
 
         # Other counts initialisation
@@ -142,7 +152,7 @@ class ActionTagger:
         if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
             # sentence_nlp_models = []
             for sentence in sentences:
-                tagged_sentence = self.nlp(sentence)
+                tagged_sentence = self.nlp(sentence.replace("`", "").replace("'", "").replace("‘", "").replace("’", ""))
                 self.sentence_nlp_models.append(tagged_sentence)
 
             self.__calculate_action_type_count(self.sentence_nlp_models)
@@ -160,38 +170,43 @@ class ActionTagger:
             for tag, span in zip(tags, spans):
                 normalised_token, is_valid_token = self.__is_valid_token(tag)
                 if is_valid_token:
-                    if tag[4].pos_ == "VERB":
-                        vb_tense = tag[4].morph.get("Tense")
-                        if vb_tense == "Past":
-                            ents.append(
-                                {"start": span[0], "end": span[1], "label": "PAST_VB"}
-                            )
-                        elif vb_tense == "Pres":
+                    if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
+                    # if tag[4].pos_ == "VERB":
+                        # if (tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge"):  # past tense
+                        # vb_tense = tag[4].morph.get("Tense")
+                        # if vb_tense == "Past":
+                        ents.append(
+                            {"start": span[0], "end": span[1], "label": "PAST_VB"}
+                        )
+                        # elif vb_tense == "Pres":
+                    else:
+                        if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):
+                        # elif tag[4].text.lower().strip() in self.present_tense_verbs:
                             ents.append(
                                 {"start": span[0], "end": span[1], "label": "PRES_VB"}
                             )
-                        else:
-                            if tag[4].text.lower().strip()[:2] == "ge":  # past tense
-                                ents.append(
-                                    {
-                                        "start": span[0],
-                                        "end": span[1],
-                                        "label": "PAST_VB",
-                                    }
-                                )
-                            else:
-                                ents.append(
-                                    {
-                                        "start": span[0],
-                                        "end": span[1],
-                                        "label": "PRES_VB",
-                                    }
-                                )
+                        # else:
+                        #     if tag[4].text.lower().strip()[:2] == "ge":  # past tense
+                        #         ents.append(
+                        #             {
+                        #                 "start": span[0],
+                        #                 "end": span[1],
+                        #                 "label": "PAST_VB",
+                        #             }
+                        #         )
+                        #     else:
+                        #         ents.append(
+                        #             {
+                        #                 "start": span[0],
+                        #                 "end": span[1],
+                        #                 "label": "PRES_VB",
+                        #             }
+                        #         )
 
-                    elif tag[4].pos_ in ["NOUN", "PRON", "PROPN"]:
-                        self.__update_postagging_metrics(
-                            tag[4].text.lower().strip(), tag[4]
-                        )
+                    # elif tag[4].pos_ in ["NOUN", "PRON", "PROPN"]:
+                    #     self.__update_postagging_metrics(
+                    #         tag[4].text.lower().strip(), tag[4]
+                    #     )
 
             # specify sentences and filtered entities to tag / highlight
             doc = {"text": sentence, "ents": ents}
@@ -237,38 +252,41 @@ class ActionTagger:
             for token in sent_model:
                 normalised_token, is_valid_token = self.__is_valid_token(token)
                 if is_valid_token:
-                    if token.pos_ == "VERB":
-                        vb_tense = token.morph.get("Tense")
-                        if vb_tense == "Past":
-                            if token.text.lower().strip() in self.past_verb_count:
-                                self.past_verb_count[token.text.lower().strip()] += 1
-                            else:
-                                self.past_verb_count[token.text.lower().strip()] = 1
-                        elif vb_tense == "Pres":
+                    if ((token.text.lower().strip() in self.past_tense_verbs) or (token.text.lower().strip()[:2] == "ge")) and (token.text.lower().strip() not in self.false_positive_verbs):  # past tense
+                    # if token.pos_ == "VERB":
+                    #     vb_tense = token.morph.get("Tense")
+                    #     if vb_tense == "Past":
+                        if token.text.lower().strip() in self.past_verb_count:
+                            self.past_verb_count[token.text.lower().strip()] += 1
+                        else:
+                            self.past_verb_count[token.text.lower().strip()] = 1
+                    else:
+                        if token.pos_ == "VERB" and (token.text.lower().strip() not in self.false_positive_verbs):
+                    # elif vb_tense == "Pres":
                             if token.text.lower().strip() in self.present_verb_count:
                                 self.present_verb_count[token.text.lower().strip()] += 1
                             else:
                                 self.present_verb_count[token.text.lower().strip()] = 1
-                        else:
-                            if token.text.lower().strip()[:2] == "ge":  # past tense
-                                if token.text.lower().strip() in self.past_verb_count:
-                                    self.past_verb_count[
-                                        token.text.lower().strip()
-                                    ] += 1
-                                else:
-                                    self.past_verb_count[token.text.lower().strip()] = 1
-                            else:
-                                if (
-                                    token.text.lower().strip()
-                                    in self.present_verb_count
-                                ):
-                                    self.present_verb_count[
-                                        token.text.lower().strip()
-                                    ] += 1
-                                else:
-                                    self.present_verb_count[
-                                        token.text.lower().strip()
-                                    ] = 1
+                        # else:
+                        #     if token.text.lower().strip()[:2] == "ge":  # past tense
+                        #         if token.text.lower().strip() in self.past_verb_count:
+                        #             self.past_verb_count[
+                        #                 token.text.lower().strip()
+                        #             ] += 1
+                        #         else:
+                        #             self.past_verb_count[token.text.lower().strip()] = 1
+                        #     else:
+                        #         if (
+                        #             token.text.lower().strip()
+                        #             in self.present_verb_count
+                        #         ):
+                        #             self.present_verb_count[
+                        #                 token.text.lower().strip()
+                        #             ] += 1
+                        #         else:
+                        #             self.present_verb_count[
+                        #                 token.text.lower().strip()
+                        #             ] = 1
 
     def calculate_metrics_freq_table(self):
         """Prepares data table for piping to Output variable of widget: frequency of verbs in story
@@ -339,32 +357,32 @@ class ActionTagger:
 
         return pd.DataFrame(rows, columns=["actor", "actions"])
 
-    def generate_halliday_action_counts_table(self, text, dim_type="realm"):
-        rows = []
+    # def generate_halliday_action_counts_table(self, text, dim_type="realm"):
+    #     rows = []
 
-        # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
-        halliday_fname = constants.HALLIDAY_FILENAME.format(dim_type)
-        # halliday_fname = "halliday_dimensions_" + dim_type + ".json"
-        RESOURCES = ActionTagger.PKG / constants.RESOURCES_SUBPACKAGE
-        json_file = RESOURCES.joinpath(halliday_fname).open("r", encoding="utf8")
-        halliday_dict = json.load(json_file)
+    #     # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
+    #     halliday_fname = constants.HALLIDAY_FILENAME.format(dim_type)
+    #     # halliday_fname = "halliday_dimensions_" + dim_type + ".json"
+    #     RESOURCES = ActionTagger.PKG / constants.RESOURCES_SUBPACKAGE
+    #     json_file = RESOURCES.joinpath(halliday_fname).open("r", encoding="utf8")
+    #     halliday_dict = json.load(json_file)
 
-        # Calculate the number of story words in each halliday dimension
-        words = text.split()
-        halliday_counts = {}
-        for item in halliday_dict:
-            halliday_counts[item] = 0
+    #     # Calculate the number of story words in each halliday dimension
+    #     words = text.split()
+    #     halliday_counts = {}
+    #     for item in halliday_dict:
+    #         halliday_counts[item] = 0
 
-        for word in words:
-            processed_word = word.lower().strip()
-            for item in halliday_dict:
-                if processed_word in halliday_dict[item]:
-                    halliday_counts[item] += 1
+    #     for word in words:
+    #         processed_word = word.lower().strip()
+    #         for item in halliday_dict:
+    #             if processed_word in halliday_dict[item]:
+    #                 halliday_counts[item] += 1
 
-        for item in halliday_dict:
-            rows.append([item, halliday_counts[item]])
+    #     for item in halliday_dict:
+    #         rows.append([item, halliday_counts[item]])
 
-        return pd.DataFrame(rows, columns=["action", "frequency"])
+    #     return pd.DataFrame(rows, columns=["action", "frequency"])
 
 
 class ActionMetricCalculator:
