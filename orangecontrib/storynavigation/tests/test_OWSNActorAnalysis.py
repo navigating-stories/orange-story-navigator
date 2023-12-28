@@ -1,5 +1,5 @@
 import unittest
-from ..widgets.OWSNActorAnalysis import OWSNActorAnalysis
+from widgets.OWSNActorAnalysis import OWSNActorAnalysis
 from orangewidget.tests.base import WidgetTest
 from orangecontrib.text.corpus import Corpus
 
