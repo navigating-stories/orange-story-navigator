@@ -6,7 +6,7 @@ from orangecontrib.text.corpus import Corpus
 class TestOWSNDSGDepParser(WidgetTest):
     def setUp(self):
         self.widget = self.create_widget(OWSNActorAnalysis)
-        self.widget.corpus = Corpus.from_file('storynavigator-testdata')
+        self.widget.corpus = Corpus.from_file('/home/runner/work/orange-story-navigator/orange-story-navigator/orangecontrib/storynavigation/tests/storynavigator-testdata.tab')
         self.send_signal(self.widget.Inputs.corpus, self.widget.corpus)
         # self.small_undir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5)
         # self.small_dir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5, directed=True)
