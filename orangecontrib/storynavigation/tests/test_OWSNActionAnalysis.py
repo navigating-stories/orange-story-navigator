@@ -1,7 +1,7 @@
 import unittest
 # import scipy.sparse as sp
 
-from orangecontrib.storynavigation.widgets.OWSNNarrativeNetwork import OWSNNarrativeNetwork
+from ..widgets.OWSNNarrativeNetwork import OWSNNarrativeNetwork
 from orangewidget.tests.base import WidgetTest
 
 class TestOWSNNarrativeNetwork(WidgetTest):
