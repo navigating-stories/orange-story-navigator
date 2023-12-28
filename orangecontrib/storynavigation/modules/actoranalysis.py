@@ -37,10 +37,8 @@ class ActorTagger:
     )
 
     def __init__(self, model):
-        s = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        pr = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
-        self.pronouns = pr
-        self.stopwords = s
+        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
+        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
         self.html_result = ""
 
         # Other counts initialisation
@@ -273,7 +271,17 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
+        print()
+        print('text:')
+        print(text)
+        print()
+
         sentences = util.preprocess_text(text)
+
+        print('sentences:')
+        print(sentences)
+        print()
+
         self.__calculate_pretagging_metrics(sentences)
 
         # pos tags that the user wants to highlight
@@ -299,103 +307,105 @@ class ActorTagger:
 
         # generate and store nlp tagged models for each sentence
         if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
-            for sentence in sentences:
-                tagged_sentence = self.nlp(sentence)
+            for sentence in sentences:	
+                tagged_sentence = self.nlp(sentence.replace("`", "").replace("'", "").replace("‘", "").replace("’", ""))
                 self.sentence_nlp_models.append(tagged_sentence)
 
             self.__calculate_word_type_count(sentences, self.sentence_nlp_models)
 
         # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
         for sentence, tagged_sentence in zip(sentences, self.sentence_nlp_models):
-            first_word_in_sent = sentence.split()[0].lower().strip()
-            tags = []
-            tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+")
-            spans = list(tokenizer.span_tokenize(sentence))
+            if len(sentence.split()) > 0:
+                first_word_in_sent = sentence.split()[0].lower().strip()
+                tags = []
+                tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+")
+                spans = list(tokenizer.span_tokenize(sentence))
 
-            for token in tagged_sentence:
-                tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
+                for token in tagged_sentence:
+                    tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
 
-            ents = []
-            if custom_dict is not None:
-                custom_matched_tags = self.__find_custom_word_matches(custom_dict, sentence)
-                for matched_tag in custom_matched_tags:
-                    ents.append(matched_tag)
+                ents = []
+                if custom_dict is not None:
+                    custom_matched_tags = self.__find_custom_word_matches(custom_dict, sentence)
+                    for matched_tag in custom_matched_tags:
+                        ents.append(matched_tag)
 
-            for tag, span in zip(tags, spans):
-                normalised_token, is_valid_token = self.__is_valid_token(tag)
-                if is_valid_token:
-                    is_subj, subj_type = self.__is_subject(tag)
-                    if is_subj:
-                        p_score_greater_than_min = self.__update_postagging_metrics(
-                            tag[0].lower().strip(),
-                            selected_prominence_metric,
-                            prominence_score_min,
-                            token,
-                        )
-                        if p_score_greater_than_min:
+                for tag, span in zip(tags, spans):
+                    normalised_token, is_valid_token = self.__is_valid_token(tag)
+                    if is_valid_token:
+                        is_subj, subj_type = self.__is_subject(tag)
+                        if is_subj:
+                            p_score_greater_than_min = self.__update_postagging_metrics(
+                                tag[0].lower().strip(),
+                                selected_prominence_metric,
+                                prominence_score_min,
+                                token,
+                            )
+                            if p_score_greater_than_min:
+                                if self.__is_pronoun(tag):
+                                    ents.append(
+                                        {"start": span[0], "end": span[1], "label": "SP"}
+                                    )
+                                else:
+                                    ents.append(
+                                        {"start": span[0], "end": span[1], "label": "SNP"}
+                                    )
+                        else:
                             if self.__is_pronoun(tag):
                                 ents.append(
-                                    {"start": span[0], "end": span[1], "label": "SP"}
+                                    {"start": span[0], "end": span[1], "label": "NSP"}
                                 )
-                            else:
+                            elif self.__is_noun_but_not_pronoun(tag):
                                 ents.append(
-                                    {"start": span[0], "end": span[1], "label": "SNP"}
+                                    {"start": span[0], "end": span[1], "label": "NSNP"}
                                 )
-                    else:
-                        if self.__is_pronoun(tag):
-                            ents.append(
-                                {"start": span[0], "end": span[1], "label": "NSP"}
-                            )
-                        elif self.__is_noun_but_not_pronoun(tag):
-                            ents.append(
-                                {"start": span[0], "end": span[1], "label": "NSNP"}
-                            )
 
-            if first_word_in_sent in self.pronouns:
-                p_score_greater_than_min = self.__update_postagging_metrics(
-                    first_word_in_sent,
-                    selected_prominence_metric,
-                    prominence_score_min,
-                    token,
-                )
-
-                if p_score_greater_than_min:
-                    ents.append(
-                        {"start": 0, "end": len(first_word_in_sent), "label": "SP"}
+                if first_word_in_sent in self.pronouns:
+                    p_score_greater_than_min = self.__update_postagging_metrics(
+                        first_word_in_sent,
+                        selected_prominence_metric,
+                        prominence_score_min,
+                        token,
                     )
 
-                if first_word_in_sent in self.passive_agency_scores:
-                    self.passive_agency_scores[first_word_in_sent] += 1
-                else:
-                    self.passive_agency_scores[first_word_in_sent] = 1
-                if first_word_in_sent not in self.active_agency_scores:
-                    self.active_agency_scores[first_word_in_sent] = 0
+                    if p_score_greater_than_min:
+                        ents.append(
+                            {"start": 0, "end": len(first_word_in_sent), "label": "SP"}
+                        )
 
-            # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
-            # to avoid duplication, only tag each entity using ONE tag category.
-            ents = util.remove_duplicate_tagged_entities(ents)
-            # specify sentences and filtered entities to tag / highlight
-            doc = {"text": sentence, "ents": ents}
+                    if first_word_in_sent in self.passive_agency_scores:
+                        self.passive_agency_scores[first_word_in_sent] += 1
+                    else:
+                        self.passive_agency_scores[first_word_in_sent] = 1
+                    if first_word_in_sent not in self.active_agency_scores:
+                        self.active_agency_scores[first_word_in_sent] = 0
 
-            # specify colors for highlighting each entity type
-            colors = {}
-            if nouns:
-                colors["NSP"] = constants.NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR
-                colors["NSNP"] = constants.NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
-            if subjs:
-                colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
-                colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
-            if custom:
-                for custom_label in custom_tag_labels:
-                    colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+                # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
+                # to avoid duplication, only tag each entity using ONE tag category.
+                ents = util.remove_duplicate_tagged_entities(ents)
+                # specify sentences and filtered entities to tag / highlight
+                doc = {"text": sentence, "ents": ents}
 
-            self.agent_prominence_score_max = self.__get_max_prominence_score()
-            # collect the above config params together
-            options = {"ents": pos_tags, "colors": colors}
-            # give all the params to displacy to generate HTML code of the text with highlighted tags
-            html += displacy.render(doc, style="ent", options=options, manual=True)
+                # specify colors for highlighting each entity type
+                colors = {}
+                if nouns:
+                    colors["NSP"] = constants.NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR
+                    colors["NSNP"] = constants.NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+                if subjs:
+                    colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
+                    colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+                if custom:
+                    for custom_label in custom_tag_labels:
+                        colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+
+                self.agent_prominence_score_max = self.__get_max_prominence_score()
+                # collect the above config params together
+                options = {"ents": pos_tags, "colors": colors}
+                # give all the params to displacy to generate HTML code of the text with highlighted tags
+                html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
+        print('got here 2!')
         # return html
         if custom:
             return util.remove_span_tags_except_custom(html)
@@ -450,12 +460,13 @@ class ActorTagger:
                                 self.num_occurences[token.text.lower().strip()] = 1
 
         for sent in sents:
-            word = sent.split()[0].lower().strip()
-            if word in self.pronouns:
-                if word in self.num_occurences_as_subject:
-                    self.num_occurences_as_subject[word] += 1
-                else:
-                    self.num_occurences_as_subject[word] = 1
+            if len(sent.split()) > 0:
+                word = sent.split()[0].lower().strip()
+                if word in self.pronouns:
+                    if word in self.num_occurences_as_subject:
+                        self.num_occurences_as_subject[word] += 1
+                    else:
+                        self.num_occurences_as_subject[word] = 1
 
     def __find_closest_match(self, word, dictionary):
         """Uses fuzzy string matching to find the closest match in a given dictionary (dict) for an input string

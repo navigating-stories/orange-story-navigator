@@ -318,7 +318,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
-        corpus = Input("Corpus", Corpus, replaces=["Data"])
+        # corpus = Input("Corpus", Corpus, replaces=["Data"])
 
     class Outputs:
         matching_docs = Output("Matching Docs", Corpus, default=True)
@@ -326,7 +326,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         corpus = Output("Corpus", Corpus)
         metrics_freq_table = Output("Frequency", Table)
         metrics_tensefreq_table = Output("Tense frequency", Table)
-        halliday_actions_table = Output("Halliday action counts", Table)
+        # halliday_actions_table = Output("Halliday action counts", Table)
         actor_action_table = Output("Actor action table", Table)
 
     settingsHandler = DomainContextHandler()
@@ -601,7 +601,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 value = str(self.corpus[c_index, feature.name])
                 self.original_text = str(value)
 
-                if feature.name == "content":
+                if feature.name.lower() == "content" or feature.name.lower() == "text":
                     value = self.actiontagger.postag_text(
                         value, self.past_vbz, self.present_vbz
                     )
@@ -618,18 +618,18 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                     self.Outputs.actor_action_table.send(
                         table_from_frame(self.actiontagger.generate_noun_action_table())
                     )
-                    self.Outputs.halliday_actions_table.send(
-                        table_from_frame(
-                            self.actiontagger.generate_halliday_action_counts_table(
-                                text=self.original_text
-                            )
-                        )
-                    )
+                    # self.Outputs.halliday_actions_table.send(
+                    #     table_from_frame(
+                    #         self.actiontagger.generate_halliday_action_counts_table(
+                    #             text=self.original_text
+                    #         )
+                    #     )
+                    # )
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
 
-                if feature.name != "content":
+                if feature.name.lower() != "content" and feature.name.lower() != "text":
                     value = value.replace("\n", "<br/>")
 
                 is_image = feature.attributes.get("type", "") == "image"
