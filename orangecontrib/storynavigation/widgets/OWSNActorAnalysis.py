@@ -338,7 +338,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         metrics_customfreq_table = Output("Custom token frequency", Table)
         metrics_agency_table = Output("Agency", Table)
 
-
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -402,8 +401,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.display_listbox = dl = VariableListViewSearch(selectionMode=ex_sel)
         dl.setModel(VisibleDomainModel(separators=False))
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
-
-        print('building gui...')
 
         # POS tag list
         self.postags_box = gui.vBox(
@@ -539,8 +536,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def __create_customtag_checkbox(self, wd):
-        print()
-        print('customtag...')
         # extract all categorisations in the input dictionary
         list_of_lists_categories = []
         if len(wd.columns) >= 2: 
@@ -548,12 +543,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             for column in column_range_by_index:
                 unique_categories = list(set(wd[column].tolist()))
                 list_of_lists_categories.append(unique_categories)
-
-        # print()
-        # print()
-        # print(list_of_lists_categories)
-        # print()
-        # print()
 
         self.custom_tag_dictionary = {}
         for lst in list_of_lists_categories:
@@ -573,8 +562,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 callback=self.pos_selection_changed,
             )
 
-            # self.pos_checkboxes.append(self.custom_tags)
-
     @Inputs.corpus
     def set_data(self, corpus=None):
         self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
@@ -590,40 +577,19 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.list_docs()
             self.update_info()
             self.set_selection()
-            print('got here - yay')
             self.show_docs()
-        else:
-            print('got here - noooo')
 
         self.commit.now()
 
     @Inputs.word_dict
     def set_word_dict(self, word_dict=None):
         if self.word_dict is None:
-            print('swd None')
             if word_dict is not None:
-                print('wd not None')
                 self.word_dict = word_dict
                 rows = []
 
-                # print()
-                # print()
-                # print('word_dict.domain: ', self.word_dict.domain)
-                # print()
-                # print()
-                # print()
-                # print()
-                # print('word_dict.attributes: ', self.word_dict.attributes)
-                # print()
-                # print()
                 if (word_dict is not None):
                     for item in word_dict:
-                        # print()
-                        # print()
-                        # print('item: ', item)
-                        # print()
-                        # print()
-
                         rows.append(item.metas)
 
                     self.word_dict = pd.DataFrame(rows[1:], index=None)
@@ -644,42 +610,17 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             else:
                 return
         else:
-            print('swd not None')
             if word_dict is not None:
-                print('wd not None')
                 if self.word_dict.equals(word_dict):
-                    print('swd = wd')
                     return
                 else:
-                    print('swd != wd')
                     self.word_dict = word_dict
                     rows = []
 
-                    # print()
-                    # print()
-                    # print('word_dict.domain: ', self.word_dict.domain)
-                    # print()
-                    # print()
-                    # print()
-                    # print()
-                    # print('word_dict.attributes: ', self.word_dict.attributes)
-                    # print()
-                    # print()
                     for item in self.word_dict:
-                        # print()
-                        # print()
-                        # print('item: ', item)
-                        # print()
-                        # print()
-
                         rows.append(item.metas)
 
                     self.word_dict = pd.DataFrame(rows[1:], index=None)
-                    # print()
-                    # print()
-                    # print('hhh!!! - ', self.word_dict)
-                    # print()
-                    # print()
                     if self.custom_tags is None:
                         self.__create_customtag_checkbox(self.word_dict)
 
@@ -809,28 +750,24 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
-        print('okay getting here at least...')
+        # print('okay getting here at least...')
         if not hasattr(self, "actortagger"):
             self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
 
         """Show the selected documents in the right area"""
         if self.corpus is None:
-            print('please say you are not getting here!')
             return
 
-        print('okay phew...')
         self.Warning.no_feats_display.clear()
         if len(self.display_features) == 0:
             self.Warning.no_feats_display()
 
         parts = []
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-            print('...what about here?? YAAY!')
             text = ""
             for feature in self.display_features:
                 value = str(self.corpus[c_index, feature.name])
                 self.original_text = str(value)
-                print('surely you are getting here at least!')
 
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
                     value = self.actortagger.postag_text(
@@ -862,8 +799,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.actortagger.calculate_metrics_agency_table()
                         )
                     )
-
-
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)

@@ -1,38 +1,91 @@
+import logging
 import unittest
-from widgets.OWSNActorAnalysis import OWSNActorAnalysis
+
+from storynavigation.widgets.OWSNActorAnalysis import OWSNActorAnalysis
 from orangewidget.tests.base import WidgetTest
 from orangecontrib.text.corpus import Corpus
+import storynavigation.modules.constants as constants
+from storynavigation.modules.actoranalysis import ActorTagger
 
-class TestOWSNDSGDepParser(WidgetTest):
+class test_owsnactoranalysis(WidgetTest):
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)  # Set the logging level
+
+    # Create a FileHandler
+    file_handler = logging.FileHandler('test_actor_analysis.log')
+
+    # Create a Formatter and set it on the FileHandler
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Add the FileHandler to the logger
+    logger.addHandler(file_handler)
+    
     def setUp(self):
+        self.logger.info("setup started...")
         self.widget = self.create_widget(OWSNActorAnalysis)
-        self.widget.corpus = Corpus.from_file('/home/runner/work/orange-story-navigator/orange-story-navigator/orangecontrib/storynavigation/tests/storynavigator-testdata.tab')
+        self.logger.info("setup completed.")
+
+    def load(self):
+        self.logger.info("loading data...")
+        self.widget.corpus = Corpus.from_file('/Users/kodymoodley/Documents/work/nlesc-projects/navigating-stories/orange-story-navigator/orangecontrib/storynavigation/tests/storynavigator-testdata.tab')
         self.send_signal(self.widget.Inputs.corpus, self.widget.corpus)
-        # self.small_undir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5)
-        # self.small_dir = _create_net(((0, 1, 1.0), (0, 2, 1.0), (1, 2, 1.0), (2, 3, 1.0)), n=5, directed=True)
-        # self.empty_net = Network([], UndirectedEdges(sp.coo_matrix((0, 0))))
+        self.logger.info("loading completed.")
 
-    # def test_density(self):
-    #     self.assertAlmostEqual(density(self.small_dir), 0.2)
-    #     self.assertAlmostEqual(density(self.small_undir), 0.4)
-    #     # n = 0 and n = 1 should not cause division problems
-    #     self.assertAlmostEqual(density(self.empty_net), 0.0)
-    #     self.assertAlmostEqual(density(self.empty_net), 0.0)
+    def test_tagging(self):
+        self.logger.info("tagging started...")
+        self.load()
 
-    # def test_average_degree(self):
-    #     self.assertAlmostEqual(avg_degree(self.small_dir), 0.8)
-    #     self.assertAlmostEqual(avg_degree(self.small_undir), 1.6)
-    #     self.assertAlmostEqual(avg_degree(self.empty_net), 0.0)
+        idx = 0
+        for document in self.widget.corpus:
+            value = ''
 
-    # def test_show_valid_indices_by_graph_type(self):
-    #     """ Test that some statistics get disabled based on type of network on input """
-    #     self.send_signal(self.widget.Inputs.network, self.small_undir)
-    #     self.assertFalse(self.widget.method_cbs["number_strongly_connected_components"].isEnabled())
-    #     self.assertFalse(self.widget.method_cbs["number_weakly_connected_components"].isEnabled())
+            if 'Text' == str(self.widget.corpus.domain.metas[0]):
+                value = str(self.widget.corpus[idx, 'Text'])
+            elif 'Content' == str(self.widget.corpus.domain.metas[0]):
+                value = str(self.widget.corpus[idx, 'Content'])
+            elif 'text' == str(self.widget.corpus.domain.metas[0]):
+                value = str(self.widget.corpus[idx, 'text'])
+            elif 'content' == str(self.widget.corpus.domain.metas[0]):
+                value = str(self.widget.corpus[idx, 'content'])
 
-    #     self.send_signal(self.widget.Inputs.network, self.small_dir)
-    #     self.assertTrue(self.widget.method_cbs["number_strongly_connected_components"].isEnabled())
-    #     self.assertTrue(self.widget.method_cbs["number_weakly_connected_components"].isEnabled())
+            idx += 1
+
+            if len(value) > 0:
+                self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
+                value = self.actortagger.postag_text(
+                    value,
+                    True,
+                    True,
+                    False,
+                    {},
+                    constants.SELECTED_PROMINENCE_METRIC,
+                    0.0
+                )
+        self.logger.info("tagging completed.")
+
+    # def test_tagging(self):
+    #                 self.Outputs.metrics_freq_table.send(
+    #                     table_from_frame(
+    #                         self.actortagger.calculate_metrics_freq_table()
+    #                     )
+    #                 )
+    #                 self.Outputs.metrics_subfreq_table.send(
+    #                     table_from_frame(
+    #                         self.actortagger.calculate_metrics_subjfreq_table()
+    #                     )
+    #                 )
+    #                 self.Outputs.metrics_customfreq_table.send(
+    #                     table_from_frame(
+    #                         self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
+    #                     )
+    #                 )
+    #                 self.Outputs.metrics_agency_table.send(
+    #                     table_from_frame(
+    #                         self.actortagger.calculate_metrics_agency_table()
+    #                     )
+    #                 )
+        
 
 
 if __name__ == '__main__':

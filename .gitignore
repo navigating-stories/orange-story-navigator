@@ -1,4 +1,6 @@
 # Build files
+*.log
+.tox
 build
 dist
 Orange3_Network.egg-info

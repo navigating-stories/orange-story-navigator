@@ -271,16 +271,16 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
-        print()
-        print('text:')
-        print(text)
-        print()
+        # print()
+        # print('text:')
+        # print(text)
+        # print()
 
         sentences = util.preprocess_text(text)
 
-        print('sentences:')
-        print(sentences)
-        print()
+        # print('sentences:')
+        # print(sentences)
+        # print()
 
         self.__calculate_pretagging_metrics(sentences)
 
@@ -405,7 +405,7 @@ class ActorTagger:
                 html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
-        print('got here 2!')
+        # print('got here 2!')
         # return html
         if custom:
             return util.remove_span_tags_except_custom(html)
