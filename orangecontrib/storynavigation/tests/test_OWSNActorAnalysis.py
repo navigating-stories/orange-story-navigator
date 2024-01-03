@@ -1,5 +1,6 @@
 import logging
 import unittest
+import os
 
 from storynavigation.widgets.OWSNActorAnalysis import OWSNActorAnalysis
 from orangewidget.tests.base import WidgetTest
@@ -9,7 +10,7 @@ from storynavigation.modules.actoranalysis import ActorTagger
 
 class test_owsnactoranalysis(WidgetTest):
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)  # Set the logging level
+    logger.setLevel(logging.INFO)
 
     # Create a FileHandler
     file_handler = logging.FileHandler('test_actor_analysis.log')
@@ -20,6 +21,9 @@ class test_owsnactoranalysis(WidgetTest):
 
     # Add the FileHandler to the logger
     logger.addHandler(file_handler)
+
+    # Current directory path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     
     def setUp(self):
         self.logger.info("setup started...")
@@ -28,7 +32,7 @@ class test_owsnactoranalysis(WidgetTest):
 
     def load(self):
         self.logger.info("loading data...")
-        self.widget.corpus = Corpus.from_file('/Users/kodymoodley/Documents/work/nlesc-projects/navigating-stories/orange-story-navigator/orangecontrib/storynavigation/tests/storynavigator-testdata.tab')
+        self.widget.corpus = Corpus.from_file(os.path.join(self.current_dir, constants.TEST_DATA_FILE_NAME))
         self.send_signal(self.widget.Inputs.corpus, self.widget.corpus)
         self.logger.info("loading completed.")
 
