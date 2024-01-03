@@ -364,9 +364,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     # currently selected agent prominence metric
     agent_prominence_metric = constants.SELECTED_PROMINENCE_METRIC
     # minimum possible score for agent prominence
-    agent_prominence_score_min = 0.0
+    agent_prominence_score_min = 0
     # maximum possible score for agent prominence
-    agent_prominence_score_max = 15.0
+    agent_prominence_score_max = 15
     word_prominence_scores = {}
     sli = None
 
@@ -723,7 +723,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
-        self.agent_prominence_score_min = 0.0
+        self.agent_prominence_score_min = 0
         self.actortagger.word_prominence_scores = {}
         self.actortagger.noun_action_dict = {}
         self.actortagger.num_occurences_as_subject = {}
@@ -738,7 +738,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def prominence_metric_change(self):
-        self.agent_prominence_score_min = 0.0
+        self.agent_prominence_score_min = 0
         self.actortagger.word_prominence_scores = {}
         self.show_docs(slider_engaged=False)
         self.commit.deferred()
