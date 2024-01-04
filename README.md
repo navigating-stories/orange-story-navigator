@@ -1,4 +1,7 @@
 ![Unit tests](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
+[![PyPI version](https://badge.fury.io/py/storynavigator.svg)](https://badge.fury.io/py/storynavigator)
+[![Read the Docs](https://readthedocs.org/projects/orange-story-navigator/badge/?version=latest)](https://orange-story-navigator.readthedocs.io/en/latest/)
+
 
 Orange3 Story Navigator
 =======================
