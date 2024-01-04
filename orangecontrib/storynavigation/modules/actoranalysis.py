@@ -178,8 +178,8 @@ class ActorTagger:
                 self.passive_agency_scores[tag[0].lower()] += 1
             else:
                 self.passive_agency_scores[tag[0].lower()] = 1
-            if tag[0].lower() not in self.active_agency_scores:
-                self.active_agency_scores[tag[0].lower()] = 0
+            # if tag[0].lower() not in self.active_agency_scores:
+            #     self.active_agency_scores[tag[0].lower()] = 0
 
         return False, ""
 
@@ -315,7 +315,7 @@ class ActorTagger:
 
         # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
         for sentence, tagged_sentence in zip(sentences, self.sentence_nlp_models):
-            if len(sentence.split()) > 0:
+            if len(sentence.split()) > 0: # sentence has at least one word in it
                 first_word_in_sent = sentence.split()[0].lower().strip()
                 tags = []
                 tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+")
@@ -324,12 +324,14 @@ class ActorTagger:
                 for token in tagged_sentence:
                     tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
 
+                # identify and tag custom words in the story text
                 ents = []
                 if custom_dict is not None:
                     custom_matched_tags = self.__find_custom_word_matches(custom_dict, sentence)
                     for matched_tag in custom_matched_tags:
                         ents.append(matched_tag)
 
+                # identify and tag POS / NER tokens in the story text
                 for tag, span in zip(tags, spans):
                     normalised_token, is_valid_token = self.__is_valid_token(tag)
                     if is_valid_token:
@@ -360,7 +362,7 @@ class ActorTagger:
                                     {"start": span[0], "end": span[1], "label": "NSNP"}
                                 )
 
-                if first_word_in_sent in self.pronouns:
+                if any(word == first_word_in_sent for word in self.pronouns):
                     p_score_greater_than_min = self.__update_postagging_metrics(
                         first_word_in_sent,
                         selected_prominence_metric,
@@ -377,8 +379,9 @@ class ActorTagger:
                         self.passive_agency_scores[first_word_in_sent] += 1
                     else:
                         self.passive_agency_scores[first_word_in_sent] = 1
-                    if first_word_in_sent not in self.active_agency_scores:
-                        self.active_agency_scores[first_word_in_sent] = 0
+                    
+                    # if first_word_in_sent not in self.active_agency_scores:
+                    #     self.active_agency_scores[first_word_in_sent] = 0
 
                 # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
                 # to avoid duplication, only tag each entity using ONE tag category.
@@ -405,7 +408,7 @@ class ActorTagger:
                 html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
-        # print('got here 2!')
+
         # return html
         if custom:
             return util.remove_span_tags_except_custom(html)
@@ -545,6 +548,7 @@ class ActorTagger:
         """
         active_freq = 0
         passive_freq = 0
+
         for item in self.active_agency_scores:
             active_freq += self.active_agency_scores[item]
         for item in self.passive_agency_scores:
@@ -652,6 +656,11 @@ class ActorTagger:
         words = list(words)
 
         for word in words:
+            if word not in self.active_agency_scores:
+                self.active_agency_scores[word] = 0
+            if word not in self.passive_agency_scores:
+                self.passive_agency_scores[word] = 0
+
             agency = self.__calculate_agency(word)
             rows.append([word, agency])
 

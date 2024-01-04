@@ -7,6 +7,8 @@ from orangewidget.tests.base import WidgetTest
 from orangecontrib.text.corpus import Corpus
 import storynavigation.modules.constants as constants
 from storynavigation.modules.actoranalysis import ActorTagger
+from Orange.data.pandas_compat import table_from_frame
+from Orange.data.pandas_compat import table_to_frames
 
 class test_owsnactoranalysis(WidgetTest):
     logger = logging.getLogger(__name__)
@@ -28,6 +30,8 @@ class test_owsnactoranalysis(WidgetTest):
     def setUp(self):
         self.logger.info("setup started...")
         self.widget = self.create_widget(OWSNActorAnalysis)
+        self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
+        self.tagging_completed = False
         self.logger.info("setup completed.")
 
     def load(self):
@@ -56,7 +60,6 @@ class test_owsnactoranalysis(WidgetTest):
             idx += 1
 
             if len(value) > 0:
-                self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
                 value = self.actortagger.postag_text(
                     value,
                     True,
@@ -66,31 +69,26 @@ class test_owsnactoranalysis(WidgetTest):
                     constants.SELECTED_PROMINENCE_METRIC,
                     0.0
                 )
+                self.tagging_completed = True
+
         self.logger.info("tagging completed.")
 
-    # def test_tagging(self):
-    #                 self.Outputs.metrics_freq_table.send(
-    #                     table_from_frame(
-    #                         self.actortagger.calculate_metrics_freq_table()
-    #                     )
-    #                 )
-    #                 self.Outputs.metrics_subfreq_table.send(
-    #                     table_from_frame(
-    #                         self.actortagger.calculate_metrics_subjfreq_table()
-    #                     )
-    #                 )
-    #                 self.Outputs.metrics_customfreq_table.send(
-    #                     table_from_frame(
-    #                         self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
-    #                     )
-    #                 )
-    #                 self.Outputs.metrics_agency_table.send(
-    #                     table_from_frame(
-    #                         self.actortagger.calculate_metrics_agency_table()
-    #                     )
-    #                 )
-        
-
+    def test_actor_metrics(self):
+        self.logger.info("calculating metrics...")
+        if self.tagging_completed:
+            ft = self.actortagger.calculate_metrics_freq_table()
+            sft = self.actortagger.calculate_metrics_subjfreq_table()
+            at = self.actortagger.calculate_metrics_agency_table()
+            self.logger.info("")
+            self.logger.info(ft.head(1))
+            self.logger.info("")
+            self.logger.info(sft.head(1))
+            self.logger.info("")
+            self.logger.info(at.head(1))
+            self.logger.info("")
+            self.logger.info("metrics calculated.")
+        else:
+            self.logger.info("metrics could not be calculated.")         
 
 if __name__ == '__main__':
     unittest.main()
