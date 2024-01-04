@@ -2,6 +2,7 @@
 [![PyPI version](https://badge.fury.io/py/storynavigator.svg)](https://badge.fury.io/py/storynavigator)
 [![Read the Docs](https://readthedocs.org/projects/orange-story-navigator/badge/?version=latest)](https://orange-story-navigator.readthedocs.io/en/latest/)
 
+![](orangecontrib/storynavigation/widgets/icons/storynavigator_logo.png)
 
 [Orange3](https://github.com/biolab/orange3) Story Navigator
 =======================
