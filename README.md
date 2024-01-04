@@ -7,7 +7,7 @@
 =======================
 
 Orange3-Story-Navigator is an add-on for the [Orange data mining software package](https://orangedatamining.com/). It
-provides story textual analysis features based on principles in [narrative psychology](https://web.lemoyne.edu/~hevern/narpsych/nr-basic.html). The aim of the widgets in the Story Navigator Orange module are to support human analysis of stories represented in digital texts with a main focus on identifying and describing the following components of the narrative (see [[1]](http://www.communicationcache.com/uploads/1/0/8/8/10887248/kenneth_burke_-_a_grammar_of_motives_1945.pdf), [[2]](https://www.semanticscholar.org/paper/Qualitative-Research-in-Clinical-and-Health-Murray-Sools/8db3916fcd1593086f0a62d78d15eacc2d3236e6) and [[3]](https://www.tandfonline.com/doi/abs/10.1080/13645579.2020.1723205?journalCode=tsrm20) for definitions and theory):
+provides quantitative textual story analysis features based on principles in [narrative psychology](https://web.lemoyne.edu/~hevern/narpsych/nr-basic.html). The aim of the Story Navigator is to support human analysis of stories represented in digital texts, with a focus on identifying and describing the following components of the narrative (see [[1]](http://www.communicationcache.com/uploads/1/0/8/8/10887248/kenneth_burke_-_a_grammar_of_motives_1945.pdf), [[2]](https://www.semanticscholar.org/paper/Qualitative-Research-in-Clinical-and-Health-Murray-Sools/8db3916fcd1593086f0a62d78d15eacc2d3236e6) and [[3]](https://www.tandfonline.com/doi/abs/10.1080/13645579.2020.1723205?journalCode=tsrm20) for definitions and theory):
 
 1. Setting
 2. Main agent
@@ -17,7 +17,9 @@ provides story textual analysis features based on principles in [narrative psych
 6. Breach
 
 [1] Burke, K. (1969). The grammar of motives. Prentice Hall, New York. Originally published in 1945.
+
 [2] M. Murray and A. Sools, P. Rohleder, A.C. Lyons (Eds.), Qualitative research in clinical and health psychology, Palgrave MacMillan, Houndmills Basingstoke (2015), pp. 133-154
+
 [3] Andrade, S. B., & Andersen, D. (2020). Digital story grammar: a quantitative methodology for narrative analysis. International Journal of Social Research Methodology, 23(4), 405-421.
 
 ## Installation
@@ -82,3 +84,6 @@ Steps to build and test from source:
 6. Run ```orange-canvas``` or ```python -m Orange.canvas```
 
 The Orange3 application should shortly start up with a splash screen
+
+## Collaborators
+The Story Navigator is maintained by the [Netherlands eScience Center](https://www.esciencecenter.nl/) in collaboration with the [Faculty of Behavioural, Management and Social Sciences (BMS)](https://www.utwente.nl/en/bms/) at the [University of Twente](https://www.utwente.nl/en/).
