@@ -770,7 +770,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.original_text = str(value)
 
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
-                    value = self.actortagger.postag_text(
+                    # TODO: this function should only be called at the beginning -- where is this exactly?
+                    # TODO: then, add a feature "fitted" or something to the actortagger to indicate whether it has to be recomputed or not 
+                    value = self.actortagger.make_html(
                         value,
                         self.nouns,
                         self.subjs,
@@ -779,6 +781,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         self.agent_prominence_metric,
                         self.agent_prominence_score_min
                     )
+                    breakpoint()
+                    # TODO: here we will need to call also the function to create the html 
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
                             self.actortagger.calculate_metrics_freq_table()
@@ -976,10 +980,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
+    import logging 
+    logging.basicConfig(level=logging.DEBUG)
+    corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = corpus_[:10]
+    breakpoint() # without this, get segfault sometimes
+    corpus_ = BASE_TOKENIZER(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(set_data=corpus_)
