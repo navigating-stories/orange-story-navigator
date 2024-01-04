@@ -13,3 +13,5 @@ graphviz
 thefuzz
 beautifulsoup4
 coverage
+sphinx
+recommonmark
