@@ -50,7 +50,7 @@ from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.actoranalysis import ActorTagger
 import storynavigation.modules.constants as constants
 
-spacy.cli.download(constants.NL_SPACY_MODEL)
+# spacy.cli.download(constants.NL_SPACY_MODEL)
 
 HTML = """
 <!doctype html>
@@ -330,9 +330,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         word_dict = Input("Token categories", Table)
 
     class Outputs:
-        matching_docs = Output("Matching Docs", Corpus, default=True)
-        other_docs = Output("Other Docs", Corpus)
-        corpus = Output("Corpus", Corpus)
+        # matching_docs = Output("Matching Docs", Corpus, default=True)
+        # other_docs = Output("Other Docs", Corpus)
+        # corpus = Output("Corpus", Corpus)
         metrics_freq_table = Output("Frequency", Table)
         metrics_subfreq_table = Output("Frequency as subject", Table)
         metrics_customfreq_table = Output("Custom token frequency", Table)
@@ -608,6 +608,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.commit.now()
 
             else:
+                self.Outputs.metrics_customfreq_table.widget = None
                 return
         else:
             if word_dict is not None:
@@ -919,9 +920,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             mask[selected_docs] = 0
             unmatched = self.corpus[mask] if mask.any() else None
             annotated_corpus = create_annotated_table(self.corpus, selected_docs)
-        self.Outputs.matching_docs.send(matched)
-        self.Outputs.other_docs.send(unmatched)
-        self.Outputs.corpus.send(annotated_corpus)
+        # self.Outputs.matching_docs.send(matched)
+        # self.Outputs.other_docs.send(unmatched)
+        # self.Outputs.corpus.send(annotated_corpus)
 
     def send_report(self):
         self.report_items(
