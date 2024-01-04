@@ -431,7 +431,7 @@ class ActorTagger:
         
 
     def postag_text_to_table(
-            self, text, custom, custom_dict, selected_prominence_metric, prominence_score_min
+            self, text, custom, custom_dict
         ):
         "POS tag text and store in a dataframe"
         self.custom_category_frequencies = {} # TODO: where is this actually used in this function?
@@ -471,8 +471,6 @@ class ActorTagger:
 
             self.__calculate_word_type_count(sentences, self.sentence_nlp_models)
 
-        logging.debug("vars(self).keys: %s", vars(self).keys())
-
         sentences_df = []
         entities_df = []
 
@@ -499,45 +497,34 @@ class ActorTagger:
                     normalised_token, is_valid_token = self.__is_valid_token(tag)
                     if is_valid_token:
                         is_subj, subj_type = self.__is_subject(tag)
-                        # TODO: these tagging metrics should be unfiltered, and then added as a separate column in the final data below
+                        p_score = None 
+                        p_score_norm = None 
                         if is_subj:
-                            p_score_greater_than_min = self.__update_postagging_metrics(
-                                tag[0].lower().strip(),
-                                selected_prominence_metric,
-                                prominence_score_min,
-                                token,
-                            )
-                            if p_score_greater_than_min:
-                                if self.__is_pronoun(tag):
-                                    ents.append(
-                                        {"start": span[0], "end": span[1], "label": "SP"}
-                                    )
-                                else:
-                                    ents.append(
-                                        {"start": span[0], "end": span[1], "label": "SNP"}
-                                    )
+                            # NOTE: this now does not do this anymore: self.word_prominence_scores[tagtext] = p_score
+                            # NOTE: I am also not sure they are still doing the same thing as before (?)
+                            # TODO: the two lines below should be moved into a separate function
+                            p_score = self.__calculate_prominence_score(tag[0].lower().strip(), "Subject frequency")
+                            p_score_norm = self.__calculate_prominence_score(tag[0].lower().strip(), "Subject frequency (normalized)")
+                            label = "SP" if self.__is_pronoun else "SNP"
                         else:
                             if self.__is_pronoun(tag):
-                                ents.append(
-                                    {"start": span[0], "end": span[1], "label": "NSP"}
-                                )
+                                label = "NSP"
                             elif self.__is_noun_but_not_pronoun(tag):
-                                ents.append(
-                                    {"start": span[0], "end": span[1], "label": "NSNP"}
-                                )
+                                label = "NSNP"
+
+                        ents.append(
+                            {"start": span[0], "end": span[1], "label": label,
+                             "p_score": p_score, "p_score_norm": p_score_norm}
+                        )
 
                 if any(word == first_word_in_sent for word in self.pronouns):
-                    p_score_greater_than_min = self.__update_postagging_metrics(
-                        first_word_in_sent,
-                        selected_prominence_metric,
-                        prominence_score_min,
-                        token,
-                    )
+                    p_score = self.__calculate_prominence_score(first_word_in_sent, "Subject frequency")
+                    p_score_norm = self.__calculate_prominence_score(first_word_in_sent, "Subject frequency (normalized)")
 
-                    if p_score_greater_than_min:
-                        ents.append(
-                            {"start": 0, "end": len(first_word_in_sent), "label": "SP"}
-                        )
+                    ents.append(
+                        {"start": 0, "end": len(first_word_in_sent), "label": "SP",
+                         "p_score": p_score, "p_score_norm": p_score_norm}
+                    )
 
                     if first_word_in_sent in self.passive_agency_scores:
                         self.passive_agency_scores[first_word_in_sent] += 1
@@ -549,6 +536,7 @@ class ActorTagger:
 
                 # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
                 # to avoid duplication, only tag each entity using ONE tag category.
+                # TODO: does this now create problems since we do not threshold anymore?
                 ents = util.remove_duplicate_tagged_entities(ents)
                 ents = pd.DataFrame.from_dict(ents)
                 ents["sentence_id"] = sent_idx
@@ -577,13 +565,14 @@ class ActorTagger:
         # NOTE: the implicit assumption is the data in sentences_df is the same as in text
         if self.sentences_df is None: 
             self.postag_text_to_table(
-                text, custom, custom_dict, selected_prominence_metric, prominence_score_min
+                text, custom, custom_dict
             )
 
-        
+        breakpoint() # code breaks from here
         custom_tag_labels = [] # TODO: should they be stored elswhere? -- double check in old function `postag_text`
 
-        # TODO: here, need to process the data on 
+        # TODO: here, need to process the data from above; use selected_prominence_metric and prominence_score_min
+            # probably need to split the filter by pronoun or not, since the function above was only applied to one of them
         # this can probably be simplified further
         for sentence in self.sentences:
             doc = {"text": sentence, "ents": mydataframe.ents} # mydataframe.ents is a list of dicts with start, end, and label
