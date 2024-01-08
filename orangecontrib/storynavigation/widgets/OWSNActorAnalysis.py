@@ -734,6 +734,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actortagger.word_count_nostops = 0
         self.actortagger.html_result = ""
         self.actortagger.sentence_nlp_models = []
+        self.actortagger.entities_df = None 
+        self.actortagger.sentences_df = None
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
         self.commit.deferred()
