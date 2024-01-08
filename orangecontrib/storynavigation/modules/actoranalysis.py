@@ -317,6 +317,7 @@ class ActorTagger:
                         is_subj, subj_type = self.__is_subject(tag)
                         p_score = None 
                         p_score_norm = None 
+                        label = None
                         if is_subj:
                             # NOTE: this now does not do this anymore: self.word_prominence_scores[tagtext] = p_score
                             # TODO NOW: check this in the class
@@ -331,10 +332,11 @@ class ActorTagger:
                             elif self.__is_noun_but_not_pronoun(tag):
                                 label = "NSNP"
 
-                        ents.append(
-                            {"start": span[0], "end": span[1], "label": label,
-                             "p_score": p_score, "p_score_norm": p_score_norm}
-                        )
+                            if label:
+                                ents.append(
+                                        {"start": span[0], "end": span[1], "label": label,
+                                        "p_score": p_score, "p_score_norm": p_score_norm}
+                                    )
 
                 if any(word == first_word_in_sent for word in self.pronouns):
                     p_score = self.__calculate_prominence_score(first_word_in_sent, "Subject frequency")
