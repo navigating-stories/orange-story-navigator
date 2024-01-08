@@ -423,26 +423,16 @@ class ActorTagger:
                         ((self.entities_df[metric] >= prominence_score_min) |
                          (self.entities_df[metric].isna())
                          )
-        entities = self.entities_df.loc[entity_mask, :]
+        entities = self.entities_df.loc[entity_mask, ["start", "end", "label"]].sort_index()
+        grouped = entities.groupby(entities.index)
 
         # iterate over the sentences
-        for row_tuple in self.sentences_df.itertuples(): 
-            idx = row_tuple.Index
-            sentence = row_tuple.sentence
-            # Filter the entities on prominence metric and labels 
-            # TODO (NOW): put this into a function? -> can be queried in other contexts, ie for the maximum agent prominence score?
-            # --> we'll need to store the settings for the prominence score etc in the class?
+        for sent_idx, entities in grouped:
+            sentence = self.sentences_df.iloc[sent_idx]["sentence"]
             if entities.shape[0] > 0: # deal with cases where no entities are identified
-                sentence_mask = self.entities_df.index == idx
-                print_entities = entities.iloc[sentence_mask] 
-                print_entities = print_entities.loc[:, ["start", "end", "label"]].to_dict("records")
+                print_entities = entities.to_dict("records")
             else:
-                print_entities = {}
-            # tag_mask = (entities["label"].isin(selected_tags)) & \
-            #             ((entities[prominence_map[selected_prominence_metric]] >= prominence_score_min) |
-            #              (entities[prominence_map[selected_prominence_metric]].isna())
-            #              ) 
-            # entities = entities.loc[tag_mask, ["start", "end", "label"]].to_dict("records")
+                print_entities = {} 
 
             doc = {"text": sentence, "ents": print_entities} 
             # specify colors for highlighting each entity type
