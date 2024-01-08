@@ -723,6 +723,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
+        logging.info("self.selection_changed() is called")
         self.agent_prominence_score_min = 0
         self.actortagger.word_prominence_scores = {}
         self.actortagger.noun_action_dict = {}
@@ -770,6 +771,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.original_text = str(value)
 
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
+                    logging.info("self.actortagger.make_html() is called")
                     value = self.actortagger.make_html(
                         value,
                         self.nouns,
@@ -982,5 +984,6 @@ if __name__ == "__main__":
     import logging 
     logging.basicConfig(level=logging.DEBUG)
     corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
+    # breakpoint()
     corpus_ = BASE_TOKENIZER(corpus_)
     WidgetPreview(OWSNActorAnalysis).run(set_data=corpus_)

@@ -552,6 +552,7 @@ class ActorTagger:
         # POS tag if not done already
         # NOTE: the implicit assumption is the data in sentences_df is the same as in text
         if self.sentences_df is None: 
+            logging.info("self.actortagger.postag_text_to_table() is called")
             self.postag_text_to_table(
                 text, custom, custom_dict
             )
