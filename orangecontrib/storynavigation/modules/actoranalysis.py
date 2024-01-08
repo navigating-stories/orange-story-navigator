@@ -434,7 +434,14 @@ class ActorTagger:
             self, text, custom, custom_dict 
             # TODO (PR): can we  drop custom (bool), use custom_dict=None as default, and replace checks for "if custom" with "if custom_dict is not None"
         ):
-        "POS tag text and store in a dataframe"
+        """Runs NLP model on story text, updates aggregate word count metrics and stores POS-tagged entities in two dataframes
+
+        Args:
+            text (string): Story text
+            custom (boolean): should custom POS tags be used?
+            custom_dict (dictionary): dictionary for custom POS tags.
+
+        """
         self.custom_category_frequencies = {} 
         # TODO (PR): is the custom and custom_dict fixed for a given active widget? if not, one would have to rerun this function 
         # if these change
@@ -541,6 +548,20 @@ class ActorTagger:
 
 
     def make_html(self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min):
+        """Puts together the html string, ready for rendering in the UI
+
+        Args:
+            text (string): Story text
+            nouns (boolean): whether noun tokens should be tagged
+            subjs (boolean): whether subject tokens should be tagged
+            custom (bool): should custom POS tags be used?
+            custom_dict (dictionary): dictionary for custom POS tags.
+            selected_prominence_metric: the selected metric by which to calculate the word prominence score
+            prominence_score_min (int): minimum prominence score for entities to be highlighted.
+
+        Returns:
+            string: HTML string representation of POS tagged text
+        """
 
         html = ""
 
