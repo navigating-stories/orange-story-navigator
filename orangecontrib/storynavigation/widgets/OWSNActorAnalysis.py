@@ -330,9 +330,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         word_dict = Input("Token categories", Table)
 
     class Outputs:
-        # matching_docs = Output("Matching Docs", Corpus, default=True)
-        # other_docs = Output("Other Docs", Corpus)
-        # corpus = Output("Corpus", Corpus)
         metrics_freq_table = Output("Frequency", Table)
         metrics_subfreq_table = Output("Frequency as subject", Table)
         metrics_customfreq_table = Output("Custom token frequency", Table)
@@ -388,7 +385,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.corpus = None  # initialise list of documents (corpus)
         self.word_dict = None  # initialise word dictionary
         self.custom_tag_dictionary = None
-        self.custom_tags = None
         self.__pending_selected_documents = self.selected_documents
 
         # Search features
@@ -424,8 +420,19 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         )
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
         self.allc.setChecked(False)
+
+        self.custom_tags = gui.checkBox(
+            self.postags_box,
+            self,
+            "custom",
+            "Custom tokens",
+            callback=self.pos_selection_changed,
+        )
+
+        self.custom_tags.setEnabled(False)
+
         self.allc.stateChanged.connect(self.on_state_changed_pos)
-        self.pos_checkboxes = [self.sc, self.nc]
+        self.pos_checkboxes = [self.sc, self.nc, self.custom_tags]
         self.controlArea.layout().addWidget(self.postags_box)
 
         # Prominence score slider
@@ -536,6 +543,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def __create_customtag_checkbox(self, wd):
+        self.custom_tags.setEnabled(True)
         # extract all categorisations in the input dictionary
         list_of_lists_categories = []
         if len(wd.columns) >= 2: 
@@ -552,15 +560,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                     current_dict_values = filtered_df.iloc[:, 0].tolist()
                     if len(current_dict_values) > 0:
                         self.custom_tag_dictionary[category] = current_dict_values
-
-        if self.custom_tags not in self.pos_checkboxes:
-            self.custom_tags = gui.checkBox(
-                self.postags_box,
-                self,
-                "custom",
-                "Custom tokens",
-                callback=self.pos_selection_changed,
-            )
 
     @Inputs.corpus
     def set_data(self, corpus=None):
@@ -593,10 +592,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         rows.append(item.metas)
 
                     self.word_dict = pd.DataFrame(rows[1:], index=None)
-                    if self.custom_tags is None:
-                        self.__create_customtag_checkbox(self.word_dict)
+                    self.__create_customtag_checkbox(self.word_dict)
 
-                if self.corpus is not None and word_dict is not None:
+                if self.corpus is not None:
                     self.setup_controls()
                     self.openContext(self.corpus)
                     self.doc_list.model().set_filter_string(self.regexp_filter)
@@ -622,10 +620,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         rows.append(item.metas)
 
                     self.word_dict = pd.DataFrame(rows[1:], index=None)
-                    if self.custom_tags is None:
-                        self.__create_customtag_checkbox(self.word_dict)
+                    self.__create_customtag_checkbox(self.word_dict)
 
-                    if self.corpus is not None and word_dict is not None:
+                    if self.corpus is not None:
                         self.setup_controls()
                         self.openContext(self.corpus)
                         self.doc_list.model().set_filter_string(self.regexp_filter)
@@ -641,8 +638,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         # Corpus
         self.corpus = None
         self.custom_tag_dictionary = None
-        self.pos_checkboxes = [self.sc, self.nc]
-        self.custom_tags = None
+        # self.pos_checkboxes = [self.sc, self.nc]
         # self.tagtype_box = None
         # Widgets
         self.search_listbox.model().set_domain(None)
@@ -778,7 +774,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         self.custom,
                         self.custom_tag_dictionary,
                         self.agent_prominence_metric,
-                        self.agent_prominence_score_min
+                        self.agent_prominence_score_min,
                     )
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
@@ -897,7 +893,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         raise ex
 
     def update_info(self):
-        self.pos_checkboxes = [self.sc, self.nc]
+        # self.pos_checkboxes = [self.sc, self.nc]
         if self.corpus is not None:
             has_tokens = self.corpus.has_tokens()
             self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.corpus)}"
@@ -911,15 +907,15 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @gui.deferred
     def commit(self):
-        self.pos_checkboxes = [self.sc, self.nc]
-        matched = unmatched = annotated_corpus = None
+        # self.pos_checkboxes = [self.sc, self.nc]
+        # matched = unmatched = annotated_corpus = None
         if self.corpus is not None:
             selected_docs = sorted(self.get_selected_indexes())
-            matched = self.corpus[selected_docs] if selected_docs else None
+            # matched = self.corpus[selected_docs] if selected_docs else None
             mask = np.ones(len(self.corpus), bool)
             mask[selected_docs] = 0
-            unmatched = self.corpus[mask] if mask.any() else None
-            annotated_corpus = create_annotated_table(self.corpus, selected_docs)
+            # unmatched = self.corpus[mask] if mask.any() else None
+            # annotated_corpus = create_annotated_table(self.corpus, selected_docs)
         # self.Outputs.matching_docs.send(matched)
         # self.Outputs.other_docs.send(unmatched)
         # self.Outputs.corpus.send(annotated_corpus)

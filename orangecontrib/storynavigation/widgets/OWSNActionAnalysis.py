@@ -321,12 +321,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         # corpus = Input("Corpus", Corpus, replaces=["Data"])
 
     class Outputs:
-        matching_docs = Output("Matching Docs", Corpus, default=True)
-        other_docs = Output("Other Docs", Corpus)
-        corpus = Output("Corpus", Corpus)
+        # matching_docs = Output("Matching Docs", Corpus, default=True)
+        # other_docs = Output("Other Docs", Corpus)
+        # corpus = Output("Corpus", Corpus)
         metrics_freq_table = Output("Frequency", Table)
         metrics_tensefreq_table = Output("Tense frequency", Table)
-        # halliday_actions_table = Output("Halliday action counts", Table)
         actor_action_table = Output("Actor action table", Table)
 
     settingsHandler = DomainContextHandler()
@@ -731,17 +730,17 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @gui.deferred
     def commit(self):
-        matched = unmatched = annotated_corpus = None
+        # matched = unmatched = annotated_corpus = None
         if self.corpus is not None:
             selected_docs = sorted(self.get_selected_indexes())
-            matched = self.corpus[selected_docs] if selected_docs else None
+            # matched = self.corpus[selected_docs] if selected_docs else None
             mask = np.ones(len(self.corpus), bool)
             mask[selected_docs] = 0
-            unmatched = self.corpus[mask] if mask.any() else None
-            annotated_corpus = create_annotated_table(self.corpus, selected_docs)
-        self.Outputs.matching_docs.send(matched)
-        self.Outputs.other_docs.send(unmatched)
-        self.Outputs.corpus.send(annotated_corpus)
+            # unmatched = self.corpus[mask] if mask.any() else None
+            # annotated_corpus = create_annotated_table(self.corpus, selected_docs)
+        # self.Outputs.matching_docs.send(matched)
+        # self.Outputs.other_docs.send(unmatched)
+        # self.Outputs.corpus.send(annotated_corpus)
 
     def send_report(self):
         self.report_items(

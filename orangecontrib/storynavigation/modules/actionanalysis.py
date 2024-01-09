@@ -171,42 +171,19 @@ class ActionTagger:
                 normalised_token, is_valid_token = self.__is_valid_token(tag)
                 if is_valid_token:
                     if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
-                    # if tag[4].pos_ == "VERB":
-                        # if (tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge"):  # past tense
-                        # vb_tense = tag[4].morph.get("Tense")
-                        # if vb_tense == "Past":
                         ents.append(
                             {"start": span[0], "end": span[1], "label": "PAST_VB"}
                         )
-                        # elif vb_tense == "Pres":
                     else:
-                        if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):
-                        # elif tag[4].text.lower().strip() in self.present_tense_verbs:
+                        if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
                             ents.append(
                                 {"start": span[0], "end": span[1], "label": "PRES_VB"}
                             )
-                        # else:
-                        #     if tag[4].text.lower().strip()[:2] == "ge":  # past tense
-                        #         ents.append(
-                        #             {
-                        #                 "start": span[0],
-                        #                 "end": span[1],
-                        #                 "label": "PAST_VB",
-                        #             }
-                        #         )
-                        #     else:
-                        #         ents.append(
-                        #             {
-                        #                 "start": span[0],
-                        #                 "end": span[1],
-                        #                 "label": "PRES_VB",
-                        #             }
-                        #         )
-
-                    # elif tag[4].pos_ in ["NOUN", "PRON", "PROPN"]:
-                    #     self.__update_postagging_metrics(
-                    #         tag[4].text.lower().strip(), tag[4]
-                    #     )
+                        
+                        elif tag[4].pos_ in ["NOUN", "PRON", "PROPN"]: # non-verbs (for noun-action table)
+                            self.__update_postagging_metrics(
+                                tag[4].text.lower().strip(), tag[4]
+                            )
 
             # specify sentences and filtered entities to tag / highlight
             doc = {"text": sentence, "ents": ents}
@@ -356,34 +333,6 @@ class ActionTagger:
                 rows.append(curr_row)
 
         return pd.DataFrame(rows, columns=["actor", "actions"])
-
-    # def generate_halliday_action_counts_table(self, text, dim_type="realm"):
-    #     rows = []
-
-    #     # Valid values for 'dim_type' parameter: realm, process, prosub, sub\
-    #     halliday_fname = constants.HALLIDAY_FILENAME.format(dim_type)
-    #     # halliday_fname = "halliday_dimensions_" + dim_type + ".json"
-    #     RESOURCES = ActionTagger.PKG / constants.RESOURCES_SUBPACKAGE
-    #     json_file = RESOURCES.joinpath(halliday_fname).open("r", encoding="utf8")
-    #     halliday_dict = json.load(json_file)
-
-    #     # Calculate the number of story words in each halliday dimension
-    #     words = text.split()
-    #     halliday_counts = {}
-    #     for item in halliday_dict:
-    #         halliday_counts[item] = 0
-
-    #     for word in words:
-    #         processed_word = word.lower().strip()
-    #         for item in halliday_dict:
-    #             if processed_word in halliday_dict[item]:
-    #                 halliday_counts[item] += 1
-
-    #     for item in halliday_dict:
-    #         rows.append([item, halliday_counts[item]])
-
-    #     return pd.DataFrame(rows, columns=["action", "frequency"])
-
 
 class ActionMetricCalculator:
     """Unused class / code so far..."""
