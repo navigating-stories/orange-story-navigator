@@ -15,3 +15,5 @@ beautifulsoup4
 coverage
 sphinx
 recommonmark
+transformers
+torch

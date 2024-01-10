@@ -18,3 +18,5 @@ pytest
 tox
 sphinx
 recommonmark
+transformers
+torch

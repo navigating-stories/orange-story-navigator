@@ -861,7 +861,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def display_features_changed(self):
         self.display_features = self.__get_selected_rows(self.display_listbox)
-        self.show_docs()
+        # self.show_docs()
 
     def regenerate_docs(self) -> List[str]:
         self.Warning.no_feats_search.clear()

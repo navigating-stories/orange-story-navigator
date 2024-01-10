@@ -2,6 +2,7 @@
 """
 
 import sys
+import os
 import pandas as pd
 from operator import itemgetter
 import storynavigation.modules.constants as constants
@@ -37,8 +38,11 @@ class ActorTagger:
     )
 
     def __init__(self, model):
-        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
+        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.stopwords = [item for item in self.stopwords if len(item) > 0]
+        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.pronouns = [item for item in self.pronouns if len(item) > 0]
+
         self.html_result = ""
 
         # Other counts initialisation
@@ -333,8 +337,14 @@ class ActorTagger:
 
                 # identify and tag POS / NER tokens in the story text
                 for tag, span in zip(tags, spans):
+                    # print()
+                    # print('tag: ', tag)
+                    # print()
                     normalised_token, is_valid_token = self.__is_valid_token(tag)
                     if is_valid_token:
+                        # print()
+                        # print('tag: ', tag)
+                        # print()
                         is_subj, subj_type = self.__is_subject(tag)
                         if is_subj:
                             p_score_greater_than_min = self.__update_postagging_metrics(
@@ -426,6 +436,8 @@ class ActorTagger:
         """
 
         word = util.get_normalized_token(token)
+
+        # return word, (word not in list(self.stopwords)) and len(word) > 1
         return word, (word not in self.stopwords) and len(word) > 1
 
     def __calculate_word_type_count(self, sents, sent_models):
@@ -445,6 +457,10 @@ class ActorTagger:
                 if is_valid_token:
                     is_subj, subj_type = self.__is_subject(tag)
                     if is_subj:
+                        if token.text.lower().strip() in ['dit', 'het', 'die']:
+                            print()
+                            print('wtf')
+                            print()
                         if token.text.lower().strip() in self.num_occurences_as_subject:
                             self.num_occurences_as_subject[
                                 token.text.lower().strip()
