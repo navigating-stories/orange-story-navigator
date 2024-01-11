@@ -50,6 +50,9 @@ This section is for those who want to install the Story Navigator purely for ana
 > 
 > Step: ``pip install storynavigator``
 
+## User documentation
+Available [here](https://orange-story-navigator.readthedocs.io/en/latest/)
+
 ## Development
 
 This section is for those who want to build the add-on from source and extend, customise, or fix bugs in it.
