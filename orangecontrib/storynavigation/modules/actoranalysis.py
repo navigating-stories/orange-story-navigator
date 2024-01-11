@@ -14,7 +14,6 @@ from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
 
-
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
     # function, so use the PyPI version:
@@ -43,7 +42,13 @@ class ActorTagger:
         self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
         self.pronouns = [item for item in self.pronouns if len(item) > 0]
 
-        self.html_result = ""
+        self.story_collection = []              # list of story texts that are processed in a session
+        self.dataset_level_df_header = []       # column names of dataset (story collection) level dataframe
+        self.dataset_level_df = pd.DataFrame()  # complete dataset (story collection) level dataframe
+        self.sentence_nlp_models = []           # nlp tagging results for each sentence
+        # self.sentences = []                     # sentences in a specific story
+
+        self.html_result = ""                   
 
         # Other counts initialisation
         self.word_count = 0
@@ -66,7 +71,7 @@ class ActorTagger:
 
         # Index of word prominence scores for each word in story
         self.word_prominence_scores = {}
-        self.sentence_nlp_models = []
+        
 
         # POS counts initialisation
         self.noun_count = 0
@@ -256,13 +261,11 @@ class ActorTagger:
     def postag_text(
         self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
     ):
-        self.custom_category_frequencies = {}
+        self.current_row_dataset_level = []
+        self.story_collection.append(text)
+        self.current_row_dataset_level.append(self.story_collection.index(text))
 
-        # print()
-        # print()
-        # print(custom_dict)
-        # print()
-        # print()
+        self.custom_category_frequencies = {}
 
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -275,18 +278,9 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
-        # print()
-        # print('text:')
-        # print(text)
-        # print()
 
         sentences = util.preprocess_text(text)
-
-        # print('sentences:')
-        # print(sentences)
-        # print()
-
-        self.__calculate_pretagging_metrics(sentences)
+        # self.__calculate_pretagging_metrics(sentences)
 
         # pos tags that the user wants to highlight
         pos_tags = []
@@ -310,12 +304,13 @@ class ActorTagger:
         html = ""
 
         # generate and store nlp tagged models for each sentence
-        if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
+        need_to_compute_nlp_models = (self.sentence_nlp_models is None or sentences is None) or (len(self.sentence_nlp_models) == 0 or len(sentences) == 0)
+        if need_to_compute_nlp_models:
             for sentence in sentences:	
-                tagged_sentence = self.nlp(sentence.replace("`", "").replace("'", "").replace("‘", "").replace("’", ""))
+                tagged_sentence = self.nlp(sentence)
                 self.sentence_nlp_models.append(tagged_sentence)
 
-            self.__calculate_word_type_count(sentences, self.sentence_nlp_models)
+            # self.__calculate_word_type_count(sentences, self.sentence_nlp_models)
 
         # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
         for sentence, tagged_sentence in zip(sentences, self.sentence_nlp_models):
