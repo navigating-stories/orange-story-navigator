@@ -1,7 +1,7 @@
 Setting
 =======
 
-<img src="images/setting_analysis_icon.png" alt="setting analysis widget icon" width="80" height="auto">
+![](images/setting_analysis_icon.png)
 
 An Orange3 widget to identify clusters of words in individual stories which might indicate the major topics touched upon within the story. Stories must be textual stories written in the Dutch language.
 
