@@ -5,28 +5,28 @@
    {
     "text": "Actor Analysis",
     "doc": "widgets/actoranalysis.md",
-    "icon": "../orangecontrib/storynavigation/widgets/icons/actor",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/actor_analysis_icon.png",
     "background": "#C0FF97",
     "keywords": ["part of speech tagging", "nouns", "characters", "actors"]
    },
    {
     "text": "Actions Analysis",
     "doc": "widgets/actionanalysis.md",
-    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_stanzasrl_icon.png",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/action_analysis_icon.png",
     "background": "#C0FF97",
     "keywords": ["verb tense", "verbs", "actions", "part of speech tagging"]
    },
    {
     "text": "Setting Analysis",
     "doc": "widgets/settinganalysis.md",
-    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_ruleset_icon.png",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/setting_analysis_icon.svg",
     "background": "#C0FF97",
     "keywords": ["clustering", "tf-idf", "word embeddings"]
    },
    {
     "text": "Narrative Network",
     "doc": "widgets/narrativenetwork.md",
-    "icon": "../orangecontrib/storynavigation/widgets/icons/dsgtagger.svg",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/narrative_network_icon.png",
     "background": "#C0FF97",
     "keywords": ["network analysis", "networks", "subject verb object tuples", "story units"]
    }
