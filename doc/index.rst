@@ -11,7 +11,7 @@ Widgets
 
    widgets/actoranalysis
    widgets/actionanalysis
-   widgets/setting
+   widgets/settinganalysis
    widgets/narrativenetwork
    
 Indices and tables
