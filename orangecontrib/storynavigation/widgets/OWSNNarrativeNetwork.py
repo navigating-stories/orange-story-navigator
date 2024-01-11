@@ -35,9 +35,9 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         corpus = Input("Corpus", Corpus, replaces=["Data"])
 
     class Outputs:
-        edge_data = Output('Edge Data', Table)
-        node_data = Output('Node Data', Table)
-        sentiment_data = Output('Sentiment Data', Table)
+        edge_data = Output('SVO tuples', Table)
+        node_data = Output('Node data', Table)
+        # sentiment_data = Output('Sentiment Data', Table)
         network = Output('Network', Network)
 
 
@@ -328,7 +328,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         # convert the dataframe to orange table format and set outputs of widget
         self.Outputs.edge_data.send(table_from_frame(edge_data_tmp))
         self.Outputs.node_data.send(table_from_frame(node_data_tmp))
-        self.Outputs.sentiment_data.send(table_from_frame(sentiment_data_tmp))
+        # self.Outputs.sentiment_data.send(table_from_frame(sentiment_data_tmp))
         # print()
         # print("handoff: ", node_data_tmp['label'].tolist())
         # print()

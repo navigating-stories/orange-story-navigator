@@ -3,32 +3,32 @@
   "Orange Story Navigator",
   [
    {
-    "text": "Digital Story Grammar Dependency Parser",
-    "doc": "widgets/dsgdepparser.md",
-    "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_stanzadep_icon.png",
+    "text": "Actor Analysis",
+    "doc": "widgets/actoranalysis.md",
+    "icon": "../orangecontrib/storynavigation/widgets/icons/actor",
     "background": "#C0FF97",
-    "keywords": []
+    "keywords": ["part of speech tagging", "nouns", "characters", "actors"]
    },
    {
-    "text": "Digital Story Grammar Semantic Role Labeller",
-    "doc": "widgets/dsgsrl.md",
+    "text": "Actions Analysis",
+    "doc": "widgets/actionanalysis.md",
     "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_stanzasrl_icon.png",
     "background": "#C0FF97",
-    "keywords": []
+    "keywords": ["verb tense", "verbs", "actions", "part of speech tagging"]
    },
    {
-    "text": "Digital Story Grammar Ruleset",
-    "doc": "widgets/dsgruleset.md",
+    "text": "Setting Analysis",
+    "doc": "widgets/settinganalysis.md",
     "icon": "../orangecontrib/storynavigation/widgets/icons/dsg_ruleset_icon.png",
     "background": "#C0FF97",
-    "keywords": []
+    "keywords": ["clustering", "tf-idf", "word embeddings"]
    },
    {
-    "text": "Digital Story Grammar Word Highlighter",
-    "doc": "widgets/dsgtagger.md",
+    "text": "Narrative Network",
+    "doc": "widgets/narrativenetwork.md",
     "icon": "../orangecontrib/storynavigation/widgets/icons/dsgtagger.svg",
     "background": "#C0FF97",
-    "keywords": []
+    "keywords": ["network analysis", "networks", "subject verb object tuples", "story units"]
    }
   ]
  ]
