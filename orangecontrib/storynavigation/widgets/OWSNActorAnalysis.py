@@ -456,14 +456,14 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.main_agents_box,
             self,
             "agent_prominence_score_min",
-            minValue=0.0,
-            maxValue=1.0,
-            step=0.01,
+            minValue=0,
+            maxValue=20,
+            # step=0.01,
             ticks=True,
             callback=self.slider_callback,
             label="Min:",
-            labelFormat="%.1f",
-            intOnly=False,
+            # labelFormat="%.1f",
+            # intOnly=False,
         )
 
         self.controlArea.layout().addWidget(self.main_agents_box)
@@ -720,6 +720,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
+        logging.info("self.selection_changed() is called")
         self.agent_prominence_score_min = 0
         self.actortagger.word_prominence_scores = {}
         self.actortagger.noun_action_dict = {}
@@ -730,6 +731,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actortagger.word_count_nostops = 0
         self.actortagger.html_result = ""
         self.actortagger.sentence_nlp_models = []
+        self.actortagger.entities_df = None 
+        self.actortagger.sentences_df = None
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
         self.commit.deferred()
@@ -767,7 +770,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.original_text = str(value)
 
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
-                    value = self.actortagger.postag_text(
+                    logging.info("self.actortagger.make_html() is called")
+                    value = self.actortagger.make_html(
                         value,
                         self.nouns,
                         self.subjs,
@@ -973,10 +977,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
+    import logging 
+    logging.basicConfig(level=logging.DEBUG)
+    corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
+    # breakpoint()
+    corpus_ = BASE_TOKENIZER(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(set_data=corpus_)

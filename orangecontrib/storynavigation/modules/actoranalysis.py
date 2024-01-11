@@ -12,7 +12,7 @@ import re
 from nltk.tokenize import RegexpTokenizer
 from thefuzz import fuzz
 from statistics import median
-
+import logging 
 
 if sys.version_info < (3, 9):
     # importlib.resources either doesn't exist or lacks the files()
@@ -68,6 +68,11 @@ class ActorTagger:
         self.noun_count = 0
         self.verb_count = 0
         self.adjective_count = 0
+
+        # data from pos tagging # TODO: is this ok to do here?
+        self.sentences_df = None 
+        self.entities_df = None 
+
 
     def __update_postagging_metrics(
         self, tagtext, selected_prominence_metric, prominence_score_min, token
@@ -249,61 +254,32 @@ class ActorTagger:
             result.append(token.upper())
         return result
 
-    def postag_text(
-        self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min
-    ):
-        self.custom_category_frequencies = {}
 
-        # print()
-        # print()
-        # print(custom_dict)
-        # print()
-        # print()
-
-        """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
+    def postag_text_to_table(
+            self, text, custom, custom_dict 
+            # TODO (PR): can we  drop custom (bool), use custom_dict=None as default, and replace checks for "if custom" with "if custom_dict is not None"
+        ):
+        """Runs NLP model on story text, updates aggregate word count metrics and stores POS-tagged entities in two dataframes
 
         Args:
             text (string): Story text
-            nouns (boolean): whether noun tokens should be tagged
-            subjs (boolean): whether subject tokens should be tagged
-            selected_prominence_metric: the selected metric by which to calculate the word prominence score
+            custom (boolean): should custom POS tags be used?
+            custom_dict (dictionary): dictionary for custom POS tags.
 
-        Returns:
-            string: HTML string representation of POS tagged text
         """
-        # print()
-        # print('text:')
-        # print(text)
-        # print()
+        self.custom_category_frequencies = {} 
+        # TODO (PR): is the custom and custom_dict fixed for a given active widget? if not, one would have to rerun this function 
+        # if these change
 
         sentences = util.preprocess_text(text)
-
-        # print('sentences:')
-        # print(sentences)
-        # print()
-
         self.__calculate_pretagging_metrics(sentences)
 
         # pos tags that the user wants to highlight
-        pos_tags = []
-        custom_tag_labels = []
-        if nouns:
-            pos_tags.append("NOUN")
-            pos_tags.append("PRON")
-            pos_tags.append("PROPN")
-            pos_tags.append("NSP")
-            pos_tags.append("NSNP")
-        if subjs:
-            pos_tags.append("SUBJ")
-            pos_tags.append("SP")
-            pos_tags.append("SNP")
-        if custom:
-            if custom_dict is not None:
-                custom_tag_labels = self.__get_custom_tags_list(custom_dict)
-                pos_tags.extend(custom_tag_labels)
-
-        # output of this function
-        html = ""
+        self.pos_tags = { 
+            "nouns": ["NOUN", "PRON", "PROPN", "NSP", "NSNP"],
+            "subjs": ["SUBJS", "SP", "SNP"],
+            "custom": self.__get_custom_tags_list(custom_dict) if custom_dict else None
+        }
 
         # generate and store nlp tagged models for each sentence
         if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
@@ -313,8 +289,11 @@ class ActorTagger:
 
             self.__calculate_word_type_count(sentences, self.sentence_nlp_models)
 
+        sentences_df = []
+        entities_df = []
+
         # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
-        for sentence, tagged_sentence in zip(sentences, self.sentence_nlp_models):
+        for sent_idx, (sentence, tagged_sentence) in enumerate(zip(sentences, self.sentence_nlp_models)):
             if len(sentence.split()) > 0: # sentence has at least one word in it
                 first_word_in_sent = sentence.split()[0].lower().strip()
                 tags = []
@@ -336,76 +315,140 @@ class ActorTagger:
                     normalised_token, is_valid_token = self.__is_valid_token(tag)
                     if is_valid_token:
                         is_subj, subj_type = self.__is_subject(tag)
+                        p_score = None 
+                        p_score_norm = None 
+                        label = None
                         if is_subj:
-                            p_score_greater_than_min = self.__update_postagging_metrics(
-                                tag[0].lower().strip(),
-                                selected_prominence_metric,
-                                prominence_score_min,
-                                token,
-                            )
-                            if p_score_greater_than_min:
-                                if self.__is_pronoun(tag):
-                                    ents.append(
-                                        {"start": span[0], "end": span[1], "label": "SP"}
-                                    )
-                                else:
-                                    ents.append(
-                                        {"start": span[0], "end": span[1], "label": "SNP"}
-                                    )
+                            # NOTE: this now does not do this anymore: self.word_prominence_scores[tagtext] = p_score
+                            # TODO NOW: check this in the class
+                            # NOTE: I am also not sure they are still doing the same thing as before (?)
+                            # TODO: the two lines below should be moved into a separate function
+                            p_score = self.__calculate_prominence_score(tag[0].lower().strip(), "Subject frequency")
+                            p_score_norm = self.__calculate_prominence_score(tag[0].lower().strip(), "Subject frequency (normalized)")
+                            label = "SP" if self.__is_pronoun else "SNP"
                         else:
                             if self.__is_pronoun(tag):
-                                ents.append(
-                                    {"start": span[0], "end": span[1], "label": "NSP"}
-                                )
+                                label = "NSP"
                             elif self.__is_noun_but_not_pronoun(tag):
+                                label = "NSNP"
+
+                            if label:
                                 ents.append(
-                                    {"start": span[0], "end": span[1], "label": "NSNP"}
-                                )
+                                        {"start": span[0], "end": span[1], "label": label,
+                                        "p_score": p_score, "p_score_norm": p_score_norm}
+                                    )
 
                 if any(word == first_word_in_sent for word in self.pronouns):
-                    p_score_greater_than_min = self.__update_postagging_metrics(
-                        first_word_in_sent,
-                        selected_prominence_metric,
-                        prominence_score_min,
-                        token,
-                    )
+                    p_score = self.__calculate_prominence_score(first_word_in_sent, "Subject frequency")
+                    p_score_norm = self.__calculate_prominence_score(first_word_in_sent, "Subject frequency (normalized)")
 
-                    if p_score_greater_than_min:
-                        ents.append(
-                            {"start": 0, "end": len(first_word_in_sent), "label": "SP"}
-                        )
+                    ents.append(
+                        {"start": 0, "end": len(first_word_in_sent), "label": "SP",
+                         "p_score": p_score, "p_score_norm": p_score_norm}
+                    )
 
                     if first_word_in_sent in self.passive_agency_scores:
                         self.passive_agency_scores[first_word_in_sent] += 1
                     else:
                         self.passive_agency_scores[first_word_in_sent] = 1
                     
-                    # if first_word_in_sent not in self.active_agency_scores:
-                    #     self.active_agency_scores[first_word_in_sent] = 0
 
                 # remove duplicate tags (sometimes one entity can fall under multiple tag categories.
                 # to avoid duplication, only tag each entity using ONE tag category.
+                # TODO (PR): does this now create problems since we do not threshold anymore?
                 ents = util.remove_duplicate_tagged_entities(ents)
-                # specify sentences and filtered entities to tag / highlight
-                doc = {"text": sentence, "ents": ents}
+                ents = pd.DataFrame.from_dict(ents)
+                ents["sentence_id"] = sent_idx
+                ents = ents.set_index(["sentence_id"])
 
-                # specify colors for highlighting each entity type
-                colors = {}
-                if nouns:
-                    colors["NSP"] = constants.NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR
-                    colors["NSNP"] = constants.NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
-                if subjs:
-                    colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
-                    colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
-                if custom:
-                    for custom_label in custom_tag_labels:
-                        colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+                temp_sent = pd.DataFrame({"sentence_id": [sent_idx], "sentence": [sentence]})
+                temp_sent = temp_sent.set_index(["sentence_id"])
 
+                entities_df.append(ents)
+                sentences_df.append(temp_sent)
+                # specify sentences and filtered entities to tag / highlight 
+                # TODO NOW: how to fix this? make it a property of self and compute the max score there directly?
                 self.agent_prominence_score_max = self.__get_max_prominence_score()
-                # collect the above config params together
-                options = {"ents": pos_tags, "colors": colors}
-                # give all the params to displacy to generate HTML code of the text with highlighted tags
-                html += displacy.render(doc, style="ent", options=options, manual=True)
+
+        self.sentences_df = pd.concat(sentences_df)
+        self.entities_df = pd.concat(entities_df)
+
+
+    def make_html(self, text, nouns, subjs, custom, custom_dict, selected_prominence_metric, prominence_score_min):
+        """Puts together the html string, ready for rendering in the UI
+
+        Args:
+            text (string): Story text
+            nouns (boolean): whether noun tokens should be tagged
+            subjs (boolean): whether subject tokens should be tagged
+            custom (bool): should custom POS tags be used?
+            custom_dict (dictionary): dictionary for custom POS tags.
+            selected_prominence_metric: the selected metric by which to calculate the word prominence score
+            prominence_score_min (int): minimum prominence score for entities to be highlighted.
+
+        Returns:
+            string: HTML string representation of POS tagged text
+        """
+
+        html = ""
+
+        prominence_map = {
+            "Subject frequency": "p_score",
+            "Subject frequency (normalized)": "p_score_norm"
+        }
+
+        # POS tag if not done already
+        # NOTE: the implicit assumption is the data in sentences_df is the same as in text
+        if self.sentences_df is None: 
+            logging.info("self.actortagger.postag_text_to_table() is called")
+            self.postag_text_to_table(
+                text, custom, custom_dict
+            )
+
+        custom_tag_labels = [] # TODO NOW: should they be stored elswhere? -- double check in old function `postag_text`
+        # --> I think these tags, along with the dict etc, should also be stored in a data structure? 
+
+        selected_tags = []
+        if nouns:
+            selected_tags.append(self.pos_tags["nouns"])
+        if subjs:
+            selected_tags.append(self.pos_tags["subjs"])
+        if custom and self.pos_tags["custom"] is not None:
+            selected_tags.append(self.pos_tags["custom"])
+
+        selected_tags = [tag for taglist in selected_tags for tag in taglist]
+
+        metric = prominence_map[selected_prominence_metric]
+        entity_mask = (self.entities_df["label"].isin(selected_tags)) & \
+                        ((self.entities_df[metric] >= prominence_score_min) |
+                         (self.entities_df[metric].isna())
+                         )
+        entities = self.entities_df.loc[entity_mask, ["start", "end", "label"]].sort_index()
+        grouped = entities.groupby(entities.index)
+
+        # iterate over the sentences
+        for sent_idx, entities in grouped:
+            sentence = self.sentences_df.iloc[sent_idx]["sentence"]
+            if entities.shape[0] > 0: # deal with cases where no entities are identified
+                print_entities = entities.to_dict("records")
+            else:
+                print_entities = {} 
+
+            doc = {"text": sentence, "ents": print_entities} 
+            # specify colors for highlighting each entity type
+            colors = {}
+            if nouns:
+                colors["NSP"] = constants.NONSUBJECT_PRONOUN_HIGHLIGHT_COLOR
+                colors["NSNP"] = constants.NONSUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+            if subjs:
+                colors["SP"] = constants.SUBJECT_PRONOUN_HIGHLIGHT_COLOR
+                colors["SNP"] = constants.SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
+            if custom:
+                for custom_label in custom_tag_labels:
+                    colors[custom_label] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+
+            options = {"ents": selected_tags, "colors": colors}
+            html += displacy.render(doc, style="ent", options=options, manual=True)
 
         self.html_result = html
 
@@ -414,6 +457,7 @@ class ActorTagger:
             return util.remove_span_tags_except_custom(html)
         else:
             return util.remove_span_tags(html)
+
 
     def __is_valid_token(self, token):
         """Verifies if token is valid word
@@ -522,7 +566,7 @@ class ActorTagger:
                 / self.word_count_nostops
             )
 
-        return score
+        return int(score)
 
     def __get_max_prominence_score(self):
         """Finds the word in the story with the highest prominence score and returns this score
