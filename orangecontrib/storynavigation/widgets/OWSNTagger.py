@@ -5,6 +5,9 @@ from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin
 from Orange.widgets.widget import Input, Output, OWWidget
 from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.tagging import Tagger
+import storynavigation.modules.constants as constants
+from AnyQt.QtWidgets import QSizePolicy
+from Orange.data.pandas_compat import table_from_frame
 
 class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     name = 'Tagger'
@@ -22,14 +25,30 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     settingsHandler = DomainContextHandler()
     settings_version = 2
     autocommit = Setting(True)
+    language = 'NL'
 
     def __init__(self):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
         self.corpus = None # initialise list of documents (corpus)
         self.custom_tag_dict = None
+
+        self.settings_panel = gui.vBox(
+            self.controlArea,
+            "Select language:",
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+        )
+
+        self.select_language_combo = gui.comboBox(
+            self.settings_panel,
+            self,
+            "language",
+            items=constants.SUPPORTED_LANGUAGES,
+            sendSelectedValue=True
+        )
+
         self.compute_data_button = gui.button(
-            self.controlArea, 
+            self.settings_panel, 
             self,
             label="Compute data button",
             callback=self.__generate_dataset_level_data,
@@ -38,9 +57,24 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             toggleButton=False
         )
 
+        self.select_language_combo.setEnabled(True)
+        self.controlArea.layout().addWidget(self.select_language_combo)
+
     @Inputs.corpus
     def set_corpus(self, corpus=None):
-        self.corpus = corpus
+        idx = 0
+        self.corpus = []
+        for document in corpus:
+            text = ''
+            for field in corpus.domain.metas:
+                text_field_name = str(field)
+                if text_field_name.lower() in ['text', 'content']:
+                    text = str(corpus[idx, text_field_name])
+
+            if len(text) > 0:
+                self.corpus.append((text, idx))
+
+            idx += 1
 
     @Inputs.custom_tag_dict
     def set_custom_tags(self, custom_tag_dict=None):
@@ -53,11 +87,15 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
     def __generate_dataset_level_data(self):
         if self.corpus is not None:
-
-            if self.custom_tag_dict is not None:
-                print('Both corpus and custom tags are available!')
+            if len(self.corpus) > 0:
+                self.tagger = Tagger(lang=self.language, text_tuples=self.corpus, custom_tags=self.custom_tag_dict)
+                self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))
+                if self.custom_tag_dict is not None:
+                    print('Both corpus and custom tags are available!')
+                else:
+                    print('ONLY corpus is available!')
             else:
-                print('ONLY corpus is available!')
+                print('Corpus is empty!')
         else:
             if self.custom_tag_dict is not None:
                 print('ONLY custom tags are available!')
