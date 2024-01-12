@@ -61,7 +61,6 @@ def get_normalized_token(token):
 
     return normalised_token
 
-
 def load_spacy_pipeline(name):
     """Check if the spacy language pipeline was downloaded and load it.
     Downloads the language pipeline if not available.
@@ -185,16 +184,19 @@ def find_verb_ancestor(token):
     Returns:
         verb: the verb text if any, otherwise None
     """
-    # Check if the token is a verb
-    if token.pos_ == "VERB":
-        return token
+    if isinstance(token, spacy.tokens.token.Token):
+        # Check if the token is a verb
+        if token.pos_ == "VERB":
+            return token
 
-    # Traverse the token's ancestors recursively
-    for ancestor in token.ancestors:
-        # Recursive call to find the verb ancestor
-        verb_ancestor = find_verb_ancestor(ancestor)
-        if verb_ancestor:
-            return verb_ancestor
+        # Traverse the token's ancestors recursively
+        for ancestor in token.ancestors:
+            # Recursive call to find the verb ancestor
+            verb_ancestor = find_verb_ancestor(ancestor)
+            if verb_ancestor:
+                return verb_ancestor
+    elif isinstance(token, tuple):
+        return find_verb_ancestor(token[4])
 
     # If no verb ancestor found, return None
     return None

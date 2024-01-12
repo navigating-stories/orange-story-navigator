@@ -745,7 +745,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
-        # print('okay getting here at least...')
         if not hasattr(self, "actortagger"):
             self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
 
