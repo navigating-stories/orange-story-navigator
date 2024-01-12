@@ -27,9 +27,9 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     name = '3) Setting Analysis'
     description = "Provides tools to help identify the main setting of a story."
     icon = "icons/setting_analysis_icon.png"
-    priority = 6424
+    priority = 6480
 
-    NL_SPACY_MODEL = "nl_core_news_lg" 
+    NL_SPACY_MODEL = "nl_core_news_sm" 
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
