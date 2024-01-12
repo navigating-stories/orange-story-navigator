@@ -64,9 +64,6 @@ de
 deden
 deed
 der
-derde
-derhalve
-dertig
 deze
 dhr
 die
@@ -74,12 +71,8 @@ dikwijls
 dit
 doch
 doe
-doen
-doet
 door
 doorgaand
-drie
-duizend
 dus
 echter
 een
@@ -88,8 +81,6 @@ eer
 eerdat
 eerder
 eerlang
-eerst
-eerste
 eigen
 eigenlijk
 elk
@@ -111,11 +102,9 @@ eveneens
 evenwel
 gauw
 ge
-gedurende
 geen
 gehad
 gekund
-geleden
 gelijk
 gemoeten
 gemogen
@@ -131,7 +120,6 @@ hebt
 hedden
 heeft
 heel
-hen
 het
 hetzelfde
 hier
@@ -142,7 +130,6 @@ hierna
 hierom
 hoe
 hoewel
-honderd
 ieder
 iedere
 iemand
@@ -168,11 +155,8 @@ later
 liever
 lijken
 lijkt
-maakte
-maakten
 maar
 mag
-me
 meer
 meest
 meestal
@@ -203,9 +187,7 @@ nadat
 nam
 namelijk
 nee
-neem
 negen
-nemen
 nergens
 net
 niemand
@@ -279,8 +261,6 @@ toenmalig
 tot
 totdat
 tussen
-twee
-tweede
 uit
 uitgezonderd
 vaak
@@ -292,17 +272,11 @@ vanuit
 vanwege
 veel
 veeleer
-veertig
 verder
 verscheidene
 verschillende
 vervolgens
 via
-vier
-vierde
-vijf
-vijfde
-vijftig
 vol
 volgend
 volgens
@@ -328,7 +302,6 @@ want
 waren
 was
 wat
-we
 wederom
 weer
 weg
@@ -357,8 +330,6 @@ zei
 zeker
 zelf
 zelfde
-zes
-zeven
 zo
 zoals
 zodat
@@ -377,5 +348,3 @@ the
 to
 and
 that
-gaan
-gaat

@@ -129,12 +129,12 @@ def preprocess_text(text):
             return []
 
     # # remove quotes because it affects the accuracy of POS tagging
-    # cleaned_sents = []
-    # for item in cleaned_sentences:
-    #     item = item.replace("`", "").replace("'", "").replace("‘", "").replace("’", "")
-    #     item = item.replace("  ", " ")
-    #     cleaned_sents.append(item)
-    return cleaned_sentences
+    cleaned_sents = []
+    for item in cleaned_sentences:
+        item = item.replace("`", "").replace("'", "").replace("‘", "").replace("’", "")
+        cleaned_sents.append(item)
+
+    return cleaned_sents
 
 
 def remove_span_tags(html_string):

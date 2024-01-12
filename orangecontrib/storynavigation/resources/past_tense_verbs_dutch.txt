@@ -92,6 +92,7 @@ vloog binnen
 gedrongen
 uitgewezen
 verzocht
+stem
 steeg af
 sprong terug
 wees af

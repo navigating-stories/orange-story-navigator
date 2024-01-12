@@ -22,6 +22,10 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
+from transformers import pipeline
+
+# Load the sentiment analysis pipeline
+sentiment_analysis = pipeline("sentiment-analysis", model="DTAI-KULeuven/robbert-v2-dutch-sentiment")
 
 class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     name = '8) Narrative Network'
@@ -29,7 +33,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     icon = 'icons/narrative_network_icon.png'
     priority = 6430
 
-    NL_SPACY_MODEL = "nl_core_news_lg" 
+    NL_SPACY_MODEL = "nl_core_news_sm" 
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])
@@ -265,7 +269,12 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
             txt = str(texts[i, 'content'])
             # print(len(str(txt)))
             sents = sent_tokenize(txt, language='dutch')
+            print()
+            print()
             for sent in sents:
+                result = sentiment_analysis(sent)
+                print(f"Sentence: '{sent}' | Sentiment: {result[0]['label']} | Score: {result[0]['score']:.4f}")
+
                 # blob = TextBlob(sent)
                 blob = TextBlob(sent, pos_tagger=PatternTagger(), analyzer=PatternAnalyzer())
                 sentiment_scores = blob.sentiment
@@ -278,22 +287,23 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
                         sv_tuples, vo_tuples = self._get_tuples(tagged_sentence, token)
                         svo_tuples = self._merge_binary_tuplelsts_into_ternary_tuplelst(sv_tuples, vo_tuples)
                     elif ('N' in token.tag_.split('|')) or ('pron' in token.tag_.split('|')) or ('ik' in token.text.lower()):
-                        print('here!! ', token.text)
-                        print(token.tag_)
+                        # print('here!! ', token.text)
+                        # print(token.tag_)
                         nouns.append((token, token.idx))
                     else:
-                        print('sdasds:', token.text)
-                        print(token.tag_)
+                        print()
+                        # print('sdasds:', token.text)
+                        # print(token.tag_)
 
                 for item in svo_tuples:
                     tmp_data.append([text_id, "'" + sent + "'", item[0].lower().strip()+'_subj', item[1].lower().strip(), item[2].lower().strip()+'_obj'])
 
-                print()
-                print(nouns)
-                print()
+                # print()
+                # print(nouns)
+                # print()
                 nouns = self.sort_tuple(nouns)
-                print(nouns)
-                print()
+                # print(nouns)
+                # print()
                 if len(nouns) > 0:
                     sentiment_subject = nouns[0][0].text
                     sentiment_object = nouns[len(nouns)-1][0].text
@@ -304,7 +314,6 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
 
         # filter only for top 10 prominence scores for subjects
         # sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 7)
-
 
         print()
         print()

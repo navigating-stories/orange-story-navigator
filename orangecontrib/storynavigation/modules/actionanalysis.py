@@ -2,6 +2,7 @@
 """
 
 import sys
+import os
 import pandas as pd
 from operator import itemgetter
 import storynavigation.modules.constants as constants
@@ -43,11 +44,18 @@ class ActionTagger:
     )
 
     def __init__(self, model):
-        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8")
-        self.past_tense_verbs = self.NL_PAST_TENSE_FILE.read_text(encoding="utf-8")
-        self.present_tense_verbs = self.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8")
-        self.false_positive_verbs = self.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8")
+        self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.stopwords = [item for item in self.stopwords if len(item) > 0]
+        self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.pronouns = [item for item in self.pronouns if len(item) > 0]
+
+        self.past_tense_verbs = self.NL_PAST_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.past_tense_verbs = [item for item in self.past_tense_verbs if len(item) > 0]
+        self.present_tense_verbs = self.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.present_tense_verbs = [item for item in self.present_tense_verbs if len(item) > 0]
+        self.false_positive_verbs = self.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split(os.linesep)
+        self.false_positive_verbs = [item for item in self.false_positive_verbs if len(item) > 0]
+
         self.html_result = ""
 
         # Other counts initialisation

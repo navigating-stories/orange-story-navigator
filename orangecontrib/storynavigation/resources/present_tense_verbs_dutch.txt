@@ -1388,8 +1388,10 @@ dichtzitten
 opvatten
 sacraliseren
 vergallen
+bevriest
 argumenteren
 nippen
+vast
 vastpakken
 vastroesten
 woekeren
@@ -3884,6 +3886,7 @@ waterskiën
 opbergen
 opraken
 herontdekken
+absorbeert
 weeromkomen
 Iemand tot bedaren brengen
 terugwinnen
@@ -7583,6 +7586,7 @@ voortleven
 knielde
 ontlenen
 smashen
+aankeek
 aantikken
 op elkaar inwerken
 groeven
