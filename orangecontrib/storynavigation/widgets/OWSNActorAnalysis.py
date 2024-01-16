@@ -4,7 +4,6 @@ import re
 import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
-import spacy
 import pandas as pd
 
 # Imports from Qt
@@ -34,14 +33,12 @@ from Orange.data import Variable, Table
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
-from Orange.widgets.utils.annotated_data import create_annotated_table
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
-from Orange.data.pandas_compat import table_from_frame
-from Orange.data.pandas_compat import table_to_frames
+from Orange.data.pandas_compat import table_from_frame, table_to_frames 
 
 # Imports from other Orange3 add-ons
 from orangecontrib.text.corpus import Corpus
@@ -211,7 +208,6 @@ class DocumentListModel(QAbstractListModel):
         self.__filter_content = []
         self.endResetModel()
 
-
 class DocumentsFilterProxyModel(QSortFilterProxyModel):
     """Filter model for documents list"""
 
@@ -326,14 +322,14 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     priority = 6422
 
     class Inputs:
-        corpus = Input("Corpus", Corpus, replaces=["Data"])
-        word_dict = Input("Token categories", Table)
+        stories = Input("Stories", Corpus, replaces=["Data"])
+        story_elements = Input("Story elements", Table)
 
     class Outputs:
-        metrics_freq_table = Output("Frequency", Table)
-        metrics_subfreq_table = Output("Frequency as subject", Table)
-        metrics_customfreq_table = Output("Custom token frequency", Table)
-        metrics_agency_table = Output("Agency", Table)
+        metrics_freq_table = Output("Word frequencies", Table)
+        metrics_subfreq_table = Output("Main subject frequencies", Table)
+        metrics_customfreq_table = Output("Custom tag frequencies", Table)
+        metrics_agency_table = Output("Actor agency scores", Table)
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -382,9 +378,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         ConcurrentWidgetMixin.__init__(self)
 
         self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
-        self.corpus = None  # initialise list of documents (corpus)
-        self.word_dict = None  # initialise word dictionary
-        self.custom_tag_dictionary = None
+        self.stories = None  # initialise list of documents (corpus)
+        self.story_elements = None  # initialise tagging information
+        self.story_elements_dict = {}
+
         self.__pending_selected_documents = self.selected_documents
 
         # Search features
@@ -402,22 +399,23 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.postags_box = gui.vBox(
             self.controlArea,
             "Story elements to highlight:",
-            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         )
         self.sc = gui.checkBox(
             self.postags_box,
             self,
             "subjs",
             "Sentence subjects",
-            callback=self.pos_selection_changed,
+            callback=self.pos_selection_changed
         )
         self.nc = gui.checkBox(
             self.postags_box,
             self,
             "nouns",
             "Other potential actors",
-            callback=self.pos_selection_changed,
+            callback=self.pos_selection_changed
         )
+
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
         self.allc.setChecked(False)
 
@@ -426,7 +424,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self,
             "custom",
             "Custom tokens",
-            callback=self.pos_selection_changed,
+            callback=self.pos_selection_changed
         )
 
         self.custom_tags.setEnabled(False)
@@ -439,7 +437,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.main_agents_box = gui.vBox(
             self.controlArea,
             "Filter actors by prominence score:",
-            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         )
         self.metric_name_combo = gui.comboBox(
             self.main_agents_box,
@@ -447,7 +445,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             "agent_prominence_metric",
             items=constants.AGENT_PROMINENCE_METRICS,
             sendSelectedValue=True,
-            callback=self.prominence_metric_change,
+            callback=self.prominence_metric_change
         )
 
         self.main_agents_box.setEnabled(True)
@@ -463,7 +461,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             callback=self.slider_callback,
             label="Min:",
             labelFormat="%.1f",
-            intOnly=False,
+            intOnly=False
         )
 
         self.controlArea.layout().addWidget(self.main_agents_box)
@@ -476,7 +474,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             maxv=100,
             controlWidth=60,
             alignment=Qt.AlignRight,
-            callback=self.slider_callback,
+            callback=self.slider_callback
         )
 
         # Auto-commit box
@@ -487,7 +485,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             "Send data",
             "Auto send is on",
             orientation=Qt.Horizontal,
-            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         )
 
         # Search
@@ -498,7 +496,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             orientation=Qt.Horizontal,
             sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
             label="RegExp Filter:",
-            callback=self.refresh_search,
+            callback=self.refresh_search
         )
 
         # Main area
@@ -535,111 +533,49 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def ner_selection_changed(self):
-        self.show_docs()
+        # self.show_docs()
         self.commit.deferred()
 
     def rehighlight_entities(self):
-        self.show_docs()
+        # self.show_docs()
         self.commit.deferred()
 
-    def __create_customtag_checkbox(self, wd):
-        self.custom_tags.setEnabled(True)
-        # extract all categorisations in the input dictionary
-        list_of_lists_categories = []
-        if len(wd.columns) >= 2: 
-            column_range_by_index = wd.iloc[:, 1:]
-            for column in column_range_by_index:
-                unique_categories = list(set(wd[column].tolist()))
-                list_of_lists_categories.append(unique_categories)
-
-        self.custom_tag_dictionary = {}
-        for lst in list_of_lists_categories:
-            for category in lst:
-                filtered_df = wd[wd.isin([category]).any(axis=1)]
-                if len(filtered_df.columns) > 1:
-                    current_dict_values = filtered_df.iloc[:, 0].tolist()
-                    if len(current_dict_values) > 0:
-                        self.custom_tag_dictionary[category] = current_dict_values
-
-    @Inputs.corpus
-    def set_data(self, corpus=None):
+    @Inputs.stories
+    def set_stories(self, stories=None):
+        self.stories = stories
         self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
-        self.closeContext()
-        self.reset_widget()
-        self.corpus = corpus
-        
-        if corpus is not None:
+        if stories is not None:
             self.setup_controls()
-            self.openContext(self.corpus)
-            self.doc_list.model().set_filter_string(self.regexp_filter)
-            self.select_variables()
+            # self.openContext(self.corpus)
+            # self.doc_list.model().set_filter_string(self.regexp_filter)
+            # self.select_variables()
             self.list_docs()
-            self.update_info()
-            self.set_selection()
+            # self.update_info()
+            # self.set_selection()
+            # self.show_docs()
             self.show_docs()
 
-        self.commit.now()
+    @Inputs.story_elements
+    def set_tagging_data(self, story_elements=None):
+        if story_elements is not None:
+            self.story_elements = pd.concat(table_to_frames(story_elements), axis=1)
+            story_elements_grouped_by_story = self.story_elements.groupby('storyid')
+            for storyid, story_df in story_elements_grouped_by_story:
+                self.story_elements_dict[storyid] = story_df
 
-    @Inputs.word_dict
-    def set_word_dict(self, word_dict=None):
-        if self.word_dict is None:
-            if word_dict is not None:
-                self.word_dict = word_dict
-                rows = []
-
-                if (word_dict is not None):
-                    for item in word_dict:
-                        rows.append(item.metas)
-
-                    self.word_dict = pd.DataFrame(rows[1:], index=None)
-                    self.__create_customtag_checkbox(self.word_dict)
-
-                if self.corpus is not None:
-                    self.setup_controls()
-                    self.openContext(self.corpus)
-                    self.doc_list.model().set_filter_string(self.regexp_filter)
-                    self.select_variables()
-                    self.list_docs()
-                    self.update_info()
-                    self.set_selection()
-                    self.show_docs()
-                self.commit.now()
-
-            else:
-                self.Outputs.metrics_customfreq_table.widget = None
-                return
-        else:
-            if word_dict is not None:
-                if self.word_dict.equals(word_dict):
-                    return
-                else:
-                    self.word_dict = word_dict
-                    rows = []
-
-                    for item in self.word_dict:
-                        rows.append(item.metas)
-
-                    self.word_dict = pd.DataFrame(rows[1:], index=None)
-                    self.__create_customtag_checkbox(self.word_dict)
-
-                    if self.corpus is not None:
-                        self.setup_controls()
-                        self.openContext(self.corpus)
-                        self.doc_list.model().set_filter_string(self.regexp_filter)
-                        self.select_variables()
-                        self.list_docs()
-                        self.update_info()
-                        self.set_selection()
-                        self.show_docs()
-                    self.commit.now()
+            self.setup_controls()
+            # self.openContext(self.corpus)
+            # self.doc_list.model().set_filter_string(self.regexp_filter)
+            # self.select_variables()
+            self.list_docs()
+            # self.update_info()
+            # self.set_selection()
+            # self.show_docs()
+            self.show_docs()
             
     def reset_widget(self):
-        self.word_dict = None
-        # Corpus
-        self.corpus = None
-        self.custom_tag_dictionary = None
-        # self.pos_checkboxes = [self.sc, self.nc]
-        # self.tagtype_box = None
+        self.stories = None
+        self.story_elements = None
         # Widgets
         self.search_listbox.model().set_domain(None)
         self.display_listbox.model().set_domain(None)
@@ -654,7 +590,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def setup_controls(self):
         """Setup controls in control area"""
-        domain = self.corpus.domain
+        domain = self.stories.domain
 
         self.search_listbox.model().set_domain(domain)
         self.display_listbox.model().set_domain(domain)
@@ -688,7 +624,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def list_docs(self):
         """List documents into the left scrolling area"""
         docs = self.regenerate_docs()
-        self.doc_list_model.setup_data(self.corpus.titles.tolist(), docs)
+        self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
 
     def get_selected_indexes(self) -> Set[int]:
         m = self.doc_list.model().mapToSource
@@ -706,7 +642,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         selection = QItemSelection()
         self.selected_documents = {
-            r for r in self.selected_documents if r < len(self.corpus)
+            r for r in self.selected_documents if r < len(self.stories)
         }
         for row in self.selected_documents:
             index = model.mapFromSource(source_model.index(row, 0))
@@ -747,34 +683,53 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
-        if not hasattr(self, "actortagger"):
-            self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
-
         """Show the selected documents in the right area"""
-        if self.corpus is None:
+        if self.stories is None:
+            # print()
+            # print('why here joe???')
+            # print()
             return
 
         self.Warning.no_feats_display.clear()
         if len(self.display_features) == 0:
+            # print()
+            # print('why here bob???')
+            # print()
             self.Warning.no_feats_display()
 
         parts = []
+
+        # if len(self.selected_documents) > 0:
+        #     print()
+        #     print('thats good...')
+        # else:
+        #     print()
+        #     print('boo boo!!!!!!')
+
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
             text = ""
             for feature in self.display_features:
-                value = str(self.corpus[c_index, feature.name])
+                value = str(self.stories[c_index, feature.name])
                 self.original_text = str(value)
-
+                # print()
+                # print('d: ', doc_count)
+                # print()
+                # print('c: ', c_index)
+                # print()
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
-                    value = self.actortagger.postag_text(
-                        value,
-                        self.nouns,
-                        self.subjs,
-                        self.custom,
-                        self.custom_tag_dictionary,
-                        self.agent_prominence_metric,
-                        self.agent_prominence_score_min,
-                    )
+                    if len(self.story_elements_dict) > 0:
+                        # print('value: ', value)
+                        # print()
+                        # print()
+                        # print()
+                        value = self.actortagger.postag_text(
+                            value,
+                            self.nouns,
+                            self.subjs,
+                            self.agent_prominence_metric,
+                            self.agent_prominence_score_min,
+                            self.story_elements_dict[c_index]
+                        )
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
                             self.actortagger.calculate_metrics_freq_table()
@@ -785,11 +740,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.actortagger.calculate_metrics_subjfreq_table()
                         )
                     )
-                    self.Outputs.metrics_customfreq_table.send(
-                        table_from_frame(
-                            self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
-                        )
-                    )
+                    # self.Outputs.metrics_customfreq_table.send(
+                    #     table_from_frame(
+                    #         self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
+                    #     )
+                    # )
                     self.Outputs.metrics_agency_table.send(
                         table_from_frame(
                             self.actortagger.calculate_metrics_agency_table()
@@ -818,7 +773,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
-        if (self.custom_tag_dictionary is None):
+        if ((self.story_elements is not None) and len(self.story_elements.columns) <= 13):
             self.doc_webview.setHtml(HTML.format('',html), base)
         else:
             custom_tag_legend = '<mark class="entity" style="background: #98FB98; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">Custom token</mark>'
@@ -853,7 +808,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def search_features_changed(self):
         self.search_features = self.__get_selected_rows(self.search_listbox)
-        if self.corpus:
+        if self.stories:
             self.doc_list_model.update_filter_content(self.regenerate_docs())
         self.doc_list.model().invalidateFilter()
         self.refresh_search()
@@ -866,10 +821,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.Warning.no_feats_search.clear()
         if len(self.search_features) == 0:
             self.Warning.no_feats_search()
-        return self.corpus.documents_from_features(self.search_features)
+        return self.stories.documents_from_features(self.search_features)
 
     def refresh_search(self):
-        if self.corpus is not None:
+        if self.stories is not None:
             self.doc_list.model().set_filter_string(self.regexp_filter)
             if not self.selected_documents:
                 # when currently selected items are filtered selection is empty
@@ -881,7 +836,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.doc_list_model.get_filter_content(),
                 self.regexp_filter,
             )
-            self.show_docs()
+            # self.show_docs()
             self.commit.deferred()
 
     def on_done(self, res: int):
@@ -893,11 +848,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def update_info(self):
         # self.pos_checkboxes = [self.sc, self.nc]
-        if self.corpus is not None:
-            has_tokens = self.corpus.has_tokens()
-            self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.corpus)}"
-            self.n_tokens = sum(map(len, self.corpus.tokens)) if has_tokens else "n/a"
-            self.n_types = len(self.corpus.dictionary) if has_tokens else "n/a"
+        if self.stories is not None:
+            has_tokens = self.stories.has_tokens()
+            self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.stories)}"
+            self.n_tokens = sum(map(len, self.stories.tokens)) if has_tokens else "n/a"
+            self.n_types = len(self.stories.dictionary) if has_tokens else "n/a"
         else:
             self.n_matching = "n/a"
             self.n_matches = "n/a"
@@ -908,13 +863,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def commit(self):
         # self.pos_checkboxes = [self.sc, self.nc]
         # matched = unmatched = annotated_corpus = None
-        if self.corpus is not None:
+        if self.stories is not None:
             selected_docs = sorted(self.get_selected_indexes())
-            # matched = self.corpus[selected_docs] if selected_docs else None
-            mask = np.ones(len(self.corpus), bool)
+            # matched = self.stories[selected_docs] if selected_docs else None
+            mask = np.ones(len(self.stories), bool)
             mask[selected_docs] = 0
-            # unmatched = self.corpus[mask] if mask.any() else None
-            # annotated_corpus = create_annotated_table(self.corpus, selected_docs)
+            # unmatched = self.stories[mask] if mask.any() else None
+            # annotated_corpus = create_annotated_table(self.stories, selected_docs)
         # self.Outputs.matching_docs.send(matched)
         # self.Outputs.other_docs.send(unmatched)
         # self.Outputs.corpus.send(annotated_corpus)

@@ -173,6 +173,11 @@ def remove_span_tags_except_custom(html_string):
 
     return str(soup)
 
+def is_only_punctuation(phrase):
+    if all(char in string.punctuation + str(' ') for char in phrase):
+        return '-'
+    else:
+        return phrase
 
 # Function to recursively traverse ancestors
 def find_verb_ancestor(token):
