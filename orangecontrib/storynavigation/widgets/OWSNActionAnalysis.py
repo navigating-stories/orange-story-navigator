@@ -48,7 +48,7 @@ from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.actionanalysis import ActionTagger
 import storynavigation.modules.constants as constants
 
-spacy.cli.download(constants.NL_SPACY_MODEL)
+# spacy.cli.download(constants.NL_SPACY_MODEL)
 
 HTML = """
 <!doctype html>
