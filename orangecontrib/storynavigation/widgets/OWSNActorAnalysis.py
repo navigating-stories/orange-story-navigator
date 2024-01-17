@@ -559,9 +559,29 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
             self.story_elements = pd.concat(table_to_frames(story_elements), axis=1)
+            print()
+            print()
+            print('story-n: ', self.story_elements['story_navigator_tag'])
+            print()
+            print()
+            print()
+            print()
+            print('story-s: ', self.story_elements['spacy_tag'])
+            print()
+            print()
+
+
             story_elements_grouped_by_story = self.story_elements.groupby('storyid')
             for storyid, story_df in story_elements_grouped_by_story:
                 self.story_elements_dict[storyid] = story_df
+                print()
+                print()
+                print(storyid)
+                print('dataframe1: ', self.story_elements_dict[storyid]['story_navigator_tag'])
+                print('dataframe2: ', self.story_elements_dict[storyid]['spacy_tag'])
+                print()
+                print()
+
 
             self.setup_controls()
             # self.openContext(self.corpus)
@@ -685,43 +705,21 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def show_docs(self, slider_engaged=False):
         """Show the selected documents in the right area"""
         if self.stories is None:
-            # print()
-            # print('why here joe???')
-            # print()
             return
 
         self.Warning.no_feats_display.clear()
         if len(self.display_features) == 0:
-            # print()
-            # print('why here bob???')
-            # print()
             self.Warning.no_feats_display()
 
         parts = []
-
-        # if len(self.selected_documents) > 0:
-        #     print()
-        #     print('thats good...')
-        # else:
-        #     print()
-        #     print('boo boo!!!!!!')
 
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
             text = ""
             for feature in self.display_features:
                 value = str(self.stories[c_index, feature.name])
                 self.original_text = str(value)
-                # print()
-                # print('d: ', doc_count)
-                # print()
-                # print('c: ', c_index)
-                # print()
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
                     if len(self.story_elements_dict) > 0:
-                        # print('value: ', value)
-                        # print()
-                        # print()
-                        # print()
                         value = self.actortagger.postag_text(
                             value,
                             self.nouns,
