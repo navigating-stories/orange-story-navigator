@@ -18,10 +18,14 @@ class Tagger:
         self.text_tuples = text_tuples
         self.custom_tags = None
         self.word_column = None
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
             self.custom_tags = custom_tags_and_word_column[0]
+            self.customtag_column_names = self.__generate_customtag_column_names()
+            self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
+            self.complete_data_columns.extend(self.customtag_column_names)
         
         self.stopwords = None
         self.pronouns = None
@@ -33,10 +37,7 @@ class Tagger:
 
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
-        self.customtag_column_names = self.__generate_customtag_column_names()
-        self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
-        self.complete_data_columns.extend(self.customtag_column_names)
+
         self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
     
     def __process_stories(self, nlp, text_tuples):
