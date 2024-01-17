@@ -4,6 +4,8 @@
 import os
 import string
 import pandas as pd
+import math
+import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
@@ -14,8 +16,9 @@ class Tagger:
     For the storynavigator Orange3 add-on:
     https://pypi.org/project/storynavigator/0.0.11/
     """
-    def __init__(self, lang, text_tuples, custom_tags_and_word_column=None):
+    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
         self.text_tuples = text_tuples
+        self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
         self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
@@ -38,7 +41,9 @@ class Tagger:
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
 
-        self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
+        tags, sentences = self.__process_stories(self.nlp, self.text_tuples)
+        self.complete_data = tags # self.__process_stories(self.nlp, self.text_tuples)
+        self.sentence_data = sentences
     
     def __process_stories(self, nlp, text_tuples):
         """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
@@ -51,10 +56,16 @@ class Tagger:
             pandas.DataFrame: a dataframe containing all tagging data for all stories in the given list
         """
         collection_df = pd.DataFrame()
+        sentences_df = []
         for story_tuple in text_tuples:
-            story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
+            story_df, sentences = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0, ignore_index=True)
-        return collection_df
+            sentences_df.append(sentences) 
+
+        sentences_df = pd.concat(sentences_df)
+        print(sentences_df.describe())
+        print(collection_df)
+        return collection_df, sentences_df
     
     def __process_story(self, storyid, story_text, nlp):
         """Given a story text, this function preprocesses the text, then runs and stores the tagging information for each sentence in the story in memory. It then uses this information to generate a dataframe synthesising all the tagging information for downstream analysis.
@@ -78,7 +89,20 @@ class Tagger:
                 tagged_sentences.append(tagged_sentence)
 
         story_df = self.__parse_tagged_story(storyid, sentences, tagged_sentences)
-        return story_df
+
+        # generate the story segments at the sentence level
+        # TODO: for a truly relational structure, we should keep only the sentence id, and not the full sentence string, in the story_df
+        # Then we can also delete the first column in the sentences_df below
+        sentences_df = []
+        sentence_id = 0
+        for segment_id, group in enumerate(np.array_split(sentences, self.n_segments)):
+            for s in group:
+                sentences_df.append([storyid, s, sentence_id, segment_id])
+                sentence_id += 1
+
+        sentences_df = pd.DataFrame(sentences_df, columns=["storyid", "sentence", "sentence_id", "segment_id"])
+
+        return story_df, sentences_df
         
     def __parse_tagged_story(self, storyid, sentences, tagged_sentences):
         """Given a list of sentences in a given story and a list of nlp tagging information for each sentence, this function processes and appends nlp tagging data about these sentences to the master output dataframe

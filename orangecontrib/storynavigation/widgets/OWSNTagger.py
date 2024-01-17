@@ -30,7 +30,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     word_column = 'word'
-    n_segments = 0
+    n_segments = 0 # this selects the the first entry in the list constants.N_STORY_SEGMENTS 
 
     def __init__(self):
         super().__init__()
@@ -138,10 +138,14 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         if self.stories is not None:
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:
-                    self.tagger = Tagger(lang=self.language, text_tuples=self.stories, custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
+                    self.tagger = Tagger(
+                        lang=self.language, n_segments=int(self.n_segments), text_tuples=self.stories, 
+                        custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
                     print('Both corpus and custom tags are available!')
                 else:
-                    self.tagger = Tagger(lang=self.language, text_tuples=self.stories, custom_tags_and_word_column=None)
+                    self.tagger = Tagger(
+                        lang=self.language, n_segments=int(self.n_segments), text_tuples=self.stories, 
+                        custom_tags_and_word_column=None)
                     print('ONLY corpus is available!')
 
 
@@ -213,12 +217,16 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
         
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
 
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNDSGTagger).run(corpus_)
+    # corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
+    corpus_ = corpus_[:3]
+    corpus_ = BASE_TOKENIZER(corpus_)
+    previewer = WidgetPreview(OWSNTagger)
+    # breakpoint()
+    previewer.run(set_stories=corpus_, no_exit=True)
+    # WidgetPreview(OWSNTagger).run(set_stories=corpus_)
