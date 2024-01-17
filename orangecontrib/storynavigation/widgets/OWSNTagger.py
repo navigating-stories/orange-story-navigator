@@ -30,6 +30,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     word_column = 'word'
+    n_segments = 0
 
     def __init__(self):
         super().__init__()
@@ -64,8 +65,21 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
         self.controlArea.layout().addWidget(self.select_word_column_combo)
 
+        self.select_n_segments_combo = gui.comboBox(
+            widget=self.controlArea,
+            master=self,
+            label="Number of segments per story",
+            value="n_segments",
+            items=constants.N_STORY_SEGMENTS,
+            sendSelectedValue=True,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+
+        self.controlArea.layout().addWidget(self.select_n_segments_combo)
+
         self.select_language_combo.setEnabled(True)
         self.select_word_column_combo.setEnabled(True)
+        self.select_n_segments_combo.setEnabled(True)
         
         self.compute_data_button = gui.button(
             self.controlArea,
