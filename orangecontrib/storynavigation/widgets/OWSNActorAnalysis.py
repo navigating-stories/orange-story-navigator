@@ -5,6 +5,7 @@ import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
 import pandas as pd
+from orangecontrib.storynavigation.modules import util
 
 # Imports from Qt
 from AnyQt.QtCore import (
@@ -526,18 +527,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
+        print('selected text: ', text)
         QApplication.clipboard().setText(text)
 
     def pos_selection_changed(self):
         self.show_docs()
-        self.commit.deferred()
-
-    def ner_selection_changed(self):
-        # self.show_docs()
-        self.commit.deferred()
-
-    def rehighlight_entities(self):
-        # self.show_docs()
         self.commit.deferred()
 
     @Inputs.stories
@@ -546,8 +540,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         if stories is not None:
             self.setup_controls()
-            # self.openContext(self.corpus)
-            # self.doc_list.model().set_filter_string(self.regexp_filter)
+            # self.openContext(self.stories)
+            self.doc_list.model().set_filter_string(self.regexp_filter)
             # self.select_variables()
             self.list_docs()
             # self.update_info()
@@ -558,7 +552,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     @Inputs.story_elements
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
-            self.story_elements = pd.concat(table_to_frames(story_elements), axis=1)
+            # self.story_elements = pd.concat(table_to_frames(story_elements), axis=1)
+            self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             print()
             print()
             print('story-n: ', self.story_elements['story_navigator_tag'])
@@ -582,15 +577,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 print()
                 print()
 
-
             self.setup_controls()
-            # self.openContext(self.corpus)
-            # self.doc_list.model().set_filter_string(self.regexp_filter)
+            # self.openContext(self.stories)
+            self.doc_list.model().set_filter_string(self.regexp_filter)
             # self.select_variables()
             self.list_docs()
             # self.update_info()
             # self.set_selection()
-            # self.show_docs()
             self.show_docs()
             
     def reset_widget(self):
@@ -600,7 +593,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.search_listbox.model().set_domain(None)
         self.display_listbox.model().set_domain(None)
         self.filter_input.clear()
-        self.update_info()
         # Models/vars
         self.doc_list_model.clear()
         # Warnings
@@ -726,7 +718,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.subjs,
                             self.agent_prominence_metric,
                             self.agent_prominence_score_min,
-                            self.story_elements_dict[c_index]
+                            self.story_elements_dict[str(c_index)]
                         )
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
@@ -813,7 +805,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def display_features_changed(self):
         self.display_features = self.__get_selected_rows(self.display_listbox)
-        # self.show_docs()
+        self.show_docs()
 
     def regenerate_docs(self) -> List[str]:
         self.Warning.no_feats_search.clear()
@@ -828,13 +820,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 # when currently selected items are filtered selection is empty
                 # select first element in the view in that case
                 self.doc_list.setCurrentIndex(self.doc_list.model().index(0, 0))
-            self.update_info()
+            # self.update_info()
             self.start(
                 _count_matches,
                 self.doc_list_model.get_filter_content(),
                 self.regexp_filter,
             )
-            # self.show_docs()
+            self.show_docs()
             self.commit.deferred()
 
     def on_done(self, res: int):
@@ -844,18 +836,18 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_exception(self, ex):
         raise ex
 
-    def update_info(self):
-        # self.pos_checkboxes = [self.sc, self.nc]
-        if self.stories is not None:
-            has_tokens = self.stories.has_tokens()
-            self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.stories)}"
-            self.n_tokens = sum(map(len, self.stories.tokens)) if has_tokens else "n/a"
-            self.n_types = len(self.stories.dictionary) if has_tokens else "n/a"
-        else:
-            self.n_matching = "n/a"
-            self.n_matches = "n/a"
-            self.n_tokens = "n/a"
-            self.n_types = "n/a"
+    # def update_info(self):
+    #     # self.pos_checkboxes = [self.sc, self.nc]
+    #     if self.stories is not None:
+    #         has_tokens = self.stories.has_tokens()
+    #         self.n_matching = f"{self.doc_list.model().rowCount()}/{len(self.stories)}"
+    #         self.n_tokens = sum(map(len, self.stories.tokens)) if has_tokens else "n/a"
+    #         self.n_types = len(self.stories.dictionary) if has_tokens else "n/a"
+    #     else:
+    #         self.n_matching = "n/a"
+    #         self.n_matches = "n/a"
+    #         self.n_tokens = "n/a"
+    #         self.n_types = "n/a"
 
     @gui.deferred
     def commit(self):
