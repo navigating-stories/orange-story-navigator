@@ -429,7 +429,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         )
 
         self.custom_tags.setEnabled(False)
-
         self.allc.stateChanged.connect(self.on_state_changed_pos)
         self.pos_checkboxes = [self.sc, self.nc, self.custom_tags]
         self.controlArea.layout().addWidget(self.postags_box)
@@ -518,12 +517,26 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.selectionModel().selectionChanged.connect(self.selection_changed)
         # Document contents
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
-        # self.doc_webview.setStyleSheet("QWidget {background-color:   #0ff}")
+        self.doc_webview.setStyleSheet("QWidget {background-color:   #0ff}")
         self.mainArea.layout().addWidget(self.splitter)
 
-    def on_state_changed_pos(self, state):
+    def __uncheckAll(self):
         for checkBox in self.pos_checkboxes:
-            checkBox.setCheckState(state)
+            checkBox.setCheckState(False)
+
+    def __checkAll(self):
+        for checkBox in self.pos_checkboxes:
+            checkBox.setCheckState(True)
+
+    def on_state_changed_pos(self, checked):
+        for checkBox in self.pos_checkboxes:
+            if checkBox == self.allc:
+                if checkBox.isChecked() and not checked:
+                    self.__uncheckAll()
+                elif (not checkBox.isChecked()) and checked:
+                    self.__checkAll()
+
+            checkBox.setCheckState(checked)
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
@@ -552,30 +565,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     @Inputs.story_elements
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
-            # self.story_elements = pd.concat(table_to_frames(story_elements), axis=1)
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-            print()
-            print()
-            print('story-n: ', self.story_elements['story_navigator_tag'])
-            print()
-            print()
-            print()
-            print()
-            print('story-s: ', self.story_elements['spacy_tag'])
-            print()
-            print()
-
-
             story_elements_grouped_by_story = self.story_elements.groupby('storyid')
             for storyid, story_df in story_elements_grouped_by_story:
                 self.story_elements_dict[storyid] = story_df
-                print()
-                print()
-                print(storyid)
-                print('dataframe1: ', self.story_elements_dict[storyid]['story_navigator_tag'])
-                print('dataframe2: ', self.story_elements_dict[storyid]['spacy_tag'])
-                print()
-                print()
 
             self.setup_controls()
             # self.openContext(self.stories)
