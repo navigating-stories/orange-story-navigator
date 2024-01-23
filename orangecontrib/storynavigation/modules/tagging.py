@@ -15,6 +15,9 @@ class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
     For the storynavigator Orange3 add-on:
     https://pypi.org/project/storynavigator/0.0.11/
+
+    Args:
+        n_segments (int): Number of segments to split each story into.
     """
     def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
         self.text_tuples = text_tuples
@@ -69,7 +72,8 @@ class Tagger:
             nlp (spacy.language.Language): a spacy language model object to use on the input stories
 
         Returns:
-            pandas.DataFrame: a dataframe containing all tagging data for the given story
+            pandas.DataFrame: a dataframe containing all tagging data for the given story, and a column with the segment.
+            The segment is the segment number of the corresponding sentence in a given story.
         """
         story_df = pd.DataFrame()
         sentences = util.preprocess_text(story_text)
