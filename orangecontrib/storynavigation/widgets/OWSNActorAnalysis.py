@@ -568,6 +568,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             for storyid, story_df in story_elements_grouped_by_story:
                 self.story_elements_dict[storyid] = story_df
 
+            if util.frame_contains_custom_tag_columns(self.story_elements):
+                self.custom_tags.setEnabled(True)
+
             self.setup_controls()
             # self.openContext(self.stories)
             self.doc_list.model().set_filter_string(self.regexp_filter)
@@ -580,6 +583,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def reset_widget(self):
         self.stories = None
         self.story_elements = None
+        self.custom_tags.setEnabled(False)
         # Widgets
         self.search_listbox.model().set_domain(None)
         self.display_listbox.model().set_domain(None)
