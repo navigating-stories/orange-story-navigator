@@ -135,16 +135,19 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         self.Warning.clear()
 
     def __generate_dataset_level_data(self):
+        n_segments = int(self.n_segments)
+        if n_segments == 0: # if the user does not choose explicitly the value in the menu, the value will be 0.
+            n_segments = 1 
         if self.stories is not None:
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:
                     self.tagger = Tagger(
-                        lang=self.language, n_segments=int(self.n_segments), text_tuples=self.stories, 
+                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
                         custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
                     print('Both corpus and custom tags are available!')
                 else:
                     self.tagger = Tagger(
-                        lang=self.language, n_segments=int(self.n_segments), text_tuples=self.stories, 
+                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
                         custom_tags_and_word_column=None)
                     print('ONLY corpus is available!')
 
