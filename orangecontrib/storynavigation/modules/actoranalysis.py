@@ -253,14 +253,16 @@ class ActorTagger:
 
         return result
 
-    def __get_custom_tags_list(self, custom_dict):
+    def __get_custom_tags_list(self, story_elements_df):
         result = []
-        for token in custom_dict:
-            result.append(token.upper())
+        index_n = 12
+        sliced_df = story_elements_df.iloc[:, index_n+1:]
+        print("no of cols: ", len(sliced_df))
+        print(sliced_df)
         return result
 
     def postag_text(
-        self, text, nouns, subjs, selected_prominence_metric, prominence_score_min, story_elements_df
+        self, text, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
     ):
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -268,6 +270,7 @@ class ActorTagger:
             text (string): Story text
             nouns (boolean): whether noun tokens should be tagged
             subjs (boolean): whether subject tokens should be tagged
+            custom (boolean): whether custom tags should be highlighted or not
             selected_prominence_metric (float): the selected metric by which to calculate the word prominence score
             prominence_score_min (float): the minimum prominence score for an entity which qualifies it to be tagged
             story_elements_df (pandas.DataFrame): a dataframe with all required nlp tagging information
@@ -280,13 +283,15 @@ class ActorTagger:
         sentences = util.preprocess_text(text)
         # pos tags that the user wants to highlight
         pos_tags = []
-        # custom_tag_labels = []
+        
         if nouns:
             pos_tags.append("NSP")
             pos_tags.append("NSNP")
         if subjs:
             pos_tags.append("SP")
             pos_tags.append("SNP")
+        if custom:
+            pos_tags.extend(self.__get_custom_tags_list(story_elements_df))
 
         if len(pos_tags) == 0:
             for sentence in sentences:
@@ -298,7 +303,8 @@ class ActorTagger:
         story_elements_df = story_elements_df.copy()
         story_elements_df['story_navigator_tag'] = story_elements_df['story_navigator_tag'].astype(str)
         story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str) 
-        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]       
+        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]
+        matched_df = matched_df.copy()
         
         matched_df['merged_tags'] = np.where(matched_df['story_navigator_tag'] == '-', matched_df['spacy_tag'], matched_df['story_navigator_tag'])
         matched_df['token_start_idx'] = matched_df['token_start_idx'].astype(str)
@@ -325,14 +331,10 @@ class ActorTagger:
             options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
             html += displacy.render(doc, style="ent", options=options, manual=True)
 
-        self.html_result = html
-        return util.remove_span_tags(html)
-    
-        # return html
-        # if custom:
-        #     return util.remove_span_tags_except_custom(html)
-        # else:
-        #     return util.remove_span_tags(html)
+        if custom:
+            return util.remove_span_tags_except_custom(html)
+        else:
+            return util.remove_span_tags(html)
 
     def __is_valid_token(self, token):
         """Verifies if token is valid word

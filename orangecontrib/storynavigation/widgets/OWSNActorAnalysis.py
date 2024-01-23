@@ -48,8 +48,6 @@ from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.actoranalysis import ActorTagger
 import storynavigation.modules.constants as constants
 
-# spacy.cli.download(constants.NL_SPACY_MODEL)
-
 HTML = """
 <!doctype html>
 <html>
@@ -709,6 +707,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             value,
                             self.nouns,
                             self.subjs,
+                            self.custom,
                             self.agent_prominence_metric,
                             self.agent_prominence_score_min,
                             self.story_elements_dict[str(c_index)]
