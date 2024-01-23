@@ -253,13 +253,67 @@ class ActorTagger:
 
         return result
 
-    def __get_custom_tags_list(self, story_elements_df):
-        result = []
-        index_n = 12
-        sliced_df = story_elements_df.iloc[:, index_n+1:]
-        print("no of cols: ", len(sliced_df))
-        print(sliced_df)
-        return result
+    def __filter_rows(self, story_elements_df, pos_tags):
+        story_elements_df = story_elements_df.copy()
+        story_elements_df['story_navigator_tag'] = story_elements_df['story_navigator_tag'].astype(str)
+        story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str) 
+        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]
+        matched_df = matched_df.copy()
+        
+        matched_df['merged_tags'] = np.where(matched_df['story_navigator_tag'] == '-', matched_df['spacy_tag'], matched_df['story_navigator_tag'])
+        matched_df['token_start_idx'] = matched_df['token_start_idx'].astype(str)
+        matched_df['token_end_idx'] = matched_df['token_end_idx'].astype(str)
+
+        return matched_df
+    
+    def __do_tagging(self, df):
+        ents = []
+        if len(df) > 0:
+            displacy_tags_list = df['displacy_tag_strings'].tolist()
+            for displacy_tag in displacy_tags_list:
+                dtag = displacy_tag.split(' | ')
+                ents.append({"start": int(float(dtag[0])), "end": int(float(dtag[1])), "label": dtag[2]})
+
+            ents = util.remove_duplicate_tagged_entities(ents) 
+
+        return ents
+    
+    def __print_html_no_highlighted_tokens(self, sentences):
+        html = ''
+        for sentence in sentences:
+            doc = {"text": sentence, "ents": []}
+            options = {"ents": [], "colors": {}}
+            html += displacy.render(doc, style="ent", options=options, manual=True)
+        return html
+    
+    def __filter_and_sort_matched_dataframe_by_sentence(self, df, sent, sents):
+        order_mapping = {value: index for index, value in enumerate(sents)}
+        matched_sent_df = df[df['sentence'] == sent]
+        matched_sent_df = matched_sent_df.copy()
+        matched_sent_df.loc[:, 'sorting_key'] = matched_sent_df['sentence'].map(lambda value: order_mapping.get(value, len(sents)))
+        matched_sent_df_sorted = matched_sent_df.sort_values(by='sorting_key').drop('sorting_key', axis=1)
+        return matched_sent_df_sorted
+    
+    def __do_custom_tagging(self, df, cust_tag_cols):
+        cust_tag_col = []
+        for index, row in df.iterrows():
+            cust_tag_val = []
+            for colname in cust_tag_cols:
+                if str(row[colname]) == '1':
+                    colname_parts = colname.split('_')
+                    cust_tag_val.append(colname_parts[2])
+            if len(cust_tag_val) > 0:
+                cust_tag_col.append('|'.join(sorted(cust_tag_val)))
+            else:
+                cust_tag_col.append('-')
+
+        df['custom_tag'] = cust_tag_col
+        df['custom_tokens_should_be_tagged'] = np.where(df['custom_tag'] == '-', '0', '1')
+        custom_tags_df = df[df['custom_tokens_should_be_tagged'] == '1']
+        custom_tags_df = custom_tags_df.copy()
+        custom_tags_df['displacy_tag_strings'] = custom_tags_df['token_start_idx'] + ' | ' + custom_tags_df['token_end_idx'] + ' | ' + custom_tags_df['custom_tag']
+        cents = self.__do_tagging(custom_tags_df)
+        return cents, custom_tags_df['custom_tag'].unique().tolist()
 
     def postag_text(
         self, text, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
@@ -281,9 +335,8 @@ class ActorTagger:
         html = ""
 
         sentences = util.preprocess_text(text)
-        # pos tags that the user wants to highlight
         pos_tags = []
-        
+        custom_tag_columns = []
         if nouns:
             pos_tags.append("NSP")
             pos_tags.append("NSNP")
@@ -291,44 +344,47 @@ class ActorTagger:
             pos_tags.append("SP")
             pos_tags.append("SNP")
         if custom:
-            pos_tags.extend(self.__get_custom_tags_list(story_elements_df))
+            custom_tag_columns, custom_tags = util.get_custom_tags_list_and_columns(story_elements_df)
+            pos_tags.extend(custom_tags)
 
         if len(pos_tags) == 0:
-            for sentence in sentences:
-                doc = {"text": sentence, "ents": []}
-                options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
-                html += displacy.render(doc, style="ent", options=options, manual=True)
-            return html
-
-        story_elements_df = story_elements_df.copy()
-        story_elements_df['story_navigator_tag'] = story_elements_df['story_navigator_tag'].astype(str)
-        story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str) 
-        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]
-        matched_df = matched_df.copy()
+            return self.__print_html_no_highlighted_tokens(sentences)
         
-        matched_df['merged_tags'] = np.where(matched_df['story_navigator_tag'] == '-', matched_df['spacy_tag'], matched_df['story_navigator_tag'])
-        matched_df['token_start_idx'] = matched_df['token_start_idx'].astype(str)
-        matched_df['token_end_idx'] = matched_df['token_end_idx'].astype(str)
-        matched_df['displacy_tag_strings'] = matched_df['token_start_idx'] + ' | ' + matched_df['token_end_idx'] + ' | ' + matched_df['merged_tags']
-        order_mapping = {value: index for index, value in enumerate(sentences)}
+        matched_df = None
 
         for sentence in sentences:
-            matched_sent_df = matched_df[matched_df['sentence'] == sentence]
-            matched_sent_df = matched_sent_df.copy()
-            matched_sent_df.loc[:, 'sorting_key'] = matched_sent_df['sentence'].map(lambda value: order_mapping.get(value, len(sentences)))
-            matched_sent_df_sorted = matched_sent_df.sort_values(by='sorting_key').drop('sorting_key', axis=1)
-
             ents = []
-            if len(matched_sent_df_sorted) > 0:
-                displacy_tags_list = matched_sent_df_sorted['displacy_tag_strings'].tolist()
-                for displacy_tag in displacy_tags_list:
-                    dtag = displacy_tag.split(' | ')
-                    ents.append({"start": int(float(dtag[0])), "end": int(float(dtag[1])), "label": dtag[2]})
+            if custom:
+                nents = []
+                cents = []
+                new_color_map = constants.COLOR_MAP
+                if nouns or subjs:
+                    matched_df = self.__filter_rows(story_elements_df, pos_tags)
+                    matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(matched_df, sentence, sentences)
+                    matched_sent_df_sorted['displacy_tag_strings'] = matched_sent_df_sorted['token_start_idx'] + ' | ' + matched_sent_df_sorted['token_end_idx'] + ' | ' + matched_sent_df_sorted['merged_tags']
+                    nents = self.__do_tagging(matched_sent_df_sorted)
 
-                ents = util.remove_duplicate_tagged_entities(ents)                
+                    matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(story_elements_df, sentence, sentences)
+                    cents, custom_pos_tags = self.__do_custom_tagging(matched_sent_df_sorted, custom_tag_columns)
+                    for custom_pos_tag in custom_pos_tags:
+                        new_color_map[custom_pos_tag] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+                    options = {"ents": pos_tags + custom_pos_tags, "colors": new_color_map}
+                else:
+                    matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(story_elements_df, sentence, sentences)
+                    cents, custom_pos_tags = self.__do_custom_tagging(matched_sent_df_sorted, custom_tag_columns)
+                    for custom_pos_tag in custom_pos_tags:
+                        new_color_map[custom_pos_tag] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
+                    options = {"ents": custom_pos_tags, "colors": new_color_map}
 
-            doc = {"text": sentence, "ents": ents}
-            options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
+                ents = nents + cents
+            else:
+                matched_df = self.__filter_rows(story_elements_df, pos_tags)
+                matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(matched_df, sentence, sentences)
+                matched_sent_df_sorted['displacy_tag_strings'] = matched_sent_df_sorted['token_start_idx'] + ' | ' + matched_sent_df_sorted['token_end_idx'] + ' | ' + matched_sent_df_sorted['merged_tags']
+                ents = self.__do_tagging(matched_sent_df_sorted)
+                options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
+
+            doc = {"text": sentence, "ents": ents}    
             html += displacy.render(doc, style="ent", options=options, manual=True)
 
         if custom:
