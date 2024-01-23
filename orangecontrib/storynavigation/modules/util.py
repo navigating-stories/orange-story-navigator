@@ -5,6 +5,7 @@ import re
 import spacy
 import os
 import string
+import pandas as pd
 import storynavigation.modules.constants as constants
 
 def entity_tag_already_exists(ents, start, end):
@@ -135,6 +136,29 @@ def preprocess_text(text):
 
     return cleaned_sents
 
+def convert_orangetable_to_dataframe(table):
+    """Converts an Orange Data Table object to a Pandas dataframe
+
+    Args:
+        table (Orange.data.Table): an Orange Data Table instance
+
+    Returns:
+        df (pandas.DataFrame): a pandas dataframe with the same content (info) and structure contained in the Orange Data Table
+    """
+    # Extract attribute names, class variable name, and meta attribute names
+    column_names = [var.name for var in table.domain.variables]
+    meta_names = [meta.name for meta in table.domain.metas]
+
+    # Combine attribute and meta names
+    all_column_names = column_names + meta_names
+
+    # Create a list of lists representing the data
+    data = [[str(entry[var]) for var in table.domain.variables + table.domain.metas] for entry in table]
+
+    # Convert to a pandas DataFrame
+    df = pd.DataFrame(data, columns=all_column_names)
+
+    return df
 
 def remove_span_tags(html_string):
     """Removes span tags (including content) from an HTML string

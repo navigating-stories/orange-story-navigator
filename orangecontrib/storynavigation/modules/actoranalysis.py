@@ -288,11 +288,6 @@ class ActorTagger:
             pos_tags.append("SP")
             pos_tags.append("SNP")
 
-        print()
-        print()
-        print("pos_tags: ", pos_tags)
-        print()
-        print()
         if len(pos_tags) == 0:
             for sentence in sentences:
                 doc = {"text": sentence, "ents": []}
@@ -302,34 +297,13 @@ class ActorTagger:
 
         story_elements_df = story_elements_df.copy()
         story_elements_df['story_navigator_tag'] = story_elements_df['story_navigator_tag'].astype(str)
-        story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str)
-
-        print()
-        print()
-        print("story_elements: ", story_elements_df)
-        print()
-        print()        
-
-
-        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]
-        print()
-        print()
-        print("matched_df1: ", matched_df)
-        print()
-        print()        
+        story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str) 
+        matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]       
         
-        # matched_df = matched_df.copy()
         matched_df['merged_tags'] = np.where(matched_df['story_navigator_tag'] == '-', matched_df['spacy_tag'], matched_df['story_navigator_tag'])
         matched_df['token_start_idx'] = matched_df['token_start_idx'].astype(str)
         matched_df['token_end_idx'] = matched_df['token_end_idx'].astype(str)
         matched_df['displacy_tag_strings'] = matched_df['token_start_idx'] + ' | ' + matched_df['token_end_idx'] + ' | ' + matched_df['merged_tags']
-
-        print()
-        print()
-        print("matched_df2: ", matched_df)
-        print()
-        print()
-
         order_mapping = {value: index for index, value in enumerate(sentences)}
 
         for sentence in sentences:
@@ -346,12 +320,6 @@ class ActorTagger:
                     ents.append({"start": int(float(dtag[0])), "end": int(float(dtag[1])), "label": dtag[2]})
 
                 ents = util.remove_duplicate_tagged_entities(ents)                
-
-            # print()
-            # print()
-            # print('ents: ', ents)
-            # print()
-            # print()
 
             doc = {"text": sentence, "ents": ents}
             options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
