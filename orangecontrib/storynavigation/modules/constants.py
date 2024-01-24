@@ -143,4 +143,4 @@ COLOR_MAP[SUBJECT_PRONOUN] = SUBJECT_PRONOUN_HIGHLIGHT_COLOR
 COLOR_MAP[SUBJECT_NON_PRONOUN] = SUBJECT_NONPRONOUN_HIGHLIGHT_COLOR
 
 # column names in tagging information dataframe
-TAGGING_DATAFRAME_COLUMNNAMES = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
+TAGGING_DATAFRAME_COLUMNNAMES = ['storyid', 'sentence', 'segment_id', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
