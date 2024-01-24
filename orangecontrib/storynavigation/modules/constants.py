@@ -25,6 +25,9 @@ NL = 'nl'
 EN = 'en'
 SUPPORTED_LANGUAGES = [EN, NL]
 
+# Number of story segments
+N_STORY_SEGMENTS = list(range(1,11))
+
 # filename from which to retrieve a list of dutch stopwords
 NL_STOPWORDS_FILENAME = "dutchstopwords.txt"
 # filename from which to retrieve a list of dutch past tense verbs

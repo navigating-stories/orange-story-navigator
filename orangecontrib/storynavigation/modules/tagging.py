@@ -4,6 +4,8 @@
 import os
 import string
 import pandas as pd
+import math
+import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
@@ -13,9 +15,13 @@ class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
     For the storynavigator Orange3 add-on:
     https://pypi.org/project/storynavigator/0.0.11/
+
+    Args:
+        n_segments (int): Number of segments to split each story into.
     """
-    def __init__(self, lang, text_tuples, custom_tags_and_word_column=None):
+    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
         self.text_tuples = text_tuples
+        self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
         self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
@@ -54,6 +60,7 @@ class Tagger:
         for story_tuple in text_tuples:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0, ignore_index=True)
+
         return collection_df
     
     def __process_story(self, storyid, story_text, nlp):
@@ -65,7 +72,8 @@ class Tagger:
             nlp (spacy.language.Language): a spacy language model object to use on the input stories
 
         Returns:
-            pandas.DataFrame: a dataframe containing all tagging data for the given story
+            pandas.DataFrame: a dataframe containing all tagging data for the given story, and a column with the segment.
+            The segment is the segment number of the corresponding sentence in a given story.
         """
         story_df = pd.DataFrame()
         sentences = util.preprocess_text(story_text)
@@ -78,6 +86,27 @@ class Tagger:
                 tagged_sentences.append(tagged_sentence)
 
         story_df = self.__parse_tagged_story(storyid, sentences, tagged_sentences)
+
+        # Append the segment id by sentence 
+        # NOTE: join on storyid x sentence id may be better, but for this we'd need to story the sentence id also in story_df 
+        sentences_df = []
+        sentence_id = 0
+        for segment_id, group in enumerate(np.array_split(sentences, self.n_segments)):
+            for s in group:
+                sentences_df.append([storyid, s, sentence_id, segment_id])
+                sentence_id += 1
+
+        sentences_df = pd.DataFrame(sentences_df, columns=["storyid", "sentence", "sentence_id", "segment_id"])
+
+        idx_cols = ["storyid", "sentence"]
+        story_df = (story_df.
+                    set_index(idx_cols).
+                    join(sentences_df.loc[:, idx_cols + ["segment_id"]].
+                         set_index(idx_cols)
+                         ).
+                    reset_index()
+                    )
+
         return story_df
         
     def __parse_tagged_story(self, storyid, sentences, tagged_sentences):

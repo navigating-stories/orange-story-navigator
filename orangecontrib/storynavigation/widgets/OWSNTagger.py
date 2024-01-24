@@ -30,6 +30,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     word_column = 'word'
+    n_segments = 0 # this selects the the first entry in the list constants.N_STORY_SEGMENTS 
 
     def __init__(self):
         super().__init__()
@@ -64,8 +65,21 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
         self.controlArea.layout().addWidget(self.select_word_column_combo)
 
+        self.select_n_segments_combo = gui.comboBox(
+            widget=self.controlArea,
+            master=self,
+            label="Number of segments per story",
+            value="n_segments",
+            items=constants.N_STORY_SEGMENTS,
+            sendSelectedValue=True,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+
+        self.controlArea.layout().addWidget(self.select_n_segments_combo)
+
         self.select_language_combo.setEnabled(True)
         self.select_word_column_combo.setEnabled(True)
+        self.select_n_segments_combo.setEnabled(True)
         
         self.compute_data_button = gui.button(
             self.controlArea,
@@ -121,13 +135,20 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         self.Warning.clear()
 
     def __generate_dataset_level_data(self):
+        n_segments = int(self.n_segments)
+        if n_segments == 0: # if the user does not choose explicitly the value in the menu, the value will be 0.
+            n_segments = 1 
         if self.stories is not None:
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:
-                    self.tagger = Tagger(lang=self.language, text_tuples=self.stories, custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
+                    self.tagger = Tagger(
+                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
+                        custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
                     print('Both corpus and custom tags are available!')
                 else:
-                    self.tagger = Tagger(lang=self.language, text_tuples=self.stories, custom_tags_and_word_column=None)
+                    self.tagger = Tagger(
+                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
+                        custom_tags_and_word_column=None)
                     print('ONLY corpus is available!')
 
 
@@ -199,12 +220,16 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
         
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
+    from orangecontrib.text.preprocess import BASE_TOKENIZER
 
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNDSGTagger).run(corpus_)
+    # corpus_ = Corpus.from_file("book-excerpts")
+    corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
+    corpus_ = corpus_[:3]
+    corpus_ = BASE_TOKENIZER(corpus_)
+    previewer = WidgetPreview(OWSNTagger)
+    # breakpoint()
+    previewer.run(set_stories=corpus_, no_exit=True)
+    # WidgetPreview(OWSNTagger).run(set_stories=corpus_)
