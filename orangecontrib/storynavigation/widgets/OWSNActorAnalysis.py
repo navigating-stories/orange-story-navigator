@@ -563,7 +563,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 if self.metric_name_combo is not None:
                     self.metric_name_combo.setEnabled(True)
         self.show_docs()
-        # self.commit.deferred()
 
     @Inputs.stories
     def set_stories(self, stories=None):
@@ -572,13 +571,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
 
         self.setup_controls()
-        # self.openContext(self.stories)
         self.doc_list.model().set_filter_string(self.regexp_filter)
-        # self.select_variables()
         self.list_docs()
-        # self.update_info()
-        # self.set_selection()
-        # self.show_docs()
         self.show_docs()
 
     @Inputs.story_elements
@@ -608,12 +602,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.metric_name_combo.setEnabled(False)
 
         self.setup_controls()
-        # self.openContext(self.stories)
         self.doc_list.model().set_filter_string(self.regexp_filter)
-        # self.select_variables()
         self.list_docs()
-        # self.update_info()
-        # self.set_selection()
         self.show_docs()
 
     def reset_widget(self):
