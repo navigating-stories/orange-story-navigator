@@ -332,9 +332,14 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
+        
         html = ""
 
         sentences = util.preprocess_text(text)
+        
+        if story_elements_df is None:
+            return self.__print_html_no_highlighted_tokens(sentences)
+        
         pos_tags = []
         custom_tag_columns = []
         if nouns:

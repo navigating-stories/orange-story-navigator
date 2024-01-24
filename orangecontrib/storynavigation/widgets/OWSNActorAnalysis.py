@@ -414,6 +414,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             "Other potential actors",
             callback=self.pos_selection_changed
         )
+       
+        self.postags_box.setEnabled(False)
+        self.sc.setChecked(False)
+        self.nc.setChecked(False)
 
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
         self.allc.setChecked(False)
@@ -426,6 +430,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             callback=self.pos_selection_changed
         )
 
+        self.custom_tags.setChecked(False)
         self.custom_tags.setEnabled(False)
         self.allc.stateChanged.connect(self.on_state_changed_pos)
         self.pos_checkboxes = [self.sc, self.nc, self.custom_tags]
@@ -446,7 +451,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             callback=self.prominence_metric_change
         )
 
-        self.main_agents_box.setEnabled(True)
+        self.metric_name_combo.setEnabled(False)
+        self.main_agents_box.setEnabled(False)
 
         gui.hSlider(
             self.main_agents_box,
@@ -542,23 +548,38 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         QApplication.clipboard().setText(text)
 
     def pos_selection_changed(self):
+        if not self.sc.isChecked():
+            if hasattr(self, 'main_agents_box'):
+                if self.main_agents_box is not None:
+                    self.main_agents_box.setEnabled(False)
+            if hasattr(self, 'metric_name_combo'):
+                if self.metric_name_combo is not None:
+                    self.metric_name_combo.setEnabled(False)
+        else:
+            if hasattr(self, 'main_agents_box'):
+                if self.main_agents_box is not None:
+                    self.main_agents_box.setEnabled(True)
+            if hasattr(self, 'metric_name_combo'):
+                if self.metric_name_combo is not None:
+                    self.metric_name_combo.setEnabled(True)
         self.show_docs()
-        self.commit.deferred()
+        # self.commit.deferred()
 
     @Inputs.stories
     def set_stories(self, stories=None):
         self.stories = stories
-        self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         if stories is not None:
-            self.setup_controls()
-            # self.openContext(self.stories)
-            self.doc_list.model().set_filter_string(self.regexp_filter)
-            # self.select_variables()
-            self.list_docs()
-            # self.update_info()
-            # self.set_selection()
-            # self.show_docs()
-            self.show_docs()
+            self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
+
+        self.setup_controls()
+        # self.openContext(self.stories)
+        self.doc_list.model().set_filter_string(self.regexp_filter)
+        # self.select_variables()
+        self.list_docs()
+        # self.update_info()
+        # self.set_selection()
+        # self.show_docs()
+        self.show_docs()
 
     @Inputs.story_elements
     def set_tagging_data(self, story_elements=None):
@@ -571,15 +592,30 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
 
-            self.setup_controls()
-            # self.openContext(self.stories)
-            self.doc_list.model().set_filter_string(self.regexp_filter)
-            # self.select_variables()
-            self.list_docs()
-            # self.update_info()
-            # self.set_selection()
-            self.show_docs()
-            
+            self.postags_box.setEnabled(True)
+            if self.sc.isChecked():
+                self.main_agents_box.setEnabled(True)
+                self.metric_name_combo.setEnabled(True)
+        else:
+            self.nc.setChecked(False)
+            self.sc.setChecked(False)
+            self.allc.setChecked(False)
+            self.custom_tags.setChecked(False)
+
+            self.custom_tags.setEnabled(False)
+            self.postags_box.setEnabled(False)
+            self.main_agents_box.setEnabled(False)
+            self.metric_name_combo.setEnabled(False)
+
+        self.setup_controls()
+        # self.openContext(self.stories)
+        self.doc_list.model().set_filter_string(self.regexp_filter)
+        # self.select_variables()
+        self.list_docs()
+        # self.update_info()
+        # self.set_selection()
+        self.show_docs()
+
     def reset_widget(self):
         self.stories = None
         self.story_elements = None
@@ -716,6 +752,16 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.agent_prominence_score_min,
                             self.story_elements_dict[str(c_index)]
                         )
+                    else:
+                        value = self.actortagger.postag_text(
+                            value,
+                            self.nouns,
+                            self.subjs,
+                            self.custom,
+                            self.agent_prominence_metric,
+                            self.agent_prominence_score_min,
+                            None
+                        )                        
                     self.Outputs.metrics_freq_table.send(
                         table_from_frame(
                             self.actortagger.calculate_metrics_freq_table()
