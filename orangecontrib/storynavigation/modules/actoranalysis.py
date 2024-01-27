@@ -623,7 +623,6 @@ class ActorTagger:
             rows.append([word, self.custom_category_frequencies[word], str(util.get_column(df, word))])
 
         rows.sort(key=lambda x: x[1])
-
         return pd.DataFrame(rows[-n:], columns=constants.CUSTOMFREQ_TABLE_HEADER)
 
 
@@ -656,6 +655,29 @@ class ActorTagger:
 
         return pd.DataFrame(rows[-n:], columns=constants.AGENCY_TABLE_HEADER)
 
+    def generate_actor_analysis_results(self, story_elements_df):
+        # add lowercase token column
+        story_elements_df = story_elements_df.copy()
+        story_elements_df['token_text_lowercase'] = story_elements_df['token_text'].str.lower()
+
+        # convert IDs to categorical values 
+        story_elements_df['storyid'] = 'ST' + story_elements_df['storyid'].str
+        story_elements_df['segment_id'] = 'SE' + story_elements_df['segment_id'].str
+
+        raw_freq = []
+
+        new_cols = ['storysegmentid', 'token_text', 'raw_freq']
+        data = []
+        for word in story_elements_df['token_text_lowercase'].unique().tolist():
+            current_rows = []
+            current_df = story_elements_df.groupby(['storyid', 'segment_id', 'sentence', 'token_text_lowercase']).count().reset_index(name='raw_freq')
+
+            # how to count subject freq here too...?
+            # and custom freq?
+            # and calculate agency?
+            # and calculate prominence?
+
+        return pd.DataFrame()
 
 class ActorMetricCalculator:
     """Unused class / code so far..."""

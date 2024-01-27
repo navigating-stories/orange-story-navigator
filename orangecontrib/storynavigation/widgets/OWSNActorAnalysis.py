@@ -39,7 +39,7 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
-from Orange.data.pandas_compat import table_from_frame, table_to_frames 
+from Orange.data.pandas_compat import table_from_frame
 
 # Imports from other Orange3 add-ons
 from orangecontrib.text.corpus import Corpus
@@ -325,10 +325,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        metrics_freq_table = Output("Word frequencies", Table)
-        metrics_subfreq_table = Output("Main subject frequencies", Table)
-        metrics_customfreq_table = Output("Custom tag frequencies", Table)
-        metrics_agency_table = Output("Actor agency scores", Table)
+        selected_story_results = Output("Selected story results", Table)
+        story_collection_results = Output("Story collection results", Table)
+        # metrics_freq_table = Output("Word frequencies", Table)
+        # metrics_subfreq_table = Output("Main subject frequencies", Table)
+        # metrics_customfreq_table = Output("Custom tag frequencies", Table)
+        # metrics_agency_table = Output("Actor agency scores", Table)
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -380,6 +382,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.stories = None  # initialise list of documents (corpus)
         self.story_elements = None  # initialise tagging information
         self.story_elements_dict = {}
+        self.actor_results_df = None
+        self.selected_actor_results_df = None
 
         self.__pending_selected_documents = self.selected_documents
 
@@ -563,7 +567,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 if self.metric_name_combo is not None:
                     self.metric_name_combo.setEnabled(True)
         self.show_docs()
-        # self.commit.deferred()
 
     @Inputs.stories
     def set_stories(self, stories=None):
@@ -572,19 +575,22 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
 
         self.setup_controls()
-        # self.openContext(self.stories)
         self.doc_list.model().set_filter_string(self.regexp_filter)
-        # self.select_variables()
         self.list_docs()
-        # self.update_info()
-        # self.set_selection()
-        # self.show_docs()
         self.show_docs()
 
     @Inputs.story_elements
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+            self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements)
+
+            self.Outputs.story_collection_results.send(
+                table_from_frame(
+                    self.actor_results_df
+                )
+            )
+
             story_elements_grouped_by_story = self.story_elements.groupby('storyid')
             for storyid, story_df in story_elements_grouped_by_story:
                 self.story_elements_dict[storyid] = story_df
@@ -608,12 +614,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.metric_name_combo.setEnabled(False)
 
         self.setup_controls()
-        # self.openContext(self.stories)
         self.doc_list.model().set_filter_string(self.regexp_filter)
-        # self.select_variables()
         self.list_docs()
-        # self.update_info()
-        # self.set_selection()
         self.show_docs()
 
     def reset_widget(self):
@@ -697,8 +699,29 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         ):
             view.selectionModel().select(selection, QItemSelectionModel.ClearAndSelect)
 
+    def update_selected_actor_results(self):
+        if self.actor_results_df is not None and len(self.actor_results_df) > 0:
+            selected_storyids = []
+            for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+                selected_storyids.append('S' + str(c_index))
+
+            selected_storyids = list(set(selected_storyids)) # only unique items
+            print()
+            print('number of stories selected: ', len(selected_storyids))
+            print()
+            self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
+            self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+
+            self.Outputs.story_collection_results.send(
+                table_from_frame(
+                    self.selected_actor_results_df
+                )
+            )
+
     def selection_changed(self) -> None:
+        
         """Function is called every time the selection changes"""
+        self.update_selected_actor_results()
         self.agent_prominence_score_min = 0
         self.actortagger.word_prominence_scores = {}
         self.actortagger.noun_action_dict = {}
@@ -711,7 +734,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actortagger.sentence_nlp_models = []
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
-        self.commit.deferred()
+        # self.commit.deferred()
 
     def prominence_metric_change(self):
         self.agent_prominence_score_min = 0
@@ -723,12 +746,15 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if self.agent_prominence_score_min > self.agent_prominence_score_max:
             self.agent_prominence_score_min = self.agent_prominence_score_max
         self.show_docs(slider_engaged=True)
-        self.commit.deferred()
+        # self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
         """Show the selected documents in the right area"""
         if self.stories is None:
             return
+        
+        if self.selected_actor_results_df is None and self.actor_results_df is not None:
+            self.update_selected_actor_results()
 
         self.Warning.no_feats_display.clear()
         if len(self.display_features) == 0:
