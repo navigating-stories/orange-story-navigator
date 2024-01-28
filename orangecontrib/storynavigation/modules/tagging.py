@@ -21,6 +21,7 @@ class Tagger:
     """
     def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
         self.text_tuples = text_tuples
+        self.lang = lang
         self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
@@ -39,13 +40,22 @@ class Tagger:
         self.past_tense_verbs = None
         self.present_tense_verbs = None
         self.false_positive_verbs = None
-        self.__setup_required_nlp_resources(lang)
+        self.__setup_required_nlp_resources(self.lang)
 
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
 
         self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
-    
+
+    def __calculate_story_wordcounts(self, collection_df):
+        story_sentence_column = collection_df['sentence'].tolist()
+        tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+") # word tokenizer
+        num_words_in_sentence_column = []
+        for sentence in story_sentence_column:
+            spans = list(tokenizer.span_tokenize(sentence))
+            num_words_in_sentence_column.append(len(spans))
+        return num_words_in_sentence_column
+
     def __process_stories(self, nlp, text_tuples):
         """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
 
@@ -60,6 +70,12 @@ class Tagger:
         for story_tuple in text_tuples:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0, ignore_index=True)
+
+        lang_col_values = [self.lang] * len(collection_df)
+        story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
+
+        collection_df['lang'] = lang_col_values
+        collection_df['num_words_in_sentence'] = story_wordcount_values
 
         return collection_df
     
@@ -88,7 +104,7 @@ class Tagger:
         story_df = self.__parse_tagged_story(storyid, sentences, tagged_sentences)
 
         # Append the segment id by sentence 
-        # NOTE: join on storyid x sentence id may be better, but for this we'd need to story the sentence id also in story_df 
+        # NOTE: join on storyid x sentence id may be better, but for this we'd need to store the sentence id also in story_df
         sentences_df = []
         sentence_id = 0
         for segment_id, group in enumerate(np.array_split(sentences, self.n_segments)):

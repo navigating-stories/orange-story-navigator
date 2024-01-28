@@ -138,9 +138,9 @@ def preprocess_text(text):
 
 def frame_contains_custom_tag_columns(story_elements_df):
     start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['lang', 'num_words_in_sentence'])
     end_len = len(df_filtered.columns)
-    if end_len == (start_len - 14):
+    if end_len == (start_len - 16):
         for colname in df_filtered.columns:
             if ((not colname.startswith('is_')) or ('-scheme_' not in colname)):
                 return False
@@ -152,9 +152,9 @@ def get_custom_tags_list_and_columns(story_elements_df):
     postags = []
     columns = []
     start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['lang', 'num_words_in_sentence'])
     end_len = len(df_filtered.columns)
-    if end_len == (start_len - 14):
+    if end_len == (start_len - 16):
         for colname in df_filtered.columns:
             columns.append(colname)
             colname_parts = colname.split('_')

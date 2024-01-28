@@ -378,7 +378,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
 
-        self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
         self.stories = None  # initialise list of documents (corpus)
         self.story_elements = None  # initialise tagging information
         self.story_elements_dict = {}
@@ -571,9 +570,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     @Inputs.stories
     def set_stories(self, stories=None):
         self.stories = stories
-        if stories is not None:
-            self.actortagger = ActorTagger(constants.NL_SPACY_MODEL)
-
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
@@ -583,6 +579,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+            # self.story_elements.to_csv('test-kks2.csv', index=False)
+            self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
             self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements)
 
             self.Outputs.story_collection_results.send(
@@ -703,16 +701,21 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if self.actor_results_df is not None and len(self.actor_results_df) > 0:
             selected_storyids = []
             for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append('S' + str(c_index))
+                selected_storyids.append('ST' + str(c_index))
 
             selected_storyids = list(set(selected_storyids)) # only unique items
             print()
             print('number of stories selected: ', len(selected_storyids))
             print()
+
+            print('len1: ', len(self.actor_results_df))
+
             self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
             self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
 
-            self.Outputs.story_collection_results.send(
+            print('len2: ', len(self.selected_actor_results_df))
+
+            self.Outputs.selected_story_results.send(
                 table_from_frame(
                     self.selected_actor_results_df
                 )
@@ -723,22 +726,22 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Function is called every time the selection changes"""
         self.update_selected_actor_results()
         self.agent_prominence_score_min = 0
-        self.actortagger.word_prominence_scores = {}
-        self.actortagger.noun_action_dict = {}
-        self.actortagger.num_occurences_as_subject = {}
-        self.actortagger.num_occurences = {}
-        self.actortagger.sentence_count = 0
-        self.actortagger.word_count = 0
-        self.actortagger.word_count_nostops = 0
-        self.actortagger.html_result = ""
-        self.actortagger.sentence_nlp_models = []
+        # self.actortagger.word_prominence_scores = {}
+        # self.actortagger.noun_action_dict = {}
+        # self.actortagger.num_occurences_as_subject = {}
+        # self.actortagger.num_occurences = {}
+        # self.actortagger.sentence_count = 0
+        # self.actortagger.word_count = 0
+        # self.actortagger.word_count_nostops = 0
+        # self.actortagger.html_result = ""
+        # self.actortagger.sentence_nlp_models = []
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
         # self.commit.deferred()
 
     def prominence_metric_change(self):
         self.agent_prominence_score_min = 0
-        self.actortagger.word_prominence_scores = {}
+        # self.actortagger.word_prominence_scores = {}
         self.show_docs(slider_engaged=False)
         self.commit.deferred()
 
@@ -750,7 +753,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def show_docs(self, slider_engaged=False):
         """Show the selected documents in the right area"""
-        if self.stories is None:
+        if self.stories is None or (not hasattr(self, 'actortagger')):
             return
         
         if self.selected_actor_results_df is None and self.actor_results_df is not None:
@@ -788,26 +791,26 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.agent_prominence_score_min,
                             None
                         )                        
-                    self.Outputs.metrics_freq_table.send(
-                        table_from_frame(
-                            self.actortagger.calculate_metrics_freq_table()
-                        )
-                    )
-                    self.Outputs.metrics_subfreq_table.send(
-                        table_from_frame(
-                            self.actortagger.calculate_metrics_subjfreq_table()
-                        )
-                    )
+                    # self.Outputs.metrics_freq_table.send(
+                    #     table_from_frame(
+                    #         self.actortagger.calculate_metrics_freq_table()
+                    #     )
+                    # )
+                    # self.Outputs.metrics_subfreq_table.send(
+                    #     table_from_frame(
+                    #         self.actortagger.calculate_metrics_subjfreq_table()
+                    #     )
+                    # )
                     # self.Outputs.metrics_customfreq_table.send(
                     #     table_from_frame(
                     #         self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
                     #     )
                     # )
-                    self.Outputs.metrics_agency_table.send(
-                        table_from_frame(
-                            self.actortagger.calculate_metrics_agency_table()
-                        )
-                    )
+                    # self.Outputs.metrics_agency_table.send(
+                    #     table_from_frame(
+                    #         self.actortagger.calculate_metrics_agency_table()
+                    #     )
+                    # )
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
