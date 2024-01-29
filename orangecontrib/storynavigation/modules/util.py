@@ -8,6 +8,20 @@ import string
 import pandas as pd
 import storynavigation.modules.constants as constants
 
+def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
+    """Verifies if token is valid word
+
+    Args:
+        token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
+        stopwords (list): list of stopwords to ignore
+
+    Returns:
+        string, boolean : cleaned token text, True if the input token is a valid word, False otherwise
+    """
+    word = get_normalized_token(token)
+    return (word not in stopwords) and len(word) > 1 and is_only_punctuation(word) != '-'
+
+
 def entity_tag_already_exists(ents, start, end):
     for ent in ents:
         if (ent['start'] == start and ent['end'] == end):

@@ -91,7 +91,7 @@ class SettingAnalyzer:
         for idx, (sentence, tagged_sentence) in enumerate(zip(sentences, tagged_sentences)):
             lemmas = []
             for token in tagged_sentence:
-                if str(token).lower().strip() not in self.stopwords: # TODO: this also adds things like "(" and ")"
+                if util.is_valid_token(token, self.stopwords): 
                     lemmas.append(token.lemma_)
             
             lemmas = Counter(lemmas)
@@ -134,9 +134,3 @@ class SettingAnalyzer:
         
         return lemmas_df
         
-
-
-
-
-
-
