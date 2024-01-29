@@ -9,12 +9,16 @@ from Orange.widgets.widget import Input, Output, OWWidget
 from orangecontrib.text.corpus import Corpus
 from AnyQt.QtWidgets import QSizePolicy
 from Orange.widgets import gui
+from Orange.data.pandas_compat import table_from_frame
+
 
 import spacy
 import pandas as pd
 
 import storynavigation.modules.util as util
 import storynavigation.modules.constants as constants
+
+from storynavigation.modules.settinganalysis import SettingAnalyzer
 
 
 class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
@@ -29,9 +33,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         stories = Input("Corpus", Corpus, replaces=["Data"])
 
     class Outputs:
-        # edge_data = Output('Edge Data', Table)
-        # TODO: add output here 
-        pass 
+        dataset_level_data = Output('Intermediate settings', Table)
 
 
     settingsHandler = DomainContextHandler()
@@ -117,7 +119,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.stories
     def set_stories(self, stories=None):
-        idx = 0
+        idx = 0 # TODO: replace this when #32 is merged
         self.stories = []
         for document in stories:
             text = ''
@@ -146,35 +148,14 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         """
         Processes the corpus and extracts embeddings for selected words.
         """
-        idx = 0 # TODO: replace this when #32 is merged
-        self.stories = []
-        for _ in self.corpus:
-            text = ''
-            for field in self.corpus.domain.metas:
-                text_field_name = str(field)
-                if text_field_name.lower() in ['text', 'content']:
-                    text = str(self.corpus[idx, text_field_name])
-
-            if len(text) > 0:
-                self.stories.append((text, idx))
-
-            idx += 1
-        
-        # process one story (like __process_story in tagging). TODO: expand to all. see __process_stories
-        story_text, story_id = self.stories[0]
-        sentences = util.preprocess_text(story_text)
-
-        # generate and store nlp tagged models for each sentence
-        tagged_sentences = []
-        for sentence in sentences:
-            if (len(sentence.split()) > 0): # sentence has at least one word in it
-                tagged_sentence = self.nlp_nl(sentence) # TODO: what is a good way to store the nlp model here? -- see other code. also, use nl/en model as necessary
-                tagged_sentences.append(tagged_sentence)
-        
-        first_sentence = tagged_sentences[0]
-        lemmatized = [token.lemma_ for token in first_sentence]
-        breakpoint()
-
+        n_segments = int(self.n_segments)
+        if n_segments == 0: # if the user does not choose explicitly the value in the menu, the value will be 0.
+            n_segments = 1 
+        analyzer = SettingAnalyzer(
+             lang=self.language, n_segments=n_segments,
+             text_tuples=self.stories
+        )
+        self.Outputs.dataset_level_data.send(table_from_frame(analyzer.complete_data))
 
 
 
