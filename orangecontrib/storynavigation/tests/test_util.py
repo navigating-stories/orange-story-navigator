@@ -2,12 +2,12 @@
 import unittest
 from orangecontrib.text.corpus import Corpus
 from orangecontrib.text.preprocess import BASE_TOKENIZER
-import storynavigation.modules.util as util
+import orangecontrib.storynavigation.modules.util as util
 
 class TestUtil(unittest.TestCase):
 
     def setUp(self):
-        self.short_testdata = Corpus.from_file("storynavigation/tests/short-testdata.tab") 
+        self.short_testdata = Corpus.from_file("orangecontrib/storynavigation/tests/short-testdata.tab") 
         self.short_testdata = BASE_TOKENIZER(self.short_testdata)
 
     def test_tupelize_corpus(self):
