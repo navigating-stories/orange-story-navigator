@@ -18,6 +18,8 @@ class SettingAnalyzer:
     Args:
         lang (str): ISO string of the language of the input text.
         n_segments (int): Number of segments to split each story into.
+        text_tuples (list): each element of the list is a binary tuple. The first component is the text of the story (string) and 
+        the second component is a number (int) uniquely identifying that story in the given list
     """
     def __init__(self, lang, n_segments, text_tuples):
         self.text_tuples = text_tuples
@@ -51,7 +53,8 @@ class SettingAnalyzer:
 
         Args:
             nlp (list): list of (spacy.tokens.doc.Doc) objects - one for each element of 'sentences'
-            text_tuples (list): each element of the list is a binary tuple. The first component is the text of the story (string) and the second component is a number (int) uniquely identifying that story in the given list
+            text_tuples (list): each element of the list is a binary tuple. The first component is the text of the story (string) and 
+            the second component is a number (int) uniquely identifying that story in the given list
 
         Returns:
             pandas.DataFrame: a dataframe containing all tagging data for all stories in the given list
