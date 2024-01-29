@@ -1,7 +1,4 @@
-import os
-import numpy as np
-import scipy.sparse as sp
-
+\
 from Orange.data import Table
 from Orange.widgets.settings import Setting, DomainContextHandler
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin
@@ -12,10 +9,6 @@ from Orange.widgets import gui
 from Orange.data.pandas_compat import table_from_frame
 
 
-import spacy
-import pandas as pd
-
-import storynavigation.modules.util as util
 import storynavigation.modules.constants as constants
 
 from storynavigation.modules.settinganalysis import SettingAnalyzer
@@ -27,8 +20,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     icon = "icons/setting_analysis_icon.png"
     priority = 6480
 
-    NL_SPACY_MODEL = "nl_core_news_sm" 
-
     class Inputs:
         stories = Input("Corpus", Corpus, replaces=["Data"])
 
@@ -39,16 +30,13 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     settingsHandler = DomainContextHandler()
     settings_version = 2
     autocommit = Setting(True)
-    language = 'nl' # TODO: add this to widget?
-    n_segments = 0 # TODO: add this option to widget this selects the the first entry in the list constants.N_STORY_SEGMENTS 
+    language = 'nl' 
+    n_segments = 0 
 
     def __init__(self):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
         self.stories = None 
-        # self.prominence_scores = {}
-        # self.corpus = None # initialise list of documents (corpus)
-        # self.nlp_nl = None # initialise spacy model
 
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
@@ -97,25 +85,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
             """
         )
 
-    
-
-
-    # def load_spacy_pipeline(self, name): # TODO: can we take this from util?
-    #     """Check if the spacy language pipeline was downloaded and load it.
-    #     Downloads the language pipeline if not available.
-    
-    #     Args:
-    #         name (string): Name of the spacy language.
-    
-    #     Returns:
-    #         spacy.language.Language: The spacy language pipeline
-    #     """
-    #     if spacy.util.is_package(name):
-    #         nlp = spacy.load(name)
-    #     else:
-    #         os.system(f"spacy download {name}")
-    #         nlp = spacy.load(name)
-    #     return nlp
 
     @Inputs.stories
     def set_stories(self, stories=None):
@@ -133,11 +102,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             idx += 1
 
-        # self.nlp_nl = self.load_spacy_pipeline(self.NL_SPACY_MODEL)
-        # self.nlp_nl.add_pipe("merge_noun_chunks")
-        # self.corpus = corpus
-        # # self._generate_network(self.corpus)
-        # self.get_embeddings()
 
     def reset_widget(self):
         self.corpus = None

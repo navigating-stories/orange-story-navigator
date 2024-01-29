@@ -2,14 +2,10 @@
 """
 
 import os
-import string
 import pandas as pd
-import math
 import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
-from nltk.tokenize import RegexpTokenizer
-from Orange.data.pandas_compat import table_to_frames
 from collections import Counter
 
 
@@ -26,7 +22,6 @@ class SettingAnalyzer:
     def __init__(self, lang, n_segments, text_tuples):
         self.text_tuples = text_tuples
         self.n_segments = n_segments
-        # self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
         self.__setup_required_nlp_resources(lang)
         self.nlp = util.load_spacy_pipeline(self.model)
@@ -70,8 +65,8 @@ class SettingAnalyzer:
     
 
     def __process_story(self, storyid, story_text, nlp):
-        """Given a story text, this function preprocesses the text, then runs and stores the tagging information for each sentence in 
-        the story in memory. It then uses this information to generate a dataframe synthesising all the tagging information for downstream analysis.
+        """Given a story text, this function preprocesses the text, then runs and stores the lemmatized tokens sentence segment in 
+        the story in memory. 
 
         Args:
             storyid (int): a number uniquely identifying a specific story
@@ -79,8 +74,8 @@ class SettingAnalyzer:
             nlp (spacy.language.Language): a spacy language model object to use on the input stories
 
         Returns:
-            pandas.DataFrame: a dataframe containing all tagging data for the given story, and a column with the segment.
-            The segment is the segment number of the corresponding sentence in a given story.
+            pandas.DataFrame: a dataframe containing, for each story and segment, the unique lemmas and how often they occur in 
+            the respective story segment.
         """
         sentences = util.preprocess_text(story_text)
 
@@ -137,7 +132,6 @@ class SettingAnalyzer:
                      reset_index()
                      )
         
-        print(lemmas_df)
         return lemmas_df
         
 
