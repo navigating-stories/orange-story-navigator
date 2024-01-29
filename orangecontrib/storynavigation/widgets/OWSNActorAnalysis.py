@@ -5,7 +5,7 @@ import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
 import pandas as pd
-from orangecontrib.storynavigation.modules import util
+from storynavigation.modules import util
 
 # Imports from Qt
 from AnyQt.QtCore import (
