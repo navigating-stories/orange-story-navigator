@@ -138,27 +138,46 @@ def preprocess_text(text):
 
 def frame_contains_custom_tag_columns(story_elements_df):
     start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['lang', 'num_words_in_sentence'])
+    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
     end_len = len(df_filtered.columns)
-    if end_len == (start_len - 16):
-        for colname in df_filtered.columns:
-            if ((not colname.startswith('is_')) or ('-scheme_' not in colname)):
-                return False
+    if start_len - end_len > 1:
         return True
-    else:
-        return False
+    return False
+    #     for colname in df_filtered.columns:
+    #         if not colname.startswith('custom_'):
+    #             columns.append(colname)
+    #             colname_parts = colname.split('_')
+    #             postags.append(colname_parts[2])
+    # return columns, postags
+    # if end_len == (start_len - num_noncustomtag_cols):
+    #     for colname in df_filtered.columns:
+    #         if ((not colname.startswith('is_')) or ('-scheme_' not in colname)):
+    #             return False
+    #     return True
+    # else:
+    #     return False
+    
+def remove_custom_tag_columns(df):
+    dropcols = []
+    for col in df.columns:
+        if '-scheme_' in col:
+            dropcols.append(col)
+    df = df.drop(columns=dropcols)  
+    return df
     
 def get_custom_tags_list_and_columns(story_elements_df):
     postags = []
     columns = []
     start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['lang', 'num_words_in_sentence'])
+    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
     end_len = len(df_filtered.columns)
-    if end_len == (start_len - 16):
+    if start_len - end_len > 1:
         for colname in df_filtered.columns:
-            columns.append(colname)
-            colname_parts = colname.split('_')
-            postags.append(colname_parts[2])
+            if not colname.startswith('custom_'):
+                columns.append(colname)
+                postags.extend(story_elements_df[colname].unique().tolist())
+                # postags.append(colname)
+    postags = list(set(postags))
     return columns, postags
 
 def convert_orangetable_to_dataframe(table):

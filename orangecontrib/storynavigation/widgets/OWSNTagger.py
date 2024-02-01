@@ -124,8 +124,9 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                 self.custom_tag_dict_columns = list(self.custom_tag_dict.columns)
                 self.select_word_column_combo.clear()
                 self.select_word_column_combo.addItems(self.custom_tag_dict_columns)
-                self.word_column = self.custom_tag_dict_columns[0]
+                
         else:
+            self.custom_tag_dict = None
             self.select_word_column_combo.clear()
             self.select_word_column_combo.setEnabled(False)
 

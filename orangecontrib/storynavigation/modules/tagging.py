@@ -30,9 +30,9 @@ class Tagger:
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
             self.custom_tags = custom_tags_and_word_column[0]
-            self.customtag_column_names = self.__generate_customtag_column_names()
-            self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
-            self.complete_data_columns.extend(self.customtag_column_names)
+            # self.customtag_column_names = self.__generate_customtag_column_names()
+            # self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
+            # self.complete_data_columns.extend(self.customtag_column_names)
         
         self.stopwords = None
         self.pronouns = None
@@ -74,9 +74,17 @@ class Tagger:
         lang_col_values = [self.lang] * len(collection_df)
         story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
 
+        if self.custom_tags is not None and self.word_column is not None:
+            collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
+            collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
+            collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
+            collection_df = collection_df.drop(columns=[self.word_column])
+        else:
+            collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
+
         collection_df['lang'] = lang_col_values
         collection_df['num_words_in_sentence'] = story_wordcount_values
-
+        
         return collection_df
     
     def __process_story(self, storyid, story_text, nlp):
@@ -155,7 +163,8 @@ class Tagger:
 
             # special case: first word in a sent can be a pronoun
             if any(word == first_word_in_sent for word in self.pronouns):
-                tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))] + self.__lookup_custom_tags(first_word_in_sent)
+                # tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))] + self.__lookup_custom_tags(first_word_in_sent)
+                tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
                 story_df_rows.append(tmp_row)
 
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
@@ -187,14 +196,18 @@ class Tagger:
                     vb_text = vb.text
                 if self.__is_pronoun(tag):
                     if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, True, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, True, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, True, vb_text]
                     else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, False, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, False, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, False, vb_text]
                 else:
                     if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, True, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, True, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, True, vb_text]
                     else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, False, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, False, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, False, vb_text]
             else:
                 if self.__is_pronoun(tag):
                     vb = util.find_verb_ancestor(tag)
@@ -202,18 +215,22 @@ class Tagger:
                     if vb is not None:
                         vb_text = vb.text
                     if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, True, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, True, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, True, vb_text]
                     else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, False, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, False, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, False, vb_text]
                 elif self.__is_noun_but_not_pronoun(tag):
                     vb = util.find_verb_ancestor(tag)
                     vb_text = '-'
                     if vb is not None:
                         vb_text = vb.text
                     if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, True, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, True, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, True, vb_text]
                     else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, False, vb_text] + self.__lookup_custom_tags(tag)
+                        # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, False, vb_text] + self.__lookup_custom_tags(tag)
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, False, vb_text]
                 else:
                     row = self.__process_action_tag(storyid, sentence, tag, span)
         return row
@@ -238,12 +255,15 @@ class Tagger:
         row = None
         if self.__is_valid_token(tag):
             if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
-                row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
             else:
                 if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
                 else:
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):

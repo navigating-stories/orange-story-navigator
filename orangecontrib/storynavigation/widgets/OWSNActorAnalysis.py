@@ -327,10 +327,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     class Outputs:
         selected_story_results = Output("Selected story results", Table)
         story_collection_results = Output("Story collection results", Table)
-        # metrics_freq_table = Output("Word frequencies", Table)
-        # metrics_subfreq_table = Output("Main subject frequencies", Table)
-        # metrics_customfreq_table = Output("Custom tag frequencies", Table)
-        # metrics_agency_table = Output("Actor agency scores", Table)
+        selected_customfreq_table = Output("Selected story custom tags", Table)
+        customfreq_table = Output("Story collection custom tags", Table)
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -547,7 +545,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
-        print('selected text: ', text)
+        # print('selected text: ', text)
         QApplication.clipboard().setText(text)
 
     def pos_selection_changed(self):
@@ -579,7 +577,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def set_tagging_data(self, story_elements=None):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-            # self.story_elements.to_csv('test-kks2.csv', index=False)
             self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
             self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements)
 
@@ -595,6 +592,24 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
+                
+                # self.Outputs.customfreq_table.send(
+                #     table_from_frame(
+                #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+                #     )
+                # )
+
+                # selected_storyids = []
+                # for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+                #     selected_storyids.append(str(c_index))
+
+                # selected_storyids = list(set(selected_storyids)) # only unique items
+
+                # self.Outputs.selected_customfreq_table.send(
+                #     table_from_frame(
+                #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
+                #     )
+                # )
 
             self.postags_box.setEnabled(True)
             if self.sc.isChecked():
@@ -700,20 +715,30 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def update_selected_actor_results(self):
         if self.actor_results_df is not None and len(self.actor_results_df) > 0:
             selected_storyids = []
+            otherids = []
             for doc_count, c_index in enumerate(sorted(self.selected_documents)):
                 selected_storyids.append('ST' + str(c_index))
+                otherids.append(str(c_index))
 
             selected_storyids = list(set(selected_storyids)) # only unique items
-            print()
-            print('number of stories selected: ', len(selected_storyids))
-            print()
+            otherids = list(set(otherids))
 
-            print('len1: ', len(self.actor_results_df))
+            # self.Outputs.selected_customfreq_table.send(
+            #     table_from_frame(
+            #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
+            #     )
+            # )
+            
+            # print()
+            # print('number of stories selected: ', len(selected_storyids))
+            # print()
+
+            # print('len1: ', len(self.actor_results_df))
 
             self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
             self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
 
-            print('len2: ', len(self.selected_actor_results_df))
+            # print('len2: ', len(self.selected_actor_results_df))
 
             self.Outputs.selected_story_results.send(
                 table_from_frame(
@@ -799,11 +824,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                     # self.Outputs.metrics_subfreq_table.send(
                     #     table_from_frame(
                     #         self.actortagger.calculate_metrics_subjfreq_table()
-                    #     )
-                    # )
-                    # self.Outputs.metrics_customfreq_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_customfreq_table(self.word_dict)
                     #     )
                     # )
                     # self.Outputs.metrics_agency_table.send(
