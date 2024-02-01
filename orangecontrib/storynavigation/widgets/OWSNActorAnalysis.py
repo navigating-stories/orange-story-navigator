@@ -574,7 +574,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.show_docs()
 
     @Inputs.story_elements
-    def set_tagging_data(self, story_elements=None):
+    def set_story_elements(self, story_elements=None):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
@@ -592,6 +592,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
                 
                 # self.Outputs.customfreq_table.send(
                 #     table_from_frame(

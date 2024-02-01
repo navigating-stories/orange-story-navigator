@@ -137,25 +137,10 @@ def preprocess_text(text):
     return cleaned_sents
 
 def frame_contains_custom_tag_columns(story_elements_df):
-    start_len = len(story_elements_df.columns)
     df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
-    end_len = len(df_filtered.columns)
-    if start_len - end_len > 1:
+    if len(df_filtered.columns) > 1:
         return True
     return False
-    #     for colname in df_filtered.columns:
-    #         if not colname.startswith('custom_'):
-    #             columns.append(colname)
-    #             colname_parts = colname.split('_')
-    #             postags.append(colname_parts[2])
-    # return columns, postags
-    # if end_len == (start_len - num_noncustomtag_cols):
-    #     for colname in df_filtered.columns:
-    #         if ((not colname.startswith('is_')) or ('-scheme_' not in colname)):
-    #             return False
-    #     return True
-    # else:
-    #     return False
     
 def remove_custom_tag_columns(df):
     dropcols = []
@@ -168,15 +153,12 @@ def remove_custom_tag_columns(df):
 def get_custom_tags_list_and_columns(story_elements_df):
     postags = []
     columns = []
-    start_len = len(story_elements_df.columns)
     df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
-    end_len = len(df_filtered.columns)
-    if start_len - end_len > 1:
+    if len(df_filtered.columns) > 1:
         for colname in df_filtered.columns:
             if not colname.startswith('custom_'):
                 columns.append(colname)
                 postags.extend(story_elements_df[colname].unique().tolist())
-                # postags.append(colname)
     postags = list(set(postags))
     return columns, postags
 
