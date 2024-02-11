@@ -24,10 +24,10 @@ from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
 
 class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
-    name = '3) Setting Analysis'
+    name = 'Setting'
     description = "Provides tools to help identify the main setting of a story."
     icon = "icons/setting_analysis_icon.png"
-    priority = 6480
+    priority = 13
 
     NL_SPACY_MODEL = "nl_core_news_sm" 
 

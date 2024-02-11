@@ -16,7 +16,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     name = 'Tagger'
     description = "Generates part of speech and linguistic tagging information for stories."
     icon = "icons/tagger_icon.png"
-    priority = 6424
+    priority = 14
 
     class Inputs:
         stories = Input("Stories", Corpus, replaces=["Data"])
