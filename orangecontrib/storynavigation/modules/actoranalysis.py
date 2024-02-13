@@ -43,46 +43,27 @@ class ActorTagger:
         self.agent_prominence_score_min = 0.0
 
     def __filter_custom_word_matches(self, story_elements_df, selected_stories, cust_tag_cols):
-        story_elements_df[cust_tag_cols] = story_elements_df[cust_tag_cols].astype(int)
-        combined_df = None
+        cols = []
+        words_tagged_with_current_cust_tags_frame = story_elements_df
+        story_elements_df[cust_tag_cols] = story_elements_df[cust_tag_cols].astype(str)
+
+        if selected_stories is not None:
+            cols = ['segment_id']
+            words_tagged_with_current_cust_tags_frame = story_elements_df[story_elements_df['storyid'].isin(selected_stories)]
+        else:
+            cols = ['storyid', 'segment_id']
+        
+        combined_df = pd.DataFrame()
         for cust_tag_col in cust_tag_cols:
-            words_tagged_with_current_cust_tags_frame = None
-            current_frame = None
-            if selected_stories is not None:
-                words_tagged_with_current_cust_tags_frame = story_elements_df[story_elements_df['storyid'].isin(selected_stories)]
-                current_frame = words_tagged_with_current_cust_tags_frame.groupby(['segment_id'])[cust_tag_col].agg('sum').to_frame("frequency").reset_index()
-            else:
-                words_tagged_with_current_cust_tags_frame = story_elements_df[story_elements_df[cust_tag_col] == 1]
-                current_frame = words_tagged_with_current_cust_tags_frame.groupby(['storyid', 'segment_id'])['token_text_lowercase'].agg('count').to_frame("frequency").reset_index()
-
-            combined_df = pd.merge(combined_df, current_frame, on=['storyid', 'segment_id', 'token_text_lowercase'], how='outer')
-        return combined_df
             
-            # if custom_tag in cust_tag_dict: 
-            #     cust_tag_dict[custom_tag] += len(current_frame)
-            # else:
-            #     cust_tag_dict[custom_tag] = len(current_frame)
+            current_frame = words_tagged_with_current_cust_tags_frame.groupby(cols+[cust_tag_col])[cust_tag_col].agg('count').to_frame("freq").reset_index()
+            c_col = [cust_tag_col] * len(current_frame)
+            current_frame['classification'] = c_col
+            current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
+            combined_df = pd.concat([combined_df, current_frame], axis=0)
 
-            # if custom_tag in custom_tag_to_category_dict:
-            #     custom_tag_to_category_dict[custom_tag].append(category_level)
-            # else:
-            #     custom_tag_to_category_dict[custom_tag] = [category_level]
-
-        # return cust_tag_dict, custom_tag_to_category_dict
-          
-        # result = []
-        # for token in custom_word_dict:
-        #         for word in custom_word_dict[token]:
-        #             matches = [match.start() for match in re.finditer(r'\b{}\b'.format(re.escape(word)), sentence, flags=re.IGNORECASE)]
-        #             for match in matches:
-        #                 current_tag = {"start": match, "end": match+len(word), "label": token.upper()}
-        #                 result.append(current_tag)
-        #                 if token in self.custom_category_frequencies:
-        #                     self.custom_category_frequencies[token] += 1
-        #                 else:
-        #                     self.custom_category_frequencies[token] = 1
-
-        # return result
+        combined_df = combined_df[combined_df['category'] != 'nan']
+        return combined_df.reset_index(drop=True)
 
     def __filter_rows(self, story_elements_df, pos_tags):
         story_elements_df = story_elements_df.copy()

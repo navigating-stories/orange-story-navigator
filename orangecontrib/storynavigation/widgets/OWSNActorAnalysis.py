@@ -586,22 +586,32 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 )
             )
 
+
             story_elements_grouped_by_story = self.story_elements.groupby('storyid')
             for storyid, story_df in story_elements_grouped_by_story:
                 self.story_elements_dict[storyid] = story_df
 
+            selected_storyids = []
+            for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+                selected_storyids.append(str(c_index))
+
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
+
+                self.Outputs.selected_customfreq_table.send(
+                    table_from_frame(
+                        self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
+                    )
+                )
             else:
                 self.custom_tags.setChecked(False)
                 self.custom_tags.setEnabled(False)
                 
-                # self.Outputs.customfreq_table.send(
-                #     table_from_frame(
-                #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-                #     )
-                # )
-
+                self.Outputs.customfreq_table.send(
+                    table_from_frame(
+                        self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+                    )
+                )
                 # selected_storyids = []
                 # for doc_count, c_index in enumerate(sorted(self.selected_documents)):
                 #     selected_storyids.append(str(c_index))

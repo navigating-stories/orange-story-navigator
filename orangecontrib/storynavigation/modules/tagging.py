@@ -69,10 +69,9 @@ class Tagger:
         collection_df = pd.DataFrame()
         for story_tuple in text_tuples:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
-            collection_df = pd.concat([collection_df, story_df], axis=0, ignore_index=True)
+            collection_df = pd.concat([collection_df, story_df], axis=0)
 
-        lang_col_values = [self.lang] * len(collection_df)
-        story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
+
 
         if self.custom_tags is not None and self.word_column is not None:
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
@@ -82,7 +81,9 @@ class Tagger:
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
+        lang_col_values = [self.lang] * len(collection_df)
         collection_df['lang'] = lang_col_values
+        story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
         collection_df['num_words_in_sentence'] = story_wordcount_values
         
         return collection_df
