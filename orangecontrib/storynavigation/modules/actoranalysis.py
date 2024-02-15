@@ -247,12 +247,15 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
+        
+        sentences = util.preprocess_text(text)
+        
+        if story_elements_df is None or len(story_elements_df) == 0:
+            return self.__print_html_no_highlighted_tokens(sentences)
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
         if (str(int(nouns)) + str(int(subjs)) + str(int(custom))) in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
             return self.tagging_cache[str(selected_storyid)][(str(int(nouns)) + str(int(subjs)) + str(int(custom)))]
-
-        sentences = util.preprocess_text(text)
 
         return self.__postag_sents(sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df)
 
@@ -332,24 +335,24 @@ class ActorTagger:
 
         return story_elements_df
     
-    def __update_frame_with_prominence_scores(self, frame, mean_subj_freq_frame):
-        frame = frame.copy()
-        storyids = frame['storyid'].tolist()
+    # def __update_frame_with_prominence_scores(self, frame, mean_subj_freq_frame):
+    #     frame = frame.copy()
+    #     storyids = frame['storyid'].tolist()
 
-        mean_subj_freq = []
-        story_mean_freq_dict = {}
-        for storyid in storyids:
-            if storyid not in story_mean_freq_dict:
-                mean_subj_freq_for_story = mean_subj_freq_frame[mean_subj_freq_frame['storyid'] == storyid]['mean_subj_freq'].tolist()[0]
-                mean_subj_freq.append(mean_subj_freq_for_story)
-                story_mean_freq_dict[storyid] = mean_subj_freq_for_story
-            else:
-                mean_subj_freq.append(story_mean_freq_dict[storyid])
+    #     mean_subj_freq = []
+    #     story_mean_freq_dict = {}
+    #     for storyid in storyids:
+    #         if storyid not in story_mean_freq_dict:
+    #             mean_subj_freq_for_story = mean_subj_freq_frame[mean_subj_freq_frame['storyid'] == storyid]['mean_subj_freq'].tolist()[0]
+    #             mean_subj_freq.append(mean_subj_freq_for_story)
+    #             story_mean_freq_dict[storyid] = mean_subj_freq_for_story
+    #         else:
+    #             mean_subj_freq.append(story_mean_freq_dict[storyid])
 
-        frame['mean_subj_freq_for_story'] = mean_subj_freq
-        frame['prominence_sf'] = frame['subj_freq'] / frame['mean_subj_freq_for_story']
-        frame = frame.drop(columns=['mean_subj_freq_for_story'])
-        return frame
+    #     frame['mean_subj_freq_for_story'] = mean_subj_freq
+    #     frame['prominence_sf'] = frame['subj_freq'] / frame['mean_subj_freq_for_story']
+    #     frame = frame.drop(columns=['mean_subj_freq_for_story'])
+    #     return frame
     
     # Custom aggregation function
     def __custom_agg_agency(self, row):
@@ -376,11 +379,6 @@ class ActorTagger:
 
     def generate_actor_analysis_results(self, story_elements_df):
         self.tagging_cache = self.__generate_tagging_cache(story_elements_df)
-        # print()
-        # print()
-        # print(self.tagging_cache['0'])
-        # print()
-        # print()
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
         result_df = pd.DataFrame()

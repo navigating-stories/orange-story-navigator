@@ -325,10 +325,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        selected_story_results = Output("Selected story results", Table)
-        story_collection_results = Output("Story collection results", Table)
-        selected_customfreq_table = Output("Selected story custom tags", Table)
-        customfreq_table = Output("Story collection custom tags", Table)
+        selected_story_results = Output("Actor stats: selected", Table)
+        story_collection_results = Output("Actor stats: all", Table)
+        selected_customfreq_table = Output("Custom tag stats: selected", Table)
+        customfreq_table = Output("Custom tag stats: all", Table)
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -793,21 +793,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.agent_prominence_score_min,
                             None
                         )                        
-                    # self.Outputs.metrics_freq_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_freq_table()
-                    #     )
-                    # )
-                    # self.Outputs.metrics_subfreq_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_subjfreq_table()
-                    #     )
-                    # )
-                    # self.Outputs.metrics_agency_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_agency_table()
-                    #     )
-                    # )
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
