@@ -137,7 +137,12 @@ def preprocess_text(text):
     return cleaned_sents
 
 def frame_contains_custom_tag_columns(story_elements_df):
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+    df_filtered = pd.DataFrame()
+    if 'token_text_lowercase' in story_elements_df.columns:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['token_text_lowercase'])
+    else:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+
     if len(df_filtered.columns) > 1:
         return True
     return False
@@ -153,7 +158,12 @@ def remove_custom_tag_columns(df):
 def get_custom_tags_list_and_columns(story_elements_df):
     postags = []
     columns = []
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+    df_filtered = pd.DataFrame()
+    if 'token_text_lowercase' in story_elements_df.columns:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['token_text_lowercase'])
+    else:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+
     if len(df_filtered.columns) > 1:
         for colname in df_filtered.columns:
             if not colname.startswith('custom_'):

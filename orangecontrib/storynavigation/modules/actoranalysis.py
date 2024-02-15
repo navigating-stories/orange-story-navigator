@@ -31,16 +31,12 @@ class ActorTagger:
         self.lang = lang
         self.stopwords = None
         self.__setup_required_nlp_resources(lang)
-
-        self.story_collection = []              # list of story texts that are processed in a session
-        self.dataset_level_df_header = []       # column names of dataset (story collection) level dataframe
-        self.dataset_level_df = pd.DataFrame()  # complete dataset (story collection) level dataframe
-        self.sentence_nlp_models = []           # nlp tagging results for each sentence
-
-        self.html_result = ""                   
-
-        self.agent_prominence_score_max = 0.0
-        self.agent_prominence_score_min = 0.0
+        self.html_result = ""
+        self.num_sents_in_stories = {}
+        self.entity_prominence_scores = {}
+        self.prominence_score_max = 0.0
+        self.prominence_score_min = 0.0
+        self.tagging_cache = {}
 
     def __filter_custom_word_matches(self, story_elements_df, selected_stories, cust_tag_cols):
         cols = []
@@ -55,7 +51,6 @@ class ActorTagger:
         
         combined_df = pd.DataFrame()
         for cust_tag_col in cust_tag_cols:
-            
             current_frame = words_tagged_with_current_cust_tags_frame.groupby(cols+[cust_tag_col])[cust_tag_col].agg('count').to_frame("freq").reset_index()
             c_col = [cust_tag_col] * len(current_frame)
             current_frame['classification'] = c_col
@@ -70,6 +65,7 @@ class ActorTagger:
         story_elements_df['story_navigator_tag'] = story_elements_df['story_navigator_tag'].astype(str)
         story_elements_df['spacy_tag'] = story_elements_df['spacy_tag'].astype(str) 
         matched_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(pos_tags) | story_elements_df['spacy_tag'].isin(pos_tags)]
+        
         matched_df = matched_df.copy()
         
         matched_df['merged_tags'] = np.where(matched_df['story_navigator_tag'] == '-', matched_df['spacy_tag'], matched_df['story_navigator_tag'])
@@ -79,6 +75,20 @@ class ActorTagger:
         return matched_df
     
     def __do_tagging(self, df):
+        # entities_above_pscore_threshold = []
+        # for item in self.entity_prominence_scores:
+        #     if self.entity_prominence_scores[item] > self.prominence_score_min:
+        #         entities_above_pscore_threshold.append(item)
+
+        # if 'token_text_lowercase' in df.columns:
+        #     df = df[df['token_text_lowercase'].isin(entities_above_pscore_threshold)]
+        # else:
+        #     word_col = ''
+        #     for col in df.columns:
+        #         if 'custom_' in col:
+        #             word_col = col
+        #     df = df[df[word_col].isin(entities_above_pscore_threshold)]
+
         ents = []
         if len(df) > 0:
             displacy_tags_list = df['displacy_tag_strings'].tolist()
@@ -108,6 +118,20 @@ class ActorTagger:
     
     def __do_custom_tagging(self, df, cust_tag_cols):
         df = df.copy()
+        # entities_above_pscore_threshold = []
+        # for item in self.entity_prominence_scores:
+        #     if self.entity_prominence_scores[item] > self.prominence_score_min:
+        #         entities_above_pscore_threshold.append(item)
+
+        # if 'token_text_lowercase' in df.columns:
+        #     df = df[df['token_text_lowercase'].isin(entities_above_pscore_threshold)]
+        # else:
+        #     word_col = ''
+        #     for col in df.columns:
+        #         if 'custom_' in col:
+        #             word_col = col
+        #     df = df[df[word_col].isin(entities_above_pscore_threshold)]
+
         df_filtered = df.dropna(subset=cust_tag_cols, how='all')
         multi_custom_tags = []
         ents = []
@@ -118,6 +142,13 @@ class ActorTagger:
                 if not pd.isna(row[col]) and (row[col] != 'nan'):
                     current_row_ents.append({"start": int(row['token_start_idx']), "end": int(row['token_end_idx']), "label": row[col]})                    
 
+            # Convert each dictionary to a tuple of (key, value) pairs
+            tuple_list = [tuple(sorted(d.items())) for d in current_row_ents]
+            # Use a set to remove duplicates
+            unique_tuples = set(tuple_list)
+            # Convert back to dictionaries
+            current_row_ents = [dict(t) for t in unique_tuples]
+
             if len(current_row_ents) > 1:
                 concat_labels = '|'.join([d['label'] for d in current_row_ents if 'label' in d and isinstance(d['label'], str)])
                 multi_custom_tags.append(concat_labels)
@@ -127,31 +158,14 @@ class ActorTagger:
 
         return ents, multi_custom_tags
 
-    def postag_text(
-        self, text, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
+    def __postag_sents(
+            self, sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
     ):
-        """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
-
-        Args:
-            text (string): Story text
-            nouns (boolean): whether noun tokens should be tagged
-            subjs (boolean): whether subject tokens should be tagged
-            custom (boolean): whether custom tags should be highlighted or not
-            selected_prominence_metric (float): the selected metric by which to calculate the word prominence score
-            prominence_score_min (float): the minimum prominence score for an entity which qualifies it to be tagged
-            story_elements_df (pandas.DataFrame): a dataframe with all required nlp tagging information
-
-        Returns:
-            string: HTML string representation of POS tagged text
-        """
-        
         html = ""
-
-        sentences = util.preprocess_text(text)
         
         if story_elements_df is None:
             return self.__print_html_no_highlighted_tokens(sentences)
-        
+
         pos_tags = []
         custom_tag_columns = []
         custom_tags = []
@@ -199,13 +213,48 @@ class ActorTagger:
                 ents = self.__do_tagging(matched_sent_df_sorted)
                 options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
 
+            # Convert each dictionary to a tuple of (key, value) pairs
+            tuple_list = [tuple(sorted(d.items())) for d in ents]
+            # Use a set to remove duplicates
+            unique_tuples = set(tuple_list)
+            # Convert back to dictionaries
+            ents = [dict(t) for t in unique_tuples]
+
             doc = {"text": sentence, "ents": ents}    
             html += displacy.render(doc, style="ent", options=options, manual=True)
 
         if custom:
-            return util.remove_span_tags_except_custom(html)
+            self.html_result = util.remove_span_tags_except_custom(html)
+            return self.html_result
         else:
-            return util.remove_span_tags(html)
+            self.html_result = util.remove_span_tags(html)
+            return self.html_result
+
+    def postag_text(
+        self, text, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
+    ):
+        """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
+
+        Args:
+            text (string): Story text
+            nouns (boolean): whether noun tokens should be tagged
+            subjs (boolean): whether subject tokens should be tagged
+            custom (boolean): whether custom tags should be highlighted or not
+            selected_prominence_metric (float): the selected metric by which to calculate the word prominence score
+            prominence_score_min (float): the minimum prominence score for an entity which qualifies it to be tagged
+            story_elements_df (pandas.DataFrame): a dataframe with all required nlp tagging information
+
+        Returns:
+            string: HTML string representation of POS tagged text
+        """
+
+        selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
+        if (str(int(nouns)) + str(int(subjs)) + str(int(custom))) in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
+            return self.tagging_cache[str(selected_storyid)][(str(int(nouns)) + str(int(subjs)) + str(int(custom)))]
+
+        sentences = util.preprocess_text(text)
+
+        return self.__postag_sents(sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df)
 
     def __calculate_prominence_score(self, word, selected_prominence_metric):
         """Calculates the promience score for a given word in the story, uses two simple metrics (work in progress and more to follow):
@@ -249,34 +298,6 @@ class ActorTagger:
             if self.word_prominence_scores[item] > highest_score:
                 highest_score = self.word_prominence_scores[item]
         return highest_score
-
-    def __calculate_agency(self, word):
-        """Calculates the agency of a given word (noun) in the story using a custom metric
-
-        Args:
-            word (string): input word
-
-        Returns:
-            agency_score: the agency score for the input word in the given story
-        """
-        active_freq = 0
-        passive_freq = 0
-
-        for item in self.active_agency_scores:
-            active_freq += self.active_agency_scores[item]
-        for item in self.passive_agency_scores:
-            passive_freq += self.passive_agency_scores[item]
-
-        if active_freq > 0 and passive_freq > 0:
-            return (self.active_agency_scores[word] / active_freq) - (
-                self.passive_agency_scores[word] / passive_freq
-            )
-        elif active_freq == 0 and passive_freq > 0:
-            return 0 - (self.passive_agency_scores[word] / passive_freq)
-        elif active_freq > 0 and passive_freq == 0:
-            return self.active_agency_scores[word] / active_freq
-        else:
-            return 0
     
     def calculate_customfreq_table(self, df, selected_stories=None):
         """Prepares data table for piping to Output variable of widget: frequencies of custom tokens by user
@@ -287,45 +308,20 @@ class ActorTagger:
         Returns:
             data table (pandas dataframe)
         """
-        cust_tag_cols, cust_tag_names = util.get_custom_tags_list_and_columns(df)
         
+        cust_tag_cols, cust_tag_names = util.get_custom_tags_list_and_columns(df)
+        df['token_text'] = df['token_text'].astype(str)
         df['token_text_lowercase'] = df['token_text'].str.lower()
-        df['token_text_lowercase'] = df['token_text_lowercase'].astype(str)
 
         if df is None:
             return pd.DataFrame([], columns=constants.CUSTOMFREQ_TABLE_HEADER)
 
-        # rows = []
-        # n = 20
-        # freq_dict, mapping_dict = self.__filter_custom_word_matches(df, selected_stories=selected_stories, cust_tag_cols=cust_tag_cols)
         return self.__filter_custom_word_matches(df, selected_stories=selected_stories, cust_tag_cols=cust_tag_cols)
-        # return 
-
-        # res = dict(
-        #     sorted(
-        #         freq_dict.items(), key=itemgetter(1), reverse=True
-        #     )
-        # )
-
-        # words = list(res.keys())
-
-        # for word in words:
-        #     # print()
-        #     # print('freq: ', freq_dict)
-        #     # print()
-
-        #     # print()
-        #     # print('map: ', mapping_dict)
-        #     # print()
-        #     rows.append([word, freq_dict[word], mapping_dict[word][0]])
-
-        # rows.sort(key=lambda x: x[1])
-        # return pd.DataFrame(rows[-n:], columns=constants.CUSTOMFREQ_TABLE_HEADER)
 
     def __prepare_story_elements_frame_for_filtering(self, story_elements_df):
-        story_elements_df = story_elements_df.copy()          
-        
+        story_elements_df = story_elements_df.copy()
         strcols = ['token_text', 'sentence', 'associated_action']
+
         for col in strcols:
             story_elements_df[col] = story_elements_df[col].astype(str)
 
@@ -352,11 +348,40 @@ class ActorTagger:
 
         frame['mean_subj_freq_for_story'] = mean_subj_freq
         frame['prominence_sf'] = frame['subj_freq'] / frame['mean_subj_freq_for_story']
-        # frame['prominence_sfn'] = frame['subj_freq'] / frame['num_words_in_sentence']
         frame = frame.drop(columns=['mean_subj_freq_for_story'])
         return frame
     
+    # Custom aggregation function
+    def __custom_agg_agency(self, row):
+        return row['agency'] / self.num_sents_in_stories[(row['storyid'].replace('ST',''))]
+    
+    def __custom_agg_prominence(self, row):
+        return row['prominence_sf'] / self.num_sents_in_stories[(row['storyid'].replace('ST',''))]
+    
+    def __generate_tagging_cache(self, story_elements_df):
+        result = {}
+        for storyid in story_elements_df['storyid'].unique().tolist():
+            result[storyid] = {}
+            sents = story_elements_df[story_elements_df['storyid'] == storyid]['sentence'].unique().tolist()
+            result[storyid]['000'] = self.__postag_sents(sents, 0, 0, 0, None, None, story_elements_df)
+            result[storyid]['001'] = self.__postag_sents(sents, 0, 0, 1, None, None, story_elements_df)
+            result[storyid]['010'] = self.__postag_sents(sents, 0, 1, 0, None, None, story_elements_df)
+            result[storyid]['011'] = self.__postag_sents(sents, 0, 1, 1, None, None, story_elements_df)
+            result[storyid]['100'] = self.__postag_sents(sents, 1, 0, 0, None, None, story_elements_df)
+            result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, None, None, story_elements_df)
+            result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, None, None, story_elements_df)
+            result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, None, None, story_elements_df)
+
+        return result
+
     def generate_actor_analysis_results(self, story_elements_df):
+        self.tagging_cache = self.__generate_tagging_cache(story_elements_df)
+        # print()
+        # print()
+        # print(self.tagging_cache['0'])
+        # print()
+        # print()
+        self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
         result_df = pd.DataFrame()
         
@@ -368,12 +393,17 @@ class ActorTagger:
             df_word = story_elements_df[story_elements_df[word_col] == str(word)]
             raw_freq_df = df_word.groupby(['storyid', 'segment_id', word_col])[word_col].agg('count').to_frame("raw_freq").reset_index()
             subj_freq_df = df_word.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('sum').to_frame("subj_freq").reset_index()
-            agency_df = df_word.groupby(['storyid', 'segment_id', word_col])['active_voice_subject_boolean'].agg('sum').to_frame("agency").reset_index()        
-            mean_subj_freq_df = df_word.groupby(['storyid'])['is_sentence_subject_boolean'].agg('mean').to_frame("mean_subj_freq").reset_index()
-            combined_df = pd.merge(raw_freq_df, pd.merge(subj_freq_df, agency_df, on=['storyid', 'segment_id', word_col], how='outer'), on=['storyid', 'segment_id', word_col], how='outer')
-            combined_df = self.__update_frame_with_prominence_scores(combined_df, mean_subj_freq_df)
+            agency_df = df_word.groupby(['storyid', 'segment_id', word_col])['active_voice_subject_boolean'].agg('sum').to_frame("agency").reset_index()
+            agency_df['agency'] = agency_df.apply(lambda row: self.__custom_agg_agency(row), axis=1)
+            prominence_df = df_word.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('sum').to_frame("prominence_sf").reset_index()
+            prominence_df['prominence_sf'] = prominence_df.apply(lambda row: self.__custom_agg_prominence(row), axis=1)
+            combined_df = pd.merge(raw_freq_df, pd.merge(subj_freq_df, pd.merge(agency_df, prominence_df, on=['storyid', 'segment_id', word_col], how='outer')), on=['storyid', 'segment_id', word_col], how='outer')
             result_df = pd.concat([result_df, combined_df], axis=0, ignore_index=True)
         
+        for word in result_df[word_col].unique().tolist():
+            self.entity_prominence_scores[word] = result_df[result_df[word_col] == word]['prominence_sf'].tolist()[0]
+
+        self.prominence_score_max = result_df['prominence_sf'].max()
         return result_df
     
     def __setup_required_nlp_resources(self, lang):

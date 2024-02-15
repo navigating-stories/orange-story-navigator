@@ -315,12 +315,12 @@ class OWScatterPlotGraph(OWScatterPlotBase):
 class OWSNSentimentAnalyzer(OWDataProjectionWidget):
     """Network visualisation of the general sentiment of the context in which pairs of actors are mentioned in a story."""
 
-    name = "Sentiment analysis"
+    name = "Sentiment"
     description = "Network visualisation of the general sentiment " \
                   "of the context in which pairs of actors " \
                   "are mentioned in a story."
     icon = "icons/sentiment_analysis_icon.png"
-    priority = 15
+    priority = 14
     keywords = "network sentiment"
 
     class Inputs(OWDataProjectionWidget.Inputs):

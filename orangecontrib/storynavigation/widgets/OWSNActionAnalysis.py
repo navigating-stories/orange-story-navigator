@@ -314,7 +314,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         "Provides tools to support basic narrative analysis for actions in stories."
     )
     icon = "icons/action_analysis_icon.png"
-    priority = 12
+    priority = 13
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])

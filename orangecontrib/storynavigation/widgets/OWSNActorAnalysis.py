@@ -318,7 +318,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         "Provides tools to support basic narrative analysis for actors in stories."
     )
     icon = "icons/actor_analysis_icon.png"
-    priority = 11
+    priority = 12
 
     class Inputs:
         stories = Input("Stories", Corpus, replaces=["Data"])
@@ -356,10 +356,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     # currently selected agent prominence metric
     agent_prominence_metric = constants.SELECTED_PROMINENCE_METRIC
     # minimum possible score for agent prominence
-    agent_prominence_score_min = 0
+    agent_prominence_score_min = 0.0
     # maximum possible score for agent prominence
-    agent_prominence_score_max = 15
+    agent_prominence_score_max = 15.0
+
     word_prominence_scores = {}
+
     sli = None
 
     # list of colour values for the background highlight for each entity type
@@ -460,7 +462,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self,
             "agent_prominence_score_min",
             minValue=0.0,
-            maxValue=1.0,
+            maxValue=self.agent_prominence_score_max,
             step=0.01,
             ticks=True,
             callback=self.slider_callback,
@@ -476,7 +478,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self,
             "agent_prominence_score_min",
             minv=0,
-            maxv=100,
+            maxv=self.agent_prominence_score_max,
             controlWidth=60,
             alignment=Qt.AlignRight,
             callback=self.slider_callback
@@ -549,20 +551,20 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         QApplication.clipboard().setText(text)
 
     def pos_selection_changed(self):
-        if not self.sc.isChecked():
-            if hasattr(self, 'main_agents_box'):
-                if self.main_agents_box is not None:
-                    self.main_agents_box.setEnabled(False)
-            if hasattr(self, 'metric_name_combo'):
-                if self.metric_name_combo is not None:
-                    self.metric_name_combo.setEnabled(False)
-        else:
-            if hasattr(self, 'main_agents_box'):
-                if self.main_agents_box is not None:
-                    self.main_agents_box.setEnabled(True)
-            if hasattr(self, 'metric_name_combo'):
-                if self.metric_name_combo is not None:
-                    self.metric_name_combo.setEnabled(True)
+        # if not self.sc.isChecked():
+        #     if hasattr(self, 'main_agents_box'):
+        #         if self.main_agents_box is not None:
+        #             self.main_agents_box.setEnabled(False)
+        #     if hasattr(self, 'metric_name_combo'):
+        #         if self.metric_name_combo is not None:
+        #             self.metric_name_combo.setEnabled(False)
+        # else:
+        #     if hasattr(self, 'main_agents_box'):
+        #         if self.main_agents_box is not None:
+        #             self.main_agents_box.setEnabled(True)
+        #     if hasattr(self, 'metric_name_combo'):
+        #         if self.metric_name_combo is not None:
+        #             self.metric_name_combo.setEnabled(True)
         self.show_docs()
 
     @Inputs.stories
@@ -579,13 +581,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
             self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements)
+            self.agent_prominence_score_max = self.actortagger.prominence_score_max
 
             self.Outputs.story_collection_results.send(
                 table_from_frame(
                     self.actor_results_df
                 )
             )
-
 
             story_elements_grouped_by_story = self.story_elements.groupby('storyid')
             for storyid, story_df in story_elements_grouped_by_story:
@@ -603,31 +605,20 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
                     )
                 )
-            else:
-                self.custom_tags.setChecked(False)
-                self.custom_tags.setEnabled(False)
-                
+
                 self.Outputs.customfreq_table.send(
                     table_from_frame(
                         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
                     )
                 )
-                # selected_storyids = []
-                # for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                #     selected_storyids.append(str(c_index))
-
-                # selected_storyids = list(set(selected_storyids)) # only unique items
-
-                # self.Outputs.selected_customfreq_table.send(
-                #     table_from_frame(
-                #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
-                #     )
-                # )
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
 
             self.postags_box.setEnabled(True)
-            if self.sc.isChecked():
-                self.main_agents_box.setEnabled(True)
-                self.metric_name_combo.setEnabled(True)
+            # if self.sc.isChecked():
+            #     self.main_agents_box.setEnabled(True)
+            #     self.metric_name_combo.setEnabled(True)
         else:
             self.nc.setChecked(False)
             self.sc.setChecked(False)
@@ -735,23 +726,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             selected_storyids = list(set(selected_storyids)) # only unique items
             otherids = list(set(otherids))
-
-            # self.Outputs.selected_customfreq_table.send(
-            #     table_from_frame(
-            #         self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
-            #     )
-            # )
-            
-            # print()
-            # print('number of stories selected: ', len(selected_storyids))
-            # print()
-
-            # print('len1: ', len(self.actor_results_df))
-
             self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
             self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
-
-            # print('len2: ', len(self.selected_actor_results_df))
 
             self.Outputs.selected_story_results.send(
                 table_from_frame(
@@ -760,22 +736,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
 
     def selection_changed(self) -> None:
-        
         """Function is called every time the selection changes"""
         self.update_selected_actor_results()
         self.agent_prominence_score_min = 0
-        # self.actortagger.word_prominence_scores = {}
-        # self.actortagger.noun_action_dict = {}
-        # self.actortagger.num_occurences_as_subject = {}
-        # self.actortagger.num_occurences = {}
-        # self.actortagger.sentence_count = 0
-        # self.actortagger.word_count = 0
-        # self.actortagger.word_count_nostops = 0
-        # self.actortagger.html_result = ""
-        # self.actortagger.sentence_nlp_models = []
         self.selected_documents = self.get_selected_indexes()
         self.show_docs()
-        # self.commit.deferred()
 
     def prominence_metric_change(self):
         self.agent_prominence_score_min = 0
@@ -787,7 +752,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if self.agent_prominence_score_min > self.agent_prominence_score_max:
             self.agent_prominence_score_min = self.agent_prominence_score_max
         self.show_docs(slider_engaged=True)
-        # self.commit.deferred()
 
     def show_docs(self, slider_engaged=False):
         """Show the selected documents in the right area"""

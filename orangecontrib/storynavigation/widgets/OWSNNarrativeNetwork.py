@@ -31,7 +31,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     name = 'Narrative Network'
     description = 'Generates a network of entities and story units for visualisation'
     icon = 'icons/narrative_network_icon.png'
-    priority = 16
+    priority = 15
 
     NL_SPACY_MODEL = "nl_core_news_sm" 
 

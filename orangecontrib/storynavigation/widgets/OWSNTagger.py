@@ -13,10 +13,10 @@ import pandas as pd
 import numpy as np
 
 class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
-    name = 'Tagger'
-    description = "Generates part of speech and linguistic tagging information for stories."
+    name = 'Elements'
+    description = "Extracts story elements. I.e., generates part of speech and linguistic tagging information for input stories."
     icon = "icons/tagger_icon.png"
-    priority = 14
+    priority = 11
 
     class Inputs:
         stories = Input("Stories", Corpus, replaces=["Data"])

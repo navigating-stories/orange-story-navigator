@@ -71,8 +71,6 @@ class Tagger:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0)
 
-
-
         if self.custom_tags is not None and self.word_column is not None:
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
             collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
