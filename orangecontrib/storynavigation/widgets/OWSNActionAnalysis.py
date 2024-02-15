@@ -309,12 +309,12 @@ class VisibleDomainModel(DomainModel):
 
 
 class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
-    name = "2) Action Analysis"
+    name = "Actions"
     description = (
         "Provides tools to support basic narrative analysis for actions in stories."
     )
     icon = "icons/action_analysis_icon.png"
-    priority = 6423
+    priority = 13
 
     class Inputs:
         corpus = Input("Corpus", Corpus, replaces=["Data"])

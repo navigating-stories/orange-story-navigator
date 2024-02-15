@@ -13,10 +13,10 @@ import pandas as pd
 import numpy as np
 
 class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
-    name = 'Tagger'
-    description = "Generates part of speech and linguistic tagging information for stories."
+    name = 'Elements'
+    description = "Extracts story elements. I.e., generates part of speech and linguistic tagging information for input stories."
     icon = "icons/tagger_icon.png"
-    priority = 6424
+    priority = 11
 
     class Inputs:
         stories = Input("Stories", Corpus, replaces=["Data"])
@@ -124,8 +124,9 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                 self.custom_tag_dict_columns = list(self.custom_tag_dict.columns)
                 self.select_word_column_combo.clear()
                 self.select_word_column_combo.addItems(self.custom_tag_dict_columns)
-                self.word_column = self.custom_tag_dict_columns[0]
+                
         else:
+            self.custom_tag_dict = None
             self.select_word_column_combo.clear()
             self.select_word_column_combo.setEnabled(False)
 
@@ -144,81 +145,12 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                     self.tagger = Tagger(
                         lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
                         custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
-                    print('Both corpus and custom tags are available!')
                 else:
                     self.tagger = Tagger(
                         lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
                         custom_tags_and_word_column=None)
-                    print('ONLY corpus is available!')
 
-
-                # metas = []
-                # for col_name in self.tagger.complete_data.columns:
-                #     if str(col_name) in ['story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency']:
-                #         metas.append({str(col_name) : 'text'})
-                #     else:
-                #         metas.append({str(col_name) : 'numeric'})
-
-                
-                
-                # new_vars = []
-                # for var in tbl.domain.attributes:
-                #     print('var: ', var.name)
-                #     print('strvar: ', type(var.name))
-
-                #     if str(var.name) in ['story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency']:
-                #         new_vars.append(StringVariable(str(var.name)))
-
-                # print()
-
-                # tbl = table_from_frame(self.tagger.complete_data)
-                    
-                # print()
-                # print()
-                # print('tbl: ', tbl)
-                # print()
-                # print()
-                # print('test class: ', tbl.domain.class_vars)
-                # print()
-
-
-                # metas=tbl.metas.tolist()
-                # print()
-                # print()
-                # print('tbl1: ', tbl.metas)
-                # print()
-                # print('tbl2: ', tbl.metas.tolist())
-                # print()
-                # print()
-                # new_vars = []
-                # for item in tbl.domain.attributes:
-                #     if str(item.name) not in ['story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency']:
-                #         new_vars.append(item)
-                #     else:
-                #         for meta in metas:
-                #             meta.append(StringVariable(name=str(item.name)))
-
-                # new_domain = Domain(attributes=new_vars, metas=metas)
-                # new_tbl = Table.from_table(new_domain, tbl)
-                # print()
-                # print()
-                # print('new_tbl: ', new_tbl)
-                # print()
-                # print()
-
-
-                self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))
-                # self.Outputs.dataset_level_data.send(new_tbl)
-                
-            else:
-                print('Corpus is empty!')
-        else:
-            if self.custom_tag_dict is not None:
-                print('ONLY custom tags are available!')
-            else:
-                print('BOTH corpus and custom tags are NOT available!')
-
-        
+                self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))        
 
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview

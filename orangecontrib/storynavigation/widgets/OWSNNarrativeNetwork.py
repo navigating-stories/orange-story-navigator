@@ -28,10 +28,10 @@ from transformers import pipeline
 sentiment_analysis = pipeline("sentiment-analysis", model="DTAI-KULeuven/robbert-v2-dutch-sentiment")
 
 class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
-    name = '8) Narrative Network'
+    name = 'Narrative Network'
     description = 'Generates a network of entities and story units for visualisation'
     icon = 'icons/narrative_network_icon.png'
-    priority = 6430
+    priority = 15
 
     NL_SPACY_MODEL = "nl_core_news_sm" 
 
