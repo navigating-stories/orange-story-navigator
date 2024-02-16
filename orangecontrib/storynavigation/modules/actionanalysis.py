@@ -275,11 +275,13 @@ class ActionTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
-
-        sentences = util.preprocess_text(text)
         
         if story_elements_df is None or len(story_elements_df) == 0:
+            sentences = util.preprocess_text(text)
             return self.__print_html_no_highlighted_tokens(sentences)
+        
+        sorted_df = story_elements_df.sort_values(by=['storyid', 'sentence_id'], ascending=True)
+        sentences = sorted_df['sentence'].unique().tolist()
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
         if (str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom))) in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
@@ -531,7 +533,9 @@ class ActionTagger:
         result = {}
         for storyid in story_elements_df['storyid'].unique().tolist():
             result[storyid] = {}
-            sents = story_elements_df[story_elements_df['storyid'] == storyid]['sentence'].unique().tolist()
+            sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
+            sorted_df = sents_df.sort_values(by=['sentence_id'], ascending=True)
+            sents = sorted_df['sentence'].unique().tolist()
             result[storyid]['000'] = self.__postag_sents(sents, 0, 0, 0, story_elements_df)
             result[storyid]['001'] = self.__postag_sents(sents, 0, 0, 1, story_elements_df)
             result[storyid]['010'] = self.__postag_sents(sents, 0, 1, 0, story_elements_df)

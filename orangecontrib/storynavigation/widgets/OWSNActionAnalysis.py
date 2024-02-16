@@ -49,8 +49,6 @@ from storynavigation.modules.actionanalysis import ActionTagger
 import storynavigation.modules.constants as constants
 from orangecontrib.storynavigation.modules import util
 
-# spacy.cli.download(constants.NL_SPACY_MODEL)
-
 HTML = """
 <!doctype html>
 <html>
@@ -606,12 +604,13 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def setup_controls(self):
         """Setup controls in control area"""
-        domain = self.stories.domain
+        if self.stories is not None:
+            domain = self.stories.domain
 
-        self.search_listbox.model().set_domain(domain)
-        self.display_listbox.model().set_domain(domain)
-        self.search_features = self.search_listbox.model()[:]
-        self.display_features = self.display_listbox.model()[:]
+            self.search_listbox.model().set_domain(domain)
+            self.display_listbox.model().set_domain(domain)
+            self.search_features = self.search_listbox.model()[:]
+            self.display_features = self.display_listbox.model()[:]
 
     def select_variables(self):
         """Set selection to display and search features view boxes"""
@@ -639,8 +638,9 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def list_docs(self):
         """List documents into the left scrolling area"""
-        docs = self.regenerate_docs()
-        self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
+        if self.stories is not None:
+            docs = self.regenerate_docs()
+            self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
 
     def get_selected_indexes(self) -> Set[int]:
         m = self.doc_list.model().mapToSource

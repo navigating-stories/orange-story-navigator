@@ -112,12 +112,12 @@ HALLIDAY_FILENAME = "halliday_dimensions_{}.json"
 # dutch spacy model (small)
 NL_SPACY_MODEL = "nl_core_news_sm"
 # dutch spacy model (large)
-NL_SPACY_MODEL_LG = "nl_core_news_sm"
+NL_SPACY_MODEL_LG = "nl_core_news_lg"
 
 # english spacy model (small)
-EN_SPACY_MODEL = "en_core_news_sm"
+EN_SPACY_MODEL = "en_core_web_sm"
 # dutch spacy model (large)
-EN_SPACY_MODEL_LG = "en_core_news_lg"
+EN_SPACY_MODEL_LG = "en_core_web_lg"
 
 # colors for highlighting words in text
 SUBJECT_PRONOUN_HIGHLIGHT_COLOR = "#87CEFA"
@@ -150,6 +150,7 @@ COLOR_MAP[PRES_VB] = ACTION_PRESENT_HIGHLIGHT_COLOR
 # column names in tagging information dataframe
 TAGGING_DATAFRAME_COLUMNNAMES = ['storyid', 
                                  'sentence', 
+                                 'sentence_id',
                                  'segment_id', 
                                  'token_text', 
                                  'token_start_idx', 
@@ -165,3 +166,4 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'lang', 
                                  'num_words_in_sentence'
                                  ]
+

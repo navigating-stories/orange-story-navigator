@@ -10,6 +10,7 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
 from Orange.data.pandas_compat import table_to_frames
+import spacy
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -30,9 +31,6 @@ class Tagger:
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
             self.custom_tags = custom_tags_and_word_column[0]
-            # self.customtag_column_names = self.__generate_customtag_column_names()
-            # self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
-            # self.complete_data_columns.extend(self.customtag_column_names)
         
         self.stopwords = None
         self.pronouns = None
@@ -127,7 +125,7 @@ class Tagger:
         idx_cols = ["storyid", "sentence"]
         story_df = (story_df.
                     set_index(idx_cols).
-                    join(sentences_df.loc[:, idx_cols + ["segment_id"]].
+                    join(sentences_df.loc[:, idx_cols + ["sentence_id", "segment_id"]].
                          set_index(idx_cols)
                          ).
                     reset_index()
@@ -256,16 +254,22 @@ class Tagger:
         """
         row = None
         if self.__is_valid_token(tag):
-            if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
-                # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-            else:
-                if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
-                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+            if self.lang == constants.NL:
+                if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
                 else:
-                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
+                    if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                    else:
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
+            else:
+                if ((tag[4].text.lower().strip() in self.past_tense_verbs) and (tag[4].text.lower().strip() not in self.false_positive_verbs)):  # past tense
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                else:
+                    if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                    else:
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):
@@ -293,7 +297,7 @@ class Tagger:
         Returns:
             boolean: True if the given token is a subject of its sentence - False otherwise
         """
-        if ((tag[3].lower() in ["nsubj", "nsubj:pass", "csubj"]) and (tag[1] in ["PRON", "NOUN", "PROPN"])):
+        if ((tag[3].lower() in ["nsubj", "nsubj:pass", "nsubjpass", "csubj"]) and (tag[1] in ["PRON", "NOUN", "PROPN"])):
             return True
         
         return False
