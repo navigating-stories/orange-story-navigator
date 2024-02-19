@@ -143,6 +143,9 @@ def frame_contains_custom_tag_columns(story_elements_df):
     else:
         df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
 
+    if 'associated_action_lowercase' in df_filtered.columns:
+        df_filtered = df_filtered.drop(columns=['associated_action_lowercase'])
+
     if len(df_filtered.columns) > 1:
         return True
     return False
@@ -164,11 +167,14 @@ def get_custom_tags_list_and_columns(story_elements_df):
     else:
         df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
 
+    if 'associated_action_lowercase' in df_filtered.columns:
+        df_filtered = df_filtered.drop(columns=['associated_action_lowercase'])
+    
     if len(df_filtered.columns) > 1:
         for colname in df_filtered.columns:
             if not colname.startswith('custom_'):
                 columns.append(colname)
-                postags.extend(story_elements_df[colname].unique().tolist())
+                postags.extend(df_filtered[colname].unique().tolist())
     postags = list(set(postags))
     return columns, postags
 
