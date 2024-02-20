@@ -341,7 +341,6 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         
         self.Outputs.network.send(Network(items, edges))
         
-
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
 
