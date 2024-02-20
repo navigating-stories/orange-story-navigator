@@ -20,7 +20,7 @@ class Tagger:
     Args:
         n_segments (int): Number of segments to split each story into.
     """
-    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
+    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None, callback=None):
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
@@ -43,7 +43,7 @@ class Tagger:
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
 
-        self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
+        self.complete_data = self.__process_stories(self.nlp, self.text_tuples, callback)
 
     def __calculate_story_wordcounts(self, collection_df):
         story_sentence_column = collection_df['sentence'].tolist()
@@ -54,7 +54,7 @@ class Tagger:
             num_words_in_sentence_column.append(len(spans))
         return num_words_in_sentence_column
 
-    def __process_stories(self, nlp, text_tuples):
+    def __process_stories(self, nlp, text_tuples, callback):
         """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
 
         Args:
@@ -66,9 +66,13 @@ class Tagger:
         """
 
         collection_df = pd.DataFrame()
+        c = 1
         for story_tuple in text_tuples:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0)
+            c+=1
+            if callback:
+                callback((c / len(text_tuples) * 100))
 
         if self.custom_tags is not None and self.word_column is not None:
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
@@ -163,7 +167,6 @@ class Tagger:
 
             # special case: first word in a sent can be a pronoun
             if any(word == first_word_in_sent for word in self.pronouns):
-                # tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))] + self.__lookup_custom_tags(first_word_in_sent)
                 tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
                 story_df_rows.append(tmp_row)
 

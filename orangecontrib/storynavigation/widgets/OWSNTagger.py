@@ -1,7 +1,7 @@
 from Orange.data import Table, Domain, StringVariable
 from Orange.widgets import gui
 from Orange.widgets.settings import Setting, DomainContextHandler
-from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin
+from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
 from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.tagging import Tagger
@@ -135,6 +135,21 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         self.custom_tag_dict = None
         self.Warning.clear()
 
+    def on_done(self, result) -> None:
+        self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))                
+
+    def run(self, lang, n_segments, text_tuples, tuple, state: TaskState):
+        def advance(progress):
+            if state.is_interruption_requested():
+                raise InterruptedError
+            state.set_progress_value(progress)
+
+        self.tagger = Tagger(
+            lang=lang, n_segments=n_segments, text_tuples=text_tuples, 
+            custom_tags_and_word_column=tuple, callback=advance)
+        
+        return self.tagger.complete_data
+
     def __generate_dataset_level_data(self):
         n_segments = int(self.n_segments)
         if n_segments == 0: # if the user does not choose explicitly the value in the menu, the value will be 0.
@@ -142,15 +157,27 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         if self.stories is not None:
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:
-                    self.tagger = Tagger(
-                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
-                        custom_tags_and_word_column=(self.custom_tag_dict, self.word_column))
+                    self.start(
+                        self.run, 
+                        self.language, 
+                        n_segments, 
+                        self.stories,
+                        (self.custom_tag_dict, self.word_column)
+                    )
                 else:
-                    self.tagger = Tagger(
-                        lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
-                        custom_tags_and_word_column=None)
+                    self.start(
+                        self.run, 
+                        self.language, 
+                        n_segments, 
+                        self.stories,
+                        None
+                    )
 
-                self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))        
+                    # self.tagger = Tagger(
+                    #     lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
+                    #     custom_tags_and_word_column=None)
+
+                # self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))        
 
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview

@@ -374,6 +374,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.action_results_df = None
         self.selected_action_results_df = None
         self.word_col = None
+        self.selected_action_table_df = None
+        self.full_action_table_df = None
+        self.selected_custom_freq = None
+        self.full_custom_freq = None
 
         self.__pending_selected_documents = self.selected_documents
 
@@ -516,64 +520,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
-            self.action_results_df = self.actiontagger.generate_action_analysis_results(self.story_elements)
-
-            self.Outputs.story_collection_results.send(
-                table_from_frame(
-                    self.action_results_df
-                )
+            self.start(
+                self.run, 
+                self.story_elements
             )
-
-            story_elements_grouped_by_story = self.story_elements.groupby('storyid')
-            for storyid, story_df in story_elements_grouped_by_story:
-                self.story_elements_dict[storyid] = story_df
-
-            selected_storyids = []
-            for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append(str(c_index))
-
-            self.word_col = next((word for word in self.story_elements.columns if word.startswith('custom_')), None)
-            if self.word_col is None:
-                self.word_col = 'token_text_lowercase'
-
-            only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
-            selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(selected_storyids)]
-
-            full_action_table_df = only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
-            selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
-            
-            self.Outputs.actor_action_table_selected.send(
-                table_from_frame(
-                    selected_action_table_df
-                )
-            )
-
-            self.Outputs.actor_action_table_full.send(
-                table_from_frame(
-                    full_action_table_df
-                )
-            )
-
-            if util.frame_contains_custom_tag_columns(self.story_elements):
-                self.custom_tags.setEnabled(True)
-
-                self.Outputs.selected_customfreq_table.send(
-                    table_from_frame(
-                        self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
-                    )
-                )
-
-                self.Outputs.customfreq_table.send(
-                    table_from_frame(
-                        self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-                    )
-                )
-            else:
-                self.custom_tags.setChecked(False)
-                self.custom_tags.setEnabled(False)
-
             self.postags_box.setEnabled(True)
         else:
             self.custom_tags.setChecked(False)
@@ -584,6 +534,90 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
         self.show_docs()
+
+    def on_done(self, res) -> None:
+        """When matches count is done show the result in the label"""
+        self.n_matches = res if res is not None else "n/a"
+
+        self.Outputs.story_collection_results.send(
+            table_from_frame(
+                self.action_results_df
+            )
+        )
+
+        self.Outputs.selected_story_results.send(
+            table_from_frame(
+                self.selected_action_results_df
+            )
+        )
+
+        self.Outputs.actor_action_table_full.send(
+            table_from_frame(
+                self.full_action_table_df
+            )
+        )
+
+        self.Outputs.actor_action_table_selected.send(
+            table_from_frame(
+                self.selected_action_table_df
+            )
+        )
+
+        self.Outputs.selected_customfreq_table.send(
+            table_from_frame(
+                self.selected_custom_freq
+            )
+        )
+
+        self.Outputs.customfreq_table.send(
+            table_from_frame(
+                self.full_custom_freq
+            )
+        )
+
+    def run(self, story_elements, state: TaskState):
+        def advance(progress):
+            if state.is_interruption_requested():
+                raise InterruptedError
+            state.set_progress_value(progress)
+
+        self.story_elements = story_elements
+        self.action_results_df = self.actiontagger.generate_action_analysis_results(self.story_elements, callback=advance)
+
+        story_elements_grouped_by_story = self.story_elements.groupby('storyid')
+        for storyid, story_df in story_elements_grouped_by_story:
+            self.story_elements_dict[storyid] = story_df
+
+        selected_storyids = []
+        otherids = []
+        for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+            selected_storyids.append('ST' + str(c_index))
+            otherids.append(str(c_index))
+
+        self.word_col = next((word for word in self.story_elements.columns if word.startswith('custom_')), None)
+        if self.word_col is None:
+            self.word_col = 'token_text_lowercase'
+
+        only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
+        selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
+
+        self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
+        self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
+
+        full_action_table_df = only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
+        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+        selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
+        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+
+        if util.frame_contains_custom_tag_columns(self.story_elements):
+            self.custom_tags.setEnabled(True)
+            self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
+            self.full_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+        else:
+            self.custom_tags.setChecked(False)
+            self.custom_tags.setEnabled(False)
+        
+        return self.action_results_df, self.selected_action_results_df, self.selected_action_table_df, self.full_action_table_df, self.selected_custom_freq, self.full_custom_freq
 
     def reset_widget(self):
         # Corpus
@@ -680,6 +714,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             selected_storyids = list(set(selected_storyids)) # only unique items
             otherids = list(set(otherids))
+
             self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
             self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
 
@@ -691,15 +726,34 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
             only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
             selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
+
             selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
 
             self.Outputs.actor_action_table_selected.send(
                 table_from_frame(
-                    selected_action_table_df
+                    self.selected_action_table_df
                 )
             )
 
+            if util.frame_contains_custom_tag_columns(self.story_elements):
+                self.custom_tags.setEnabled(True)
+                self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
+                self.full_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+                self.Outputs.selected_customfreq_table.send(
+                    table_from_frame(
+                        self.selected_custom_freq
+                    )
+                )
+
+                self.Outputs.customfreq_table.send(
+                    table_from_frame(
+                        self.full_custom_freq
+                    )
+                )
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
@@ -734,14 +788,14 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.custom,
                             self.story_elements_dict[str(c_index)]
                         )
-                    else:
-                        value = self.actiontagger.postag_text(
-                            value,
-                            self.past_vbz,
-                            self.present_vbz,
-                            self.custom,
-                            None
-                        )                        
+                    # else:
+                    #     value = self.actiontagger.postag_text(
+                    #         value,
+                    #         self.past_vbz,
+                    #         self.present_vbz,
+                    #         self.custom,
+                    #         None
+                    #     )                        
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
@@ -830,9 +884,8 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
             self.show_docs()
 
-    def on_done(self, res: int):
-        """When matches count is done show the result in the label"""
-        self.n_matches = res if res is not None else "n/a"
+    # def on_done(self, res: int):
+
 
     def on_exception(self, ex):
         raise ex

@@ -40,8 +40,8 @@ class ActorTagger:
 
     def __filter_custom_word_matches(self, story_elements_df, selected_stories, cust_tag_cols):
         cols = []
-        words_tagged_with_current_cust_tags_frame = story_elements_df
         story_elements_df[cust_tag_cols] = story_elements_df[cust_tag_cols].astype(str)
+        words_tagged_with_current_cust_tags_frame = story_elements_df
 
         if selected_stories is not None:
             cols = ['segment_id']
@@ -256,10 +256,17 @@ class ActorTagger:
             return self.__print_html_no_highlighted_tokens(sentences)
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
-        if (str(int(nouns)) + str(int(subjs)) + str(int(custom))) in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
-            return self.tagging_cache[str(selected_storyid)][(str(int(nouns)) + str(int(subjs)) + str(int(custom)))]
+        specific_tag_choice_html = (str(int(nouns)) + str(int(subjs)) + str(int(custom)))
+        if selected_storyid in self.tagging_cache:
+            if specific_tag_choice_html in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
+                return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
+            else:
+                self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df)
+        else:
+            self.tagging_cache[str(selected_storyid)] = {}
+            self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df)
 
-        return self.__postag_sents(sentences, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df)
+        return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
 
     def __calculate_prominence_score(self, word, selected_prominence_metric):
         """Calculates the promience score for a given word in the story, uses two simple metrics (work in progress and more to follow):
@@ -363,8 +370,9 @@ class ActorTagger:
     def __custom_agg_prominence(self, row):
         return row['prominence_sf'] / self.num_sents_in_stories[(row['storyid'].replace('ST',''))]
     
-    def __generate_tagging_cache(self, story_elements_df):
+    def __generate_tagging_cache(self, story_elements_df, callback=None):
         result = {}
+        c = 1
         for storyid in story_elements_df['storyid'].unique().tolist():
             result[storyid] = {}
             sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
@@ -378,11 +386,14 @@ class ActorTagger:
             result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, None, None, story_elements_df)
             result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, None, None, story_elements_df)
             result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, None, None, story_elements_df)
-
+            c+=1
+            if callback:
+                increment = ((c/len(story_elements_df['storyid'].unique().tolist()))*80)
+                callback(increment)
         return result
 
-    def generate_actor_analysis_results(self, story_elements_df):
-        self.tagging_cache = self.__generate_tagging_cache(story_elements_df)
+    def generate_actor_analysis_results(self, story_elements_df, callback=None):
+        # self.tagging_cache = self.__generate_tagging_cache(story_elements_df, callback)
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
         result_df = pd.DataFrame()

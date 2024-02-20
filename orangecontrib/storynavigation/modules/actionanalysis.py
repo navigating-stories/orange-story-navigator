@@ -284,10 +284,18 @@ class ActionTagger:
         sentences = sorted_df['sentence'].unique().tolist()
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
-        if (str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom))) in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
-            return self.tagging_cache[str(selected_storyid)][(str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom)))]
+        specific_tag_choice_html = (str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom)))
+        if selected_storyid in self.tagging_cache:
+            if specific_tag_choice_html in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
+                return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
+            else:
+                self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, custom, story_elements_df)
+        else:
+            self.tagging_cache[str(selected_storyid)] = {}
+            self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, custom, story_elements_df)
 
-        return self.__postag_sents(sentences, past_vbz, present_vbz, custom, story_elements_df)
+        return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
+    
         # self.__calculate_pretagging_metrics(sentences)
 
         # # pos tags that the user wants to highlight
@@ -389,12 +397,7 @@ class ActionTagger:
         Returns:
             data table (pandas dataframe)
         """
-        
         cust_tag_cols, cust_tag_names = util.get_custom_tags_list_and_columns(df)
-
-        print()
-        print("custtagcols: ", cust_tag_cols)
-        print()
 
         df['token_text'] = df['token_text'].astype(str)
         df['token_text_lowercase'] = df['token_text'].str.lower()
@@ -534,8 +537,9 @@ class ActionTagger:
 
         return pd.DataFrame(rows, columns=["actor", "actions"])
 
-    def __generate_tagging_cache(self, story_elements_df):
+    def __generate_tagging_cache(self, story_elements_df, callback=None):
         result = {}
+        c = 1
         for storyid in story_elements_df['storyid'].unique().tolist():
             result[storyid] = {}
             sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
@@ -549,6 +553,10 @@ class ActionTagger:
             result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, story_elements_df)
             result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, story_elements_df)
             result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, story_elements_df)
+            c+=1
+            if callback:
+                increment = ((c/len(story_elements_df['storyid'].unique().tolist()))*80)
+                callback(increment)
 
         return result
     
@@ -564,8 +572,8 @@ class ActionTagger:
 
         return story_elements_df
     
-    def generate_action_analysis_results(self, story_elements_df):
-        self.tagging_cache = self.__generate_tagging_cache(story_elements_df)
+    def generate_action_analysis_results(self, story_elements_df, callback=None):
+        # self.tagging_cache = self.__generate_tagging_cache(story_elements_df, callback)
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
         result_df = pd.DataFrame()
@@ -576,6 +584,7 @@ class ActionTagger:
             
         past_or_present_tense_verbs_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(['PRES_VB', 'PAST_VB'])]
         result_df = past_or_present_tense_verbs_df.groupby(['storyid', 'segment_id', 'story_navigator_tag'])[word_col].agg(word_col='nunique').reset_index().rename(columns={word_col: "tense_freq"})
+
         return result_df
     
     def __setup_required_nlp_resources(self, lang):
