@@ -64,4 +64,4 @@ class OWSNSentimentAnalyzer(OWWidget, ConcurrentWidgetMixin):
 
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
-    WidgetPreview(OWSNSentimentAnalyzer).run()
+    WidgetPreview(OWSNSentimentAnalyzer).run(None)
