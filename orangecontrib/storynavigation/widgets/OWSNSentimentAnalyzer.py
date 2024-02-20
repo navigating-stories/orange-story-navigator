@@ -4,7 +4,7 @@ from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
 from Orange.data.pandas_compat import table_from_frame
 import storynavigation.modules.util as util
-import storynavigation.modules.sentiment as sentiment
+from storynavigation.modules.sentiment import SentimentAnalyzer
 
 class OWSNSentimentAnalyzer(OWWidget, ConcurrentWidgetMixin):
     """Computes positive, negative and neutral sentiment scores for sentences in input stories."""
@@ -29,7 +29,7 @@ class OWSNSentimentAnalyzer(OWWidget, ConcurrentWidgetMixin):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
         self.story_elements = None
-        self.sentiment_analyzer = sentiment.SentimentAnalyzer()
+        self.sentiment_analyzer = SentimentAnalyzer()
         self.story_elements_with_sentiment_df = None
 
     @Inputs.story_elements
