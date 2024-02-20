@@ -33,7 +33,6 @@ from Orange.data import Variable, Table
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
-from Orange.widgets.utils.annotated_data import create_annotated_table
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
@@ -47,7 +46,7 @@ from orangecontrib.text.corpus import Corpus
 # Imports from this add-on
 from storynavigation.modules.actionanalysis import ActionTagger
 import storynavigation.modules.constants as constants
-from orangecontrib.storynavigation.modules import util
+import storynavigation.modules.util as util
 
 HTML = """
 <!doctype html>
@@ -500,20 +499,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.story_elements_dict[storyid] = story_df
 
         self.show_docs()
-        # self.actiontagger = ActionTagger(constants.NL_SPACY_MODEL)
-        # self.closeContext()
-        # self.reset_widget()
-        # self.stories = stories
-        # if stories is not None:
-        #     self.setup_controls()
-        #     self.openContext(self.stories)
-        #     self.doc_list.model().set_filter_string(self.regexp_filter)
-        #     self.select_variables()
-        #     self.list_docs()
-        #     self.update_info()
-        #     self.set_selection()
-        #     self.show_docs()
-        # self.commit.now()
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
@@ -884,9 +869,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
             self.show_docs()
 
-    # def on_done(self, res: int):
-
-
     def on_exception(self, ex):
         raise ex
 
@@ -904,17 +886,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @gui.deferred
     def commit(self):
-        # matched = unmatched = annotated_corpus = None
         if self.stories is not None:
             selected_docs = sorted(self.get_selected_indexes())
-            # matched = self.stories[selected_docs] if selected_docs else None
             mask = np.ones(len(self.stories), bool)
             mask[selected_docs] = 0
-            # unmatched = self.stories[mask] if mask.any() else None
-            # annotated_corpus = create_annotated_table(self.stories, selected_docs)
-        # self.Outputs.matching_docs.send(matched)
-        # self.Outputs.other_docs.send(unmatched)
-        # self.Outputs.corpus.send(annotated_corpus)
 
     def send_report(self):
         self.report_items(
@@ -968,11 +943,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 context.metas = dict(context.metas)
                 delattr(context, "class_vars")
 
-
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 #     from orangecontrib.text.preprocess import BASE_TOKENIZER
 #     corpus_ = Corpus.from_file("book-excerpts")
 #     corpus_ = corpus_[:3]
 #     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActionAnalysis).run(corpus_)
+    WidgetPreview(OWSNActionAnalysis).run(None)

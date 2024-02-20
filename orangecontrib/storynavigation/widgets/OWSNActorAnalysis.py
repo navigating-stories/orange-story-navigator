@@ -4,8 +4,6 @@ import re
 import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
-import pandas as pd
-from orangecontrib.storynavigation.modules import util
 
 # Imports from Qt
 from AnyQt.QtCore import (
@@ -47,6 +45,7 @@ from orangecontrib.text.corpus import Corpus
 # Imports from this add-on
 from storynavigation.modules.actoranalysis import ActorTagger
 import storynavigation.modules.constants as constants
+import storynavigation.modules.util as util
 
 HTML = """
 <!doctype html>
@@ -791,17 +790,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.agent_prominence_metric,
                             self.agent_prominence_score_min,
                             self.story_elements_dict[str(c_index)]
-                        )
-                    # else:
-                    #     value = self.actortagger.postag_text(
-                    #         value,
-                    #         self.nouns,
-                    #         self.subjs,
-                    #         self.custom,
-                    #         self.agent_prominence_metric,
-                    #         self.agent_prominence_score_min,
-                    #         None
-                    #     )                        
+                        )                   
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
@@ -1006,10 +995,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 delattr(context, "class_vars")
 
 
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 #     from orangecontrib.text.preprocess import BASE_TOKENIZER
 #     corpus_ = Corpus.from_file("book-excerpts")
 #     corpus_ = corpus_[:3]
 #     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNActorAnalysis).run(corpus_)
+    WidgetPreview(OWSNActorAnalysis).run(None)

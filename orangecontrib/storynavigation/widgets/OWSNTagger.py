@@ -173,12 +173,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                         None
                     )
 
-                    # self.tagger = Tagger(
-                    #     lang=self.language, n_segments=n_segments, text_tuples=self.stories, 
-                    #     custom_tags_and_word_column=None)
-
-                # self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))        
-
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
 

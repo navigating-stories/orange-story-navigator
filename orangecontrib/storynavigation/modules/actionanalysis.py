@@ -9,17 +9,6 @@ from operator import itemgetter
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from spacy import displacy
-import string
-from nltk.tokenize import RegexpTokenizer
-import json
-
-if sys.version_info < (3, 9):
-    # importlib.resources either doesn't exist or lacks the files()
-    # function, so use the PyPI version:
-    import importlib_resources
-else:
-    import importlib.resources as importlib_resources
-
 
 class ActionTagger:
     """Class to perform NLP analysis of actors in textual stories
@@ -34,91 +23,6 @@ class ActionTagger:
         self.html_result = ""
         self.num_sents_in_stories = {}
         self.tagging_cache = {}
-
-        # self.stopwords = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
-        # self.stopwords = [item for item in self.stopwords if len(item) > 0]
-        # self.pronouns = self.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
-        # self.pronouns = [item for item in self.pronouns if len(item) > 0]
-
-        # self.past_tense_verbs = self.NL_PAST_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-        # self.past_tense_verbs = [item for item in self.past_tense_verbs if len(item) > 0]
-        # self.present_tense_verbs = self.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-        # self.present_tense_verbs = [item for item in self.present_tense_verbs if len(item) > 0]
-        # self.false_positive_verbs = self.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split(os.linesep)
-        # self.false_positive_verbs = [item for item in self.false_positive_verbs if len(item) > 0]
-
-        # self.html_result = ""
-
-        # # Other counts initialisation
-        # self.word_count = 0
-        # self.word_count_nostops = 0
-        # self.sentence_count = 0
-        # self.sentence_count_per_word = {}
-        # self.active_agency_scores = {}
-        # self.passive_agency_scores = {}
-        # self.past_verb_count = {}
-        # self.present_verb_count = {}
-        # self.num_occurences = {}
-        # self.num_occurences_as_subject = {}
-        # self.noun_action_dict = {}
-
-        # self.nlp = util.load_spacy_pipeline(model)
-
-        # Scoring related to agent prominence score
-        # self.agent_prominence_score_max = 0.0
-        # self.agent_prominence_score_min = 0.0
-
-        # # Index of word prominence scores for each word in story
-        # self.word_prominence_scores = {}
-        # self.sentence_nlp_models = []
-
-        # # POS counts initialisation
-        # self.noun_count = 0
-        # self.verb_count = 0
-        # self.adjective_count = 0
-
-    def __update_postagging_metrics(self, tagtext, token):
-        """After pos-tagging a particular token, this method is executed to calculate the noun-action dictionary
-
-        Args:
-            tagtext (string): the string representation of the input token from the story text
-
-        """
-
-        vb = util.find_verb_ancestor(token)
-        if vb is not None:
-            if tagtext in self.noun_action_dict:
-                self.noun_action_dict[tagtext].append(vb.text)
-            else:
-                self.noun_action_dict[tagtext] = []
-
-    def __calculate_pretagging_metrics(self, sentences):
-        """Before pos-tagging commences, this method is executed to calculate some basic story metrics
-        including word count (with and without stopwords) and sentence count.
-
-        Args:
-            sentences (list): list of string sentences from the story
-        """
-
-        self.sentence_count = len(sentences)
-        for sentence in sentences:
-            words = sentence.split()
-            tokens = []
-            for word in words:
-                if len(word) > 1:
-                    if word[len(word) - 1] in string.punctuation:
-                        tokens.append(word[: len(word) - 1].lower().strip())
-                    else:
-                        tokens.append(word.lower().strip())
-
-            self.word_count += len(tokens)
-
-            if len(self.stopwords) > 0:
-                for token in tokens:
-                    if token not in self.stopwords:
-                        self.word_count_nostops += 1
-            else:
-                self.word_count_nostops = self.word_count
 
     def __print_html_no_highlighted_tokens(self, sentences):
         html = ''
@@ -296,76 +200,6 @@ class ActionTagger:
 
         return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
     
-        # self.__calculate_pretagging_metrics(sentences)
-
-        # # pos tags that the user wants to highlight
-        # pos_tags = []
-
-        # # add pos tags to highlight according to whether the user has selected them or not
-        # if past_vbz:
-        #     pos_tags.append("PAST_VB")
-        # if present_vbz:
-        #     pos_tags.append("PRES_VB")
-
-        # # output of this function
-        # html = ""
-
-        # # generate and store nlp tagged models for each sentence
-        # if self.sentence_nlp_models is None or len(self.sentence_nlp_models) == 0:
-        #     # sentence_nlp_models = []
-        #     for sentence in sentences:
-        #         tagged_sentence = self.nlp(sentence.replace("`", "").replace("'", "").replace("‘", "").replace("’", ""))
-        #         self.sentence_nlp_models.append(tagged_sentence)
-
-        #     self.__calculate_action_type_count(self.sentence_nlp_models)
-
-        # # loop through model to filter out those words that need to be tagged (based on user selection and prominence score)
-        # for sentence, tagged_sentence in zip(sentences, self.sentence_nlp_models):
-        #     tags = []
-        #     tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+")
-        #     spans = list(tokenizer.span_tokenize(sentence))
-
-        #     for token in tagged_sentence:
-        #         tags.append((token.text, token.pos_, token.tag_, token.dep_, token))
-
-        #     ents = []
-        #     for tag, span in zip(tags, spans):
-        #         normalised_token, is_valid_token = self.__is_valid_token(tag)
-        #         if is_valid_token:
-        #             if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
-        #                 ents.append(
-        #                     {"start": span[0], "end": span[1], "label": "PAST_VB"}
-        #                 )
-        #             else:
-        #                 if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
-        #                     ents.append(
-        #                         {"start": span[0], "end": span[1], "label": "PRES_VB"}
-        #                     )
-                        
-        #                 elif tag[4].pos_ in ["NOUN", "PRON", "PROPN"]: # non-verbs (for noun-action table)
-        #                     self.__update_postagging_metrics(
-        #                         tag[4].text.lower().strip(), tag[4]
-        #                     )
-
-        #     # specify sentences and filtered entities to tag / highlight
-        #     doc = {"text": sentence, "ents": ents}
-
-        #     # specify colors for highlighting each entity type
-        #     colors = {}
-        #     if past_vbz:
-        #         colors["PAST_VB"] = constants.ACTION_PAST_HIGHLIGHT_COLOR
-        #     if present_vbz:
-        #         colors["PRES_VB"] = constants.ACTION_PRESENT_HIGHLIGHT_COLOR
-
-        #     # collect the above config params together
-        #     options = {"ents": pos_tags, "colors": colors}
-        #     # give all the params to displacy to generate HTML code of the text with highlighted tags
-        #     html += displacy.render(doc, style="ent", options=options, manual=True)
-
-        # self.html_result = html
-        # # return html
-        # return util.remove_span_tags(html)
-    
     def __filter_custom_word_matches(self, story_elements_df, selected_stories, cust_tag_cols):
         cols = []
         words_tagged_with_current_cust_tags_frame = story_elements_df
@@ -419,54 +253,6 @@ class ActionTagger:
 
         word = util.get_normalized_token(token)
         return word, (word not in self.stopwords) and len(word) > 1
-
-    def __calculate_action_type_count(self, sent_models):
-        """Calculates the frequency of mentions for each word in the story:
-
-        Args:
-            sents (list): list of all sentences (strings) from the input story
-            sent_models (list): list of (spacy.tokens.doc.Doc) objects - one for each element of 'sents'
-        """
-
-        for sent_model in sent_models:
-            for token in sent_model:
-                normalised_token, is_valid_token = self.__is_valid_token(token)
-                if is_valid_token:
-                    if ((token.text.lower().strip() in self.past_tense_verbs) or (token.text.lower().strip()[:2] == "ge")) and (token.text.lower().strip() not in self.false_positive_verbs):  # past tense
-                    # if token.pos_ == "VERB":
-                    #     vb_tense = token.morph.get("Tense")
-                    #     if vb_tense == "Past":
-                        if token.text.lower().strip() in self.past_verb_count:
-                            self.past_verb_count[token.text.lower().strip()] += 1
-                        else:
-                            self.past_verb_count[token.text.lower().strip()] = 1
-                    else:
-                        if token.pos_ == "VERB" and (token.text.lower().strip() not in self.false_positive_verbs):
-                    # elif vb_tense == "Pres":
-                            if token.text.lower().strip() in self.present_verb_count:
-                                self.present_verb_count[token.text.lower().strip()] += 1
-                            else:
-                                self.present_verb_count[token.text.lower().strip()] = 1
-                        # else:
-                        #     if token.text.lower().strip()[:2] == "ge":  # past tense
-                        #         if token.text.lower().strip() in self.past_verb_count:
-                        #             self.past_verb_count[
-                        #                 token.text.lower().strip()
-                        #             ] += 1
-                        #         else:
-                        #             self.past_verb_count[token.text.lower().strip()] = 1
-                        #     else:
-                        #         if (
-                        #             token.text.lower().strip()
-                        #             in self.present_verb_count
-                        #         ):
-                        #             self.present_verb_count[
-                        #                 token.text.lower().strip()
-                        #             ] += 1
-                        #         else:
-                        #             self.present_verb_count[
-                        #                 token.text.lower().strip()
-                        #             ] = 1
 
     def calculate_metrics_freq_table(self):
         """Prepares data table for piping to Output variable of widget: frequency of verbs in story
@@ -537,28 +323,28 @@ class ActionTagger:
 
         return pd.DataFrame(rows, columns=["actor", "actions"])
 
-    def __generate_tagging_cache(self, story_elements_df, callback=None):
-        result = {}
-        c = 1
-        for storyid in story_elements_df['storyid'].unique().tolist():
-            result[storyid] = {}
-            sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
-            sorted_df = sents_df.sort_values(by=['sentence_id'], ascending=True)
-            sents = sorted_df['sentence'].unique().tolist()
-            result[storyid]['000'] = self.__postag_sents(sents, 0, 0, 0, story_elements_df)
-            result[storyid]['001'] = self.__postag_sents(sents, 0, 0, 1, story_elements_df)
-            result[storyid]['010'] = self.__postag_sents(sents, 0, 1, 0, story_elements_df)
-            result[storyid]['011'] = self.__postag_sents(sents, 0, 1, 1, story_elements_df)
-            result[storyid]['100'] = self.__postag_sents(sents, 1, 0, 0, story_elements_df)
-            result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, story_elements_df)
-            result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, story_elements_df)
-            result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, story_elements_df)
-            c+=1
-            if callback:
-                increment = ((c/len(story_elements_df['storyid'].unique().tolist()))*80)
-                callback(increment)
+    # def __generate_tagging_cache(self, story_elements_df, callback=None):
+    #     result = {}
+    #     c = 1
+    #     for storyid in story_elements_df['storyid'].unique().tolist():
+    #         result[storyid] = {}
+    #         sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
+    #         sorted_df = sents_df.sort_values(by=['sentence_id'], ascending=True)
+    #         sents = sorted_df['sentence'].unique().tolist()
+    #         result[storyid]['000'] = self.__postag_sents(sents, 0, 0, 0, story_elements_df)
+    #         result[storyid]['001'] = self.__postag_sents(sents, 0, 0, 1, story_elements_df)
+    #         result[storyid]['010'] = self.__postag_sents(sents, 0, 1, 0, story_elements_df)
+    #         result[storyid]['011'] = self.__postag_sents(sents, 0, 1, 1, story_elements_df)
+    #         result[storyid]['100'] = self.__postag_sents(sents, 1, 0, 0, story_elements_df)
+    #         result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, story_elements_df)
+    #         result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, story_elements_df)
+    #         result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, story_elements_df)
+    #         c+=1
+    #         if callback:
+    #             increment = ((c/len(story_elements_df['storyid'].unique().tolist()))*80)
+    #             callback(increment)
 
-        return result
+    #     return result
     
     def __prepare_story_elements_frame_for_filtering(self, story_elements_df):
         story_elements_df = story_elements_df.copy()
@@ -599,34 +385,3 @@ class ActionTagger:
             self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
-
-class ActionMetricCalculator:
-    """Unused class / code so far..."""
-
-    def __init__(self, text, listofwords):
-        s = self.NL_STOPWORDS_FILE.read_text(encoding="utf-8")
-        self.stopwords = s
-        self.html_result = ""
-
-        # Other counts initialisation
-        self.word_count = 0
-        self.word_count_nostops = 0
-        self.sentence_count = 0
-        self.sentence_count_per_word = {}
-        self.num_occurences = {}
-        self.num_occurences_as_subject = {}
-        self.noun_action_dict = {}
-
-        # self.nlp = self.__load_spacy_pipeline(model)
-
-        # Scoring related to agent prominence score
-        self.agent_prominence_score_max = 0.0
-        self.agent_prominence_score_min = 0.0
-
-        # Index of word prominence scores for each word in story
-        self.word_prominence_scores = {}
-
-        # POS counts initialisation
-        self.noun_count = 0
-        self.verb_count = 0
-        self.adjective_count = 0

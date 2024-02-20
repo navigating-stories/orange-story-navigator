@@ -1,17 +1,10 @@
 from Orange.data import Table
-from Orange.widgets import gui
 from Orange.widgets.settings import Setting, DomainContextHandler
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
-from orangecontrib.text.corpus import Corpus
-from storynavigation.modules.tagging import Tagger
-import storynavigation.modules.constants as constants
-from AnyQt.QtWidgets import QSizePolicy
 from Orange.data.pandas_compat import table_from_frame
-from Orange.data.pandas_compat import table_to_frames
-import pandas as pd
-from orangecontrib.storynavigation.modules import util
-from orangecontrib.storynavigation.modules import sentiment
+from storynavigation.modules import util
+from storynavigation.modules import sentiment
 
 class OWSNSentimentAnalyzer(OWWidget, ConcurrentWidgetMixin):
     """Computes positive, negative and neutral sentiment scores for sentences in input stories."""
@@ -71,14 +64,4 @@ class OWSNSentimentAnalyzer(OWWidget, ConcurrentWidgetMixin):
 
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
-
-    from orangecontrib.text.preprocess import BASE_TOKENIZER
-
-    # need to change this file to a Data table object containing story elements (import from CSV perhaps?)
-    corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
-    corpus_ = corpus_[:3]
-    corpus_ = BASE_TOKENIZER(corpus_)
-    previewer = WidgetPreview(OWSNSentimentAnalyzer)
-    # breakpoint()
-    previewer.run(set_story_elements=None, no_exit=True)
-    # WidgetPreview(OWSNTagger).run(set_stories=corpus_)
+    WidgetPreview(OWSNSentimentAnalyzer).run()
