@@ -10,6 +10,7 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
 from Orange.data.pandas_compat import table_to_frames
+import spacy
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -19,7 +20,7 @@ class Tagger:
     Args:
         n_segments (int): Number of segments to split each story into.
     """
-    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None):
+    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None, callback=None):
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
@@ -30,9 +31,6 @@ class Tagger:
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
             self.custom_tags = custom_tags_and_word_column[0]
-            # self.customtag_column_names = self.__generate_customtag_column_names()
-            # self.flattened_custom_tags_dictionary = self.__flatten_custom_tag_dictionary()
-            # self.complete_data_columns.extend(self.customtag_column_names)
         
         self.stopwords = None
         self.pronouns = None
@@ -45,7 +43,7 @@ class Tagger:
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
 
-        self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
+        self.complete_data = self.__process_stories(self.nlp, self.text_tuples, callback)
 
     def __calculate_story_wordcounts(self, collection_df):
         story_sentence_column = collection_df['sentence'].tolist()
@@ -56,7 +54,7 @@ class Tagger:
             num_words_in_sentence_column.append(len(spans))
         return num_words_in_sentence_column
 
-    def __process_stories(self, nlp, text_tuples):
+    def __process_stories(self, nlp, text_tuples, callback):
         """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
 
         Args:
@@ -66,10 +64,15 @@ class Tagger:
         Returns:
             pandas.DataFrame: a dataframe containing all tagging data for all stories in the given list
         """
+
         collection_df = pd.DataFrame()
+        c = 1
         for story_tuple in text_tuples:
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0)
+            c+=1
+            if callback:
+                callback((c / len(text_tuples) * 100))
 
         if self.custom_tags is not None and self.word_column is not None:
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
@@ -79,6 +82,8 @@ class Tagger:
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
+        collection_df['associated_action'] = collection_df['associated_action'].str.lstrip('0123456789@#$!“"-')
+        collection_df['associated_action_lowercase'] = collection_df['associated_action'].str.lower()
         lang_col_values = [self.lang] * len(collection_df)
         collection_df['lang'] = lang_col_values
         story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
@@ -124,7 +129,7 @@ class Tagger:
         idx_cols = ["storyid", "sentence"]
         story_df = (story_df.
                     set_index(idx_cols).
-                    join(sentences_df.loc[:, idx_cols + ["segment_id"]].
+                    join(sentences_df.loc[:, idx_cols + ["sentence_id", "segment_id"]].
                          set_index(idx_cols)
                          ).
                     reset_index()
@@ -162,7 +167,6 @@ class Tagger:
 
             # special case: first word in a sent can be a pronoun
             if any(word == first_word_in_sent for word in self.pronouns):
-                # tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))] + self.__lookup_custom_tags(first_word_in_sent)
                 tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
                 story_df_rows.append(tmp_row)
 
@@ -253,16 +257,22 @@ class Tagger:
         """
         row = None
         if self.__is_valid_token(tag):
-            if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
-                # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-            else:
-                if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
-                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+            if self.lang == constants.NL:
+                if ((tag[4].text.lower().strip() in self.past_tense_verbs) or (tag[4].text.lower().strip()[:2] == "ge")) and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # past tense
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
                 else:
-                    # row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-'] + self.__lookup_custom_tags(tag)
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
+                    if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                    else:
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
+            else:
+                if ((tag[4].text.lower().strip() in self.past_tense_verbs) and (tag[4].text.lower().strip() not in self.false_positive_verbs)):  # past tense
+                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                else:
+                    if (tag[4].pos_ == "VERB") and (tag[4].text.lower().strip() not in self.false_positive_verbs):  # present tense
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
+                    else:
+                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):
@@ -290,7 +300,7 @@ class Tagger:
         Returns:
             boolean: True if the given token is a subject of its sentence - False otherwise
         """
-        if ((tag[3].lower() in ["nsubj", "nsubj:pass", "csubj"]) and (tag[1] in ["PRON", "NOUN", "PROPN"])):
+        if ((tag[3].lower() in ["nsubj", "nsubj:pass", "nsubjpass", "csubj"]) and (tag[1] in ["PRON", "NOUN", "PROPN"])):
             return True
         
         return False

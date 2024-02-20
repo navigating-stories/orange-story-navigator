@@ -325,10 +325,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        selected_story_results = Output("Selected story results", Table)
-        story_collection_results = Output("Story collection results", Table)
-        selected_customfreq_table = Output("Selected story custom tags", Table)
-        customfreq_table = Output("Story collection custom tags", Table)
+        selected_story_results = Output("Actor stats: selected", Table)
+        story_collection_results = Output("Actor stats: all", Table)
+        selected_customfreq_table = Output("Custom tag stats: selected", Table)
+        customfreq_table = Output("Custom tag stats: all", Table)
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -383,6 +383,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.story_elements_dict = {}
         self.actor_results_df = None
         self.selected_actor_results_df = None
+        self.selected_custom_freq = None
+        self.full_custom_freq = None
 
         self.__pending_selected_documents = self.selected_documents
 
@@ -547,24 +549,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
-        # print('selected text: ', text)
         QApplication.clipboard().setText(text)
 
     def pos_selection_changed(self):
-        # if not self.sc.isChecked():
-        #     if hasattr(self, 'main_agents_box'):
-        #         if self.main_agents_box is not None:
-        #             self.main_agents_box.setEnabled(False)
-        #     if hasattr(self, 'metric_name_combo'):
-        #         if self.metric_name_combo is not None:
-        #             self.metric_name_combo.setEnabled(False)
-        # else:
-        #     if hasattr(self, 'main_agents_box'):
-        #         if self.main_agents_box is not None:
-        #             self.main_agents_box.setEnabled(True)
-        #     if hasattr(self, 'metric_name_combo'):
-        #         if self.metric_name_combo is not None:
-        #             self.metric_name_combo.setEnabled(True)
         self.show_docs()
 
     @Inputs.stories
@@ -580,45 +567,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
-            self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements)
-            self.agent_prominence_score_max = self.actortagger.prominence_score_max
-
-            self.Outputs.story_collection_results.send(
-                table_from_frame(
-                    self.actor_results_df
-                )
+            self.start(
+                self.run, 
+                self.story_elements
             )
-
-            story_elements_grouped_by_story = self.story_elements.groupby('storyid')
-            for storyid, story_df in story_elements_grouped_by_story:
-                self.story_elements_dict[storyid] = story_df
-
-            selected_storyids = []
-            for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append(str(c_index))
-
-            if util.frame_contains_custom_tag_columns(self.story_elements):
-                self.custom_tags.setEnabled(True)
-
-                self.Outputs.selected_customfreq_table.send(
-                    table_from_frame(
-                        self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=selected_storyids)
-                    )
-                )
-
-                self.Outputs.customfreq_table.send(
-                    table_from_frame(
-                        self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-                    )
-                )
-            else:
-                self.custom_tags.setChecked(False)
-                self.custom_tags.setEnabled(False)
-
             self.postags_box.setEnabled(True)
-            # if self.sc.isChecked():
-            #     self.main_agents_box.setEnabled(True)
-            #     self.metric_name_combo.setEnabled(True)
         else:
             self.nc.setChecked(False)
             self.sc.setChecked(False)
@@ -634,6 +587,40 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
         self.show_docs()
+
+    def run(self, story_elements, state: TaskState):
+        def advance(progress):
+            if state.is_interruption_requested():
+                raise InterruptedError
+            state.set_progress_value(progress)
+
+        self.story_elements = story_elements
+        self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements, callback=advance)
+        self.agent_prominence_score_max = self.actortagger.prominence_score_max
+
+        story_elements_grouped_by_story = self.story_elements.groupby('storyid')
+        for storyid, story_df in story_elements_grouped_by_story:
+            self.story_elements_dict[storyid] = story_df
+
+        selected_storyids = []
+        otherids = []
+        for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+            selected_storyids.append('ST' + str(c_index))
+            otherids.append(str(c_index))
+
+        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
+        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+
+        if util.frame_contains_custom_tag_columns(self.story_elements):
+            self.custom_tags.setEnabled(True)
+            self.selected_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
+            self.full_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+        else:
+            self.custom_tags.setChecked(False)
+            self.custom_tags.setEnabled(False)
+        
+        return self.actor_results_df, self.selected_actor_results_df, self.selected_custom_freq, self.full_custom_freq
+
 
     def reset_widget(self):
         self.stories = None
@@ -652,12 +639,14 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def setup_controls(self):
         """Setup controls in control area"""
-        domain = self.stories.domain
+        if self.stories is not None:
+            domain = self.stories.domain
 
-        self.search_listbox.model().set_domain(domain)
-        self.display_listbox.model().set_domain(domain)
-        self.search_features = self.search_listbox.model()[:]
-        self.display_features = self.display_listbox.model()[:]
+            self.search_listbox.model().set_domain(domain)
+            self.display_listbox.model().set_domain(domain)
+
+            self.search_features = self.search_listbox.model()[:]
+            self.display_features = self.display_listbox.model()[:]
 
     def select_variables(self):
         """Set selection to display and search features view boxes"""
@@ -685,8 +674,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def list_docs(self):
         """List documents into the left scrolling area"""
-        docs = self.regenerate_docs()
-        self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
+        if self.stories is not None:
+            docs = self.regenerate_docs()
+            self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
 
     def get_selected_indexes(self) -> Set[int]:
         m = self.doc_list.model().mapToSource
@@ -735,6 +725,26 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 )
             )
 
+            if util.frame_contains_custom_tag_columns(self.story_elements):
+                self.custom_tags.setEnabled(True)
+                self.selected_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
+                self.full_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+
+                self.Outputs.selected_customfreq_table.send(
+                    table_from_frame(
+                        self.selected_custom_freq
+                    )
+                )
+
+                self.Outputs.customfreq_table.send(
+                    table_from_frame(
+                        self.full_custom_freq
+                    )
+                )
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
+
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""
         self.update_selected_actor_results()
@@ -744,7 +754,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def prominence_metric_change(self):
         self.agent_prominence_score_min = 0
-        # self.actortagger.word_prominence_scores = {}
         self.show_docs(slider_engaged=False)
         self.commit.deferred()
 
@@ -758,7 +767,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         if self.stories is None or (not hasattr(self, 'actortagger')):
             return
         
-        if self.selected_actor_results_df is None and self.actor_results_df is not None:
+        if (self.selected_actor_results_df is None) and (self.actor_results_df is not None):
             self.update_selected_actor_results()
 
         self.Warning.no_feats_display.clear()
@@ -783,31 +792,16 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.agent_prominence_score_min,
                             self.story_elements_dict[str(c_index)]
                         )
-                    else:
-                        value = self.actortagger.postag_text(
-                            value,
-                            self.nouns,
-                            self.subjs,
-                            self.custom,
-                            self.agent_prominence_metric,
-                            self.agent_prominence_score_min,
-                            None
-                        )                        
-                    # self.Outputs.metrics_freq_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_freq_table()
-                    #     )
-                    # )
-                    # self.Outputs.metrics_subfreq_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_subjfreq_table()
-                    #     )
-                    # )
-                    # self.Outputs.metrics_agency_table.send(
-                    #     table_from_frame(
-                    #         self.actortagger.calculate_metrics_agency_table()
-                    #     )
-                    # )
+                    # else:
+                    #     value = self.actortagger.postag_text(
+                    #         value,
+                    #         self.nouns,
+                    #         self.subjs,
+                    #         self.custom,
+                    #         self.agent_prominence_metric,
+                    #         self.agent_prominence_score_min,
+                    #         None
+                    #     )                        
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
@@ -879,7 +873,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.Warning.no_feats_search.clear()
         if len(self.search_features) == 0:
             self.Warning.no_feats_search()
-        return self.stories.documents_from_features(self.search_features)
+        if self.stories is not None:
+            return self.stories.documents_from_features(self.search_features)
+        else:
+            return None
 
     def refresh_search(self):
         if self.stories is not None:
@@ -900,6 +897,30 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, res: int):
         """When matches count is done show the result in the label"""
         self.n_matches = res if res is not None else "n/a"
+
+        self.Outputs.story_collection_results.send(
+            table_from_frame(
+                self.actor_results_df
+            )
+        )
+
+        self.Outputs.selected_story_results.send(
+            table_from_frame(
+                self.selected_actor_results_df
+            )
+        )
+
+        self.Outputs.selected_customfreq_table.send(
+            table_from_frame(
+                self.selected_custom_freq
+            )
+        )
+
+        self.Outputs.customfreq_table.send(
+            table_from_frame(
+                self.full_custom_freq
+            )
+        )
 
     def on_exception(self, ex):
         raise ex
