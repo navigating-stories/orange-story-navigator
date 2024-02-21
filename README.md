@@ -1,5 +1,5 @@
 ![Unit tests](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
-[![PyPI version](https://badge.fury.io/py/storynavigator.svg)](https://badge.fury.io/py/storynavigator)
+[![PyPI version](https://badge.fury.io/py/storynavigator.svg?branch=master&kill_cache=1)](https://badge.fury.io/py/storynavigator)
 [![Read the Docs](https://readthedocs.org/projects/orange-story-navigator/badge/?version=latest)](https://orange-story-navigator.readthedocs.io/en/latest/)
 
 <img src="orangecontrib/storynavigation/widgets/icons/storynavigator_logo.png" alt="setting_icon" width="300" height="auto">
