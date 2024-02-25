@@ -384,6 +384,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.selected_actor_results_df = None
         self.selected_custom_freq = None
         self.full_custom_freq = None
+        self.valid_stories = []
 
         self.__pending_selected_documents = self.selected_documents
 
@@ -556,6 +557,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     @Inputs.stories
     def set_stories(self, stories=None):
         self.stories = stories
+
+        if self.story_elements is not None:
+            self.start(
+                self.run, 
+                self.story_elements
+            )
+
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
@@ -597,8 +605,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements, callback=advance)
         self.agent_prominence_score_max = self.actortagger.prominence_score_max
 
+        # deal with stories that do not have any text / entry in story elements: remove them from doc list
         story_elements_grouped_by_story = self.story_elements.groupby('storyid')
         for storyid, story_df in story_elements_grouped_by_story:
+            if self.stories is not None:
+                self.valid_stories.append(self.stories[int(storyid)])
             self.story_elements_dict[storyid] = story_df
 
         selected_storyids = []
@@ -618,7 +629,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
         
-        return self.actor_results_df, self.selected_actor_results_df, self.selected_custom_freq, self.full_custom_freq
+        return self.actor_results_df, self.valid_stories, self.selected_actor_results_df, self.selected_custom_freq, self.full_custom_freq
 
 
     def reset_widget(self):
@@ -777,7 +788,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
             text = ""
-            for feature in self.display_features:
+            for feature in self.display_features:                
                 value = str(self.stories[c_index, feature.name])
                 self.original_text = str(value)
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
@@ -887,6 +898,15 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         """When matches count is done show the result in the label"""
         self.n_matches = res if res is not None else "n/a"
 
+        # deal with stories that do not have entry in story elements frame
+        if self.stories is not None:
+            domain = Domain([], metas=self.display_features)
+            metas = []
+            for item in self.valid_stories:
+                metas.append(item.metas.tolist())
+            self.stories = Corpus(domain=domain, metas=np.array(metas))
+            self.list_docs()
+
         self.Outputs.story_collection_results.send(
             table_from_frame(
                 self.actor_results_df
@@ -899,17 +919,19 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
-        self.Outputs.selected_customfreq_table.send(
-            table_from_frame(
-                self.selected_custom_freq
-            )
-        )
+        if util.frame_contains_custom_tag_columns(self.story_elements):
 
-        self.Outputs.customfreq_table.send(
-            table_from_frame(
-                self.full_custom_freq
+            self.Outputs.selected_customfreq_table.send(
+                table_from_frame(
+                    self.selected_custom_freq
+                )
             )
-        )
+
+            self.Outputs.customfreq_table.send(
+                table_from_frame(
+                    self.full_custom_freq
+                )
+            )
 
     def on_exception(self, ex):
         raise ex

@@ -112,6 +112,8 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
             if len(text) > 0:
                 self.stories.append((text, idx))
+            else:
+                print(idx)
 
             idx += 1
 

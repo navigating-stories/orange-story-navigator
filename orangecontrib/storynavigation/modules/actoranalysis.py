@@ -254,8 +254,16 @@ class ActorTagger:
         for col in strcols:
             story_elements_df[col] = story_elements_df[col].astype(str)
 
-        story_elements_df['is_sentence_subject_boolean'] = story_elements_df['is_sentence_subject_boolean'].astype(int)
-        story_elements_df['active_voice_subject_boolean'] = story_elements_df['active_voice_subject_boolean'].astype(int)
+        try:
+            story_elements_df['is_sentence_subject_boolean'] = story_elements_df['is_sentence_subject_boolean'].astype(int)
+        except ValueError:
+            pass
+
+        try:
+            story_elements_df['active_voice_subject_boolean'] = story_elements_df['active_voice_subject_boolean'].astype(int)
+        except ValueError:
+            pass
+
         story_elements_df['storyid'] = 'ST' + story_elements_df['storyid'].astype(str)
         story_elements_df['segment_id'] = 'SE' + story_elements_df['segment_id'].astype(str)
 
@@ -291,6 +299,7 @@ class ActorTagger:
     #     return result
 
     def generate_actor_analysis_results(self, story_elements_df, callback=None):
+        story_elements_df = story_elements_df.copy()
         # self.tagging_cache = self.__generate_tagging_cache(story_elements_df, callback)
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
@@ -300,16 +309,41 @@ class ActorTagger:
         if word_col is None:
             word_col = 'token_text_lowercase'
             
-        for word in story_elements_df[story_elements_df['story_navigator_tag'].isin(['SP', 'SNP'])][word_col].unique().tolist(): # loop through unique words that are subjects of sentences in a story
+        c = 1
+        rel_rows = story_elements_df[story_elements_df['story_navigator_tag'].isin(['SP', 'SNP'])][word_col].unique().tolist()
+
+        for word in rel_rows: # loop through unique words that are subjects of sentences in a story
             df_word = story_elements_df[story_elements_df[word_col] == str(word)]
             raw_freq_df = df_word.groupby(['storyid', 'segment_id', word_col])[word_col].agg('count').to_frame("raw_freq").reset_index()
-            subj_freq_df = df_word.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('sum').to_frame("subj_freq").reset_index()
-            agency_df = df_word.groupby(['storyid', 'segment_id', word_col])['active_voice_subject_boolean'].agg('sum').to_frame("agency").reset_index()
+            
+            subj_freq_df = None
+            if df_word['is_sentence_subject_boolean'].dtype == int:
+                subj_freq_df = df_word.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('sum').to_frame("subj_freq").reset_index()
+            else:
+                df_word = df_word.copy()
+                df_word['is_sentence_subject_boolean'] = df_word['is_sentence_subject_boolean'].astype(bool)
+                
+                rel_df = df_word[df_word['is_sentence_subject_boolean']]
+                subj_freq_df = rel_df.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('nunique').to_frame("subj_freq").reset_index()
+
+            agency_df = None
+            if df_word['active_voice_subject_boolean'].dtype == int:
+                agency_df = df_word.groupby(['storyid', 'segment_id', word_col])['active_voice_subject_boolean'].agg('sum').to_frame("agency").reset_index()
+            else:
+                df_word['active_voice_subject_boolean'] = df_word['active_voice_subject_boolean'].astype(bool)
+                rel_df = df_word[df_word['active_voice_subject_boolean']]
+                agency_df = rel_df.groupby(['storyid', 'segment_id', word_col])['active_voice_subject_boolean'].agg('nunique').to_frame("agency").reset_index()
+
             agency_df['agency'] = agency_df.apply(lambda row: self.__custom_agg_agency(row), axis=1)
             prominence_df = df_word.groupby(['storyid', 'segment_id', word_col])['is_sentence_subject_boolean'].agg('sum').to_frame("prominence_sf").reset_index()
             prominence_df['prominence_sf'] = prominence_df.apply(lambda row: self.__custom_agg_prominence(row), axis=1)
             combined_df = pd.merge(raw_freq_df, pd.merge(subj_freq_df, pd.merge(agency_df, prominence_df, on=['storyid', 'segment_id', word_col], how='outer')), on=['storyid', 'segment_id', word_col], how='outer')
             result_df = pd.concat([result_df, combined_df], axis=0, ignore_index=True)
+
+            c+=1
+            if callback:
+                callback((c / len(rel_rows) * 100))
+
         
         for word in result_df[word_col].unique().tolist():
             self.entity_prominence_scores[word] = result_df[result_df[word_col] == word]['prominence_sf'].tolist()[0]

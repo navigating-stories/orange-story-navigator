@@ -75,7 +75,8 @@ def load_spacy_pipeline(name):
     if spacy.util.is_package(name):
         nlp = spacy.load(name)
     else:
-        os.system(f"spacy download {name}")
+        # os.system(f"spacy download {name}")
+        spacy.cli.download(name)
         nlp = spacy.load(name)
         nlp.add_pipe("merge_noun_chunks")
         nlp.add_pipe("merge_entities")

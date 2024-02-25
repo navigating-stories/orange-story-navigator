@@ -26,12 +26,6 @@ class SentimentAnalyzer:
         return {'positive' : p_score, 'neutral' : neu_score, 'negative' : neg_score, 'overall' : overall_score} 
 
     def compute_sentiment_scores(self, story_elements, callback=None):
-        # Load model directly
-        # from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
-        # tokenizer = AutoTokenizer.from_pretrained("lxyuan/distilbert-base-multilingual-cased-sentiments-student")
-        # model = AutoModelForSequenceClassification.from_pretrained("lxyuan/distilbert-base-multilingual-cased-sentiments-student")
-
         story_els = story_elements.copy()
         sentences = story_els['sentence'].unique().tolist()
         self.sentiment_scores_dict_pos = {}
@@ -40,7 +34,12 @@ class SentimentAnalyzer:
         self.sentiment_scores_dict_over = {}
         c = 1
         for sentence in sentences:
-            current_scores = self.__compute_individual_sentiment_score(sentence)
+            current_scores = None
+            if (len(sentence) > 512):
+                current_scores = self.__compute_individual_sentiment_score(sentence[:511])
+            else:
+                current_scores = self.__compute_individual_sentiment_score(sentence)
+            
             self.sentiment_scores_dict_pos[sentence] = current_scores['positive']
             self.sentiment_scores_dict_neu[sentence] = current_scores['neutral']
             self.sentiment_scores_dict_neg[sentence] = current_scores['negative']

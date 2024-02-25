@@ -377,6 +377,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.full_action_table_df = None
         self.selected_custom_freq = None
         self.full_custom_freq = None
+        self.valid_stories = []
 
         self.__pending_selected_documents = self.selected_documents
 
@@ -489,15 +490,16 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     @Inputs.stories
     def set_stories(self, stories=None):
         self.stories = stories
+
+        if self.story_elements is not None:
+            self.start(
+                self.run, 
+                self.story_elements
+            )
+
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
-
-        if self.story_elements is not None:
-            story_elements_grouped_by_story = self.story_elements.groupby('storyid')
-            for storyid, story_df in story_elements_grouped_by_story:
-                self.story_elements_dict[storyid] = story_df
-
         self.show_docs()
 
     @Inputs.story_elements
@@ -520,9 +522,18 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.list_docs()
         self.show_docs()
 
-    def on_done(self, res) -> None:
+    def on_done(self, res : int) -> None:
         """When matches count is done show the result in the label"""
         self.n_matches = res if res is not None else "n/a"
+
+        # deal with stories that do not have entry in story elements frame
+        if self.stories is not None:
+            domain = Domain([], metas=self.display_features)
+            metas = []
+            for item in self.valid_stories:
+                metas.append(item.metas.tolist())
+            self.stories = Corpus(domain=domain, metas=np.array(metas))
+            self.list_docs()
 
         self.Outputs.story_collection_results.send(
             table_from_frame(
@@ -548,17 +559,18 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
-        self.Outputs.selected_customfreq_table.send(
-            table_from_frame(
-                self.selected_custom_freq
+        if util.frame_contains_custom_tag_columns(self.story_elements):
+            self.Outputs.selected_customfreq_table.send(
+                table_from_frame(
+                    self.selected_custom_freq
+                )
             )
-        )
 
-        self.Outputs.customfreq_table.send(
-            table_from_frame(
-                self.full_custom_freq
+            self.Outputs.customfreq_table.send(
+                table_from_frame(
+                    self.full_custom_freq
+                )
             )
-        )
 
     def run(self, story_elements, state: TaskState):
         def advance(progress):
@@ -569,8 +581,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.story_elements = story_elements
         self.action_results_df = self.actiontagger.generate_action_analysis_results(self.story_elements, callback=advance)
 
+        # deal with stories that do not have any text / entry in story elements: remove them from doc list
         story_elements_grouped_by_story = self.story_elements.groupby('storyid')
         for storyid, story_df in story_elements_grouped_by_story:
+            if self.stories is not None:
+                self.valid_stories.append(self.stories[int(storyid)])
             self.story_elements_dict[storyid] = story_df
 
         selected_storyids = []
@@ -602,7 +617,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
         
-        return self.action_results_df, self.selected_action_results_df, self.selected_action_table_df, self.full_action_table_df, self.selected_custom_freq, self.full_custom_freq
+        return self.action_results_df, self.valid_stories, self.selected_action_results_df, self.selected_action_table_df, self.full_action_table_df, self.selected_custom_freq, self.full_custom_freq
 
     def reset_widget(self):
         # Corpus
@@ -852,7 +867,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.Warning.no_feats_search.clear()
         if len(self.search_features) == 0:
             self.Warning.no_feats_search()
-        return self.stories.documents_from_features(self.search_features)
+            if self.stories is not None:
+                return self.stories.documents_from_features(self.display_features)
+        else:
+            if self.stories is not None:
+                return self.stories.documents_from_features(self.search_features)
+        return None
 
     def refresh_search(self):
         if self.stories is not None:
