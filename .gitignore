@@ -17,6 +17,8 @@ MANIFEST
 nv
 venv
 flenv/
+.venv/
+
 
 # Cython generated files
 __pycache__
