@@ -329,6 +329,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         selected_customfreq_table = Output("Custom tag stats: selected", Table)
         customfreq_table = Output("Custom tag stats: all", Table)
 
+    class Error(OWWidget.Error):
+        input_channel_not_corpus = Msg(
+            """`Stories` cannot receive `Story elements` as input. Error will go away if `Stories` receives `Corpus` as input.""")
+        input_channel_not_table = Msg("Cannot connect Stories to Story elements.") # not used at the moment
+
+
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -556,7 +562,14 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.stories
     def set_stories(self, stories=None):
-        self.stories = stories
+        """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs.         
+        """
+        if not isinstance(stories, Corpus):
+            self.Error.input_channel_not_corpus()
+        else:
+            self.stories = stories
+            self.Error.clear()
 
         if self.story_elements is not None:
             self.start(
@@ -571,6 +584,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
+        # we do not want that story elements are connected to stories, but only to story elements
+        # if story_elements is not None: # this works if the right types are connected but not otherwise. why?
+        #     print(type(story_elements))
+        #     print("story_elements is a table?", isinstance(story_elements, Table))
+        #     print("story_elements is a corpus?", isinstance(story_elements, Corpus))
+
         if story_elements is not None:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
@@ -642,8 +661,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.filter_input.clear()
         # Models/vars
         self.doc_list_model.clear()
-        # Warnings
+        # Warnings and Errors
         self.Warning.clear()
+        self.Error.clear()
         # WebView
         self.doc_webview.setHtml("")
 
