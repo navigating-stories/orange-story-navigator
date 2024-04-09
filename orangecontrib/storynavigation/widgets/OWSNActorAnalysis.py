@@ -46,6 +46,7 @@ from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.actoranalysis import ActorTagger
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
+import storynavigation.modules.error_handling as error_handling
 
 HTML = """
 <!doctype html>
@@ -330,25 +331,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         customfreq_table = Output("Custom tag stats: all", Table)
 
     class Error(OWWidget.Error):
-        msg_wrong_input_for_stories = (
-            "Wrong input to `Stories`. "
-            "The input to `Story elements` needs to be a `Table`. \n"
-            "The input to `Stories` needs to be a `Corpus`." 
-        )
-        wrong_input_for_stories = Msg(msg_wrong_input_for_stories)
-
-        msg_wrong_input_for_elements = (
-            "Wrong input to `Story elements`. "
-            "The input to `Story elements` needs to be a `Table`. \n"
-            "The input to `Stories` needs to be a `Corpus`."
-        ) 
-        wrong_input_for_elements = Msg(msg_wrong_input_for_elements)
-
-        msg_residual_error = (
-            "Could not process data. Check the inputs to the widget."
-        )
-        residual_error = Msg(msg_residual_error)
-
+        wrong_input_for_stories = error_handling.wrong_input_for_stories
+        wrong_input_for_elements = error_handling.wrong_input_for_elements
+        residual_error = error_handling.residual_error
+        
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
