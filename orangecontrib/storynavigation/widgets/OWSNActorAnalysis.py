@@ -330,9 +330,24 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         customfreq_table = Output("Custom tag stats: all", Table)
 
     class Error(OWWidget.Error):
-        input_channel_not_corpus = Msg(
-            """`Stories` cannot receive `Story elements` as input. Error will go away if `Stories` receives `Corpus` as input.""")
-        input_channel_not_table = Msg("Cannot connect Stories to Story elements.") # not used at the moment
+        msg_wrong_input_for_stories = (
+            "Wrong input to `Stories`. "
+            "The input to `Story elements` needs to be a `Table`. \n"
+            "The input to `Stories` needs to be a `Corpus`." 
+        )
+        wrong_input_for_stories = Msg(msg_wrong_input_for_stories)
+
+        msg_wrong_input_for_elements = (
+            "Wrong input to `Story elements`. "
+            "The input to `Story elements` needs to be a `Table`. \n"
+            "The input to `Stories` needs to be a `Corpus`."
+        ) 
+        wrong_input_for_elements = Msg(msg_wrong_input_for_elements)
+
+        msg_residual_error = (
+            "Could not process data. Check the inputs to the widget."
+        )
+        residual_error = Msg(msg_residual_error)
 
 
     settingsHandler = DomainContextHandler()
@@ -566,16 +581,20 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         misses wrongly connected inputs.         
         """
         if not isinstance(stories, Corpus):
-            self.Error.input_channel_not_corpus()
+            self.Error.wrong_input_for_stories()
         else:
             self.stories = stories
             self.Error.clear()
 
         if self.story_elements is not None:
-            self.start(
-                self.run, 
-                self.story_elements
-            )
+            self.Error.clear()
+            try:
+                self.start(
+                    self.run, 
+                    self.story_elements
+                )
+            except Exception as e:
+                self.Error.residual_error()
 
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
@@ -584,30 +603,34 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
-        # we do not want that story elements are connected to stories, but only to story elements
-        # if story_elements is not None: # this works if the right types are connected but not otherwise. why?
-        #     print(type(story_elements))
-        #     print("story_elements is a table?", isinstance(story_elements, Table))
-        #     print("story_elements is a corpus?", isinstance(story_elements, Corpus))
+        """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs."""
+        if isinstance(story_elements, Corpus): 
+            self.Error.wrong_input_for_elements()
 
-        if story_elements is not None:
-            self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-            self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
-            self.start(
-                self.run, 
-                self.story_elements
-            )
-            self.postags_box.setEnabled(True)
         else:
-            self.nc.setChecked(False)
-            self.sc.setChecked(False)
-            self.allc.setChecked(False)
-            self.custom_tags.setChecked(False)
+            if story_elements is not None:
+                self.Error.clear()
+                try:
+                    self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+                    self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
+                    self.start(
+                        self.run, 
+                        self.story_elements
+                    )
+                    self.postags_box.setEnabled(True)
+                except Exception as e:
+                    self.Error.residual_error()
+            else:
+                self.nc.setChecked(False)
+                self.sc.setChecked(False)
+                self.allc.setChecked(False)
+                self.custom_tags.setChecked(False)
 
-            self.custom_tags.setEnabled(False)
-            self.postags_box.setEnabled(False)
-            self.main_agents_box.setEnabled(False)
-            self.metric_name_combo.setEnabled(False)
+                self.custom_tags.setEnabled(False)
+                self.postags_box.setEnabled(False)
+                self.main_agents_box.setEnabled(False)
+                self.metric_name_combo.setEnabled(False)
 
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
