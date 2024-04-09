@@ -326,6 +326,28 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         actor_action_table_selected = Output("Action table: selected", Table)
         actor_action_table_full = Output("Action table: all", Table)
 
+
+    class Error(OWWidget.Error):
+        msg_wrong_input_for_stories = (
+            "Wrong input to `Stories`. "
+            "The input to `Story elements` needs to be a `Table`. \n"
+            "The input to `Stories` needs to be a `Corpus`." 
+        )
+        wrong_input_for_stories = Msg(msg_wrong_input_for_stories)
+
+        msg_wrong_input_for_elements = (
+            "Wrong input to `Story elements`. "
+            "The input to `Story elements` needs to be a `Table`. \n"
+            "The input to `Stories` needs to be a `Corpus`."
+        ) 
+        wrong_input_for_elements = Msg(msg_wrong_input_for_elements)
+
+        msg_residual_error = (
+            "Could not process data. Check the inputs to the widget."
+        )
+        residual_error = Msg(msg_residual_error)
+
+
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -489,7 +511,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.stories
     def set_stories(self, stories=None):
-        self.stories = stories
+
+        if not isinstance(stories, Corpus):
+            self.Error.wrong_input_for_stories()
+        else:
+            self.stories = stories
+            self.Error.clear()
 
         if self.story_elements is not None:
             self.start(
@@ -504,7 +531,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
+        if isinstance(story_elements, Corpus): 
+            self.Error.wrong_input_for_elements()
+
         if story_elements is not None:
+            self.Error.clear()
+            # try:
             self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
             self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
             self.start(

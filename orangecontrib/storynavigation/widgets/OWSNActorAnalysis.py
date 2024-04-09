@@ -588,13 +588,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         if self.story_elements is not None:
             self.Error.clear()
-            try:
-                self.start(
-                    self.run, 
-                    self.story_elements
-                )
-            except Exception as e:
-                self.Error.residual_error()
+            self.start(
+                self.run, 
+                self.story_elements
+            )
 
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
@@ -611,16 +608,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         else:
             if story_elements is not None:
                 self.Error.clear()
-                try:
-                    self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-                    self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
-                    self.start(
-                        self.run, 
-                        self.story_elements
-                    )
-                    self.postags_box.setEnabled(True)
-                except Exception as e:
-                    self.Error.residual_error()
+                self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+                self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
+                self.start(
+                    self.run, 
+                    self.story_elements
+                )
+                self.postags_box.setEnabled(True)
             else:
                 self.nc.setChecked(False)
                 self.sc.setChecked(False)
