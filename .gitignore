@@ -16,8 +16,14 @@ MANIFEST
 # virtual environment
 nv
 venv
+navigating/
 flenv/
 .venv/
+
+data/
+workflows/
+
+navigator.code-workspace
 
 
 # Cython generated files
