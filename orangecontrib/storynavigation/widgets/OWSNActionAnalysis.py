@@ -498,7 +498,9 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.stories
     def set_stories(self, stories=None):
-
+        """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs.         
+        """
         if not isinstance(stories, Corpus):
             self.Error.wrong_input_for_stories()
         else:
@@ -506,6 +508,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.Error.clear()
 
         if self.story_elements is not None:
+            self.Error.clear()
             self.start(
                 self.run, 
                 self.story_elements
@@ -518,23 +521,25 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
+        """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs."""
         if isinstance(story_elements, Corpus): 
             self.Error.wrong_input_for_elements()
-
-        if story_elements is not None:
-            self.Error.clear()
-            # try:
-            self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-            self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
-            self.start(
-                self.run, 
-                self.story_elements
-            )
-            self.postags_box.setEnabled(True)
+        
         else:
-            self.custom_tags.setChecked(False)
-            self.custom_tags.setEnabled(False)
-            self.postags_box.setEnabled(False)
+            if story_elements is not None:
+                self.Error.clear()
+                self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+                self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
+                self.start(
+                    self.run, 
+                    self.story_elements
+                )
+                self.postags_box.setEnabled(True)
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
+                self.postags_box.setEnabled(False)
 
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
