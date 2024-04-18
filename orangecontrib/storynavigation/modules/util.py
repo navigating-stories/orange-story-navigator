@@ -7,6 +7,7 @@ import os
 import string
 import pandas as pd
 import storynavigation.modules.constants as constants
+from nltk.tokenize import sent_tokenize
 
 def entity_tag_already_exists(ents, start, end):
     for ent in ents:
@@ -83,8 +84,25 @@ def load_spacy_pipeline(name):
         nlp.add_pipe("sentencizer")
     return nlp
 
-
 def preprocess_text(text):
+    # Match all letter followed by whitespace following by newline character (no fullstop)
+    # Basically, add a fullstop where it should be and was forgotten
+    # e.g. "Its where Kody went   
+    #       He landed in India."
+    # replaced with:
+    # "Its where Kody went. He landed in India."
+    regex_pattern = r'([a-zA-Z])\s*\n([A-Z])'
+    replacement_pattern = r'\1. \2' # replace with first letter, fullstop, space and uppercase letter
+    processed_text_step1 = re.sub(regex_pattern, replacement_pattern, text)
+    # Change all newlines to spaces
+    processed_text_step2 = processed_text_step1.replace("\n", " ")
+    # Remove all quotes
+    quote_pattern = r'[\'\"‘’“”]'
+    processed_text_step3 = re.sub(quote_pattern, '', processed_text_step2)
+    # return sentences (tokenized from text)
+    return sent_tokenize(processed_text_step3)
+
+def preprocess_text_complex(text):
     """Preprocesses story text. A lot of stories in the Corona in de stad dataset
     have sentences with no period at the end followed immediately by newline characters.
     This function processes these and other issues to make the resulting text suitable for
@@ -101,7 +119,7 @@ def preprocess_text(text):
     for i in re.finditer("\n[A-Z]", text):
         startindex = i.start()
         match_indices.append(startindex + 1)
-    match_indices.append(None)
+    # match_indices.append(None)
     # split the text into clauses (based on regex matches) - clauses can be single or multiple sentences
     clauses = [
         text[match_indices[i] : match_indices[i + 1]]
