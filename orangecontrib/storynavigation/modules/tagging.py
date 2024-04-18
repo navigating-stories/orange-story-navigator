@@ -227,10 +227,62 @@ class Tagger:
                     else:
                         row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, False, vb_text]
                 else:
-                    row = self.__process_non_noun_tag(storyid, sentence, tag, span)
+                    row = self.__process_non_noun_tag(storyid, sentence, tag)
         return row
     
-    def __process_non_noun_tag(self, storyid, sentence, tag, span):
+    def __process_english_potential_action(self, tag):
+        if (tag[4].pos_ == "VERB"):
+            # VB  --  verb, base form
+            # VBD  --  verb, past tense
+            # VBG  --  verb, gerund or present participle
+            # VBN  --  verb, past participle
+            # VBP  --  verb, non-3rd person singular present
+            # VBZ  --  verb, 3rd person singular present
+            
+            # Classify verb as either past or present tense
+            if tag[4].tag_ in ['VB', 'VBG', 'VBP', 'VBZ']:
+                return "PRES_VB"
+            elif tag[4].tag_ in ['VBD', 'VBN']:
+                return "PAST_VB"
+            else:                                                                                                                                       
+                return "-"
+        else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
+            return "-"
+
+    def __process_dutch_potential_action(self, tag):
+        # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
+        if (tag[4].pos_ == "VERB" and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
+            # Present tense == WW|pv|tgw or WW|pv|conj
+            #   * Potentially include WW|inf category (see below)
+            # Past tense == WW|pv|verl
+            #   * Potentially include WW|vd category (see below)
+            # Verb forms covering in training data
+            # "VERB WW|" all verbs in training data	            19682 cases
+            # VERB WW|pv subcategory	                        9589 cases
+            # VERB WW|vd subcategory	                        5165 cases
+            # VERB WW|od subcategory                            721 cases (Adjectival form of verb  so N/A)
+            # VERB WW|inf subcategory	                        4207 cases 
+
+            # Classify verb as either past or present tense
+            if (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
+                return "PRES_VB"
+            elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
+                return "PAST_VB"
+            else:                                                                                                                                       # Cannot infer from fine-grained Verb tags whether this is present or past tense, rather don't give the Verb a tense at all and don't even tag it as a Verb (to be safe)
+                # WW|od cases will pass through here
+                return "-"
+        else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
+            return "-"
+
+    def __process_potential_action(self, tag):
+        if self.lang == constants.NL:
+            return self.__process_dutch_potential_action(tag)
+        elif self.lang == constants.EN:
+            return self.__process_english_potential_action(tag)
+        else: 
+            return "-"
+        
+    def __process_non_noun_tag(self, storyid, sentence, tag):
         """Given a tagged token in a sentence within a specific story known to not be a noun (potentially a verb), this function processes and appends data about this action to the master output dataframe
 
         Args:
@@ -245,38 +297,12 @@ class Tagger:
             span (tuple): 2-component tuple. First component is the matching start index in the sentence of the given tag.text. Second component is the matching end index.
 
         Returns:
-            list: list representing a row of the master story elements dataframe
+            list: list representing a row of the master story elements dataframe with the tense of the input action / verb word
         """
         row = None
         if self.__is_valid_token(tag):
-            # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
-            if (tag[4].pos_ == "VERB" and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
-                # Present tense == WW|pv|tgw or WW|pv|conj
-                #   * Potentially include WW|inf category (see below)
-                # Past tense == WW|pv|verl
-                #   * Potentially include WW|vd category (see below)
-                # Verb forms covering in training data
-                # "VERB WW|" all verbs in training data	            19682 cases
-                # VERB WW|pv subcategory	                        9589 cases
-                # VERB WW|vd subcategory	                        5165 cases
-                # VERB WW|od subcategory                            721 cases (Adjectival form of verb  so N/A)
-                # VERB WW|inf subcategory	                        4207 cases 
-
-                # Classify verb as either past or present tense
-                if (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-                elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-                else:                                                                                                                                       # Cannot infer from fine-grained Verb tags whether this is present or past tense, rather don't give the Verb a tense at all and don't even tag it as a Verb (to be safe)
-                    # WW|od cases will pass through here
-                    row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
-            else:                                                                                                                                           # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
-                # if ((vb in self.past_tense_verbs) and (vb not in self.false_positive_verbs) and (vb not in self.present_tense_verbs)):                    # PAST TENSE
-                #     row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PAST_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-                # elif ((vb in self.present_tense_verbs) and (vb not in self.false_positive_verbs) and (vb not in self.past_tense_verbs)):                  # PRESENT TENSE
-                #     row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "PRES_VB", tag[1], tag[2], tag[3], False, False, False, '-']
-                # else:                                                                                                                                     # Can't classify tense from Verb dictionaries, must mean that word is not a Verb
-                row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "-", tag[1], tag[2], tag[3], False, False, False, '-']
+            tense_value = self.__process_potential_action(tag)
+            row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):
