@@ -49,7 +49,6 @@ import storynavigation.modules.util as util
 import storynavigation.modules.error_handling as error_handling
 
 from thefuzz import fuzz
-from thefuzz import process
 
 HTML = """
 <!doctype html>

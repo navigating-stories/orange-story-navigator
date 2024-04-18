@@ -48,7 +48,7 @@ from storynavigation.modules.actionanalysis import ActionTagger
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 import storynavigation.modules.error_handling as error_handling
-
+from thefuzz import fuzz
 
 HTML = """
 <!doctype html>
@@ -702,9 +702,36 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             docs = self.regenerate_docs()
             self.doc_list_model.setup_data(self.stories.titles.tolist(), docs)
 
+    def get_el_story_text(self, df):
+        return ' '.join(df['sentence'].unique().tolist())               # Concatenate all unique sentences in a dataframe column into a single story text
+    
+    def fuzzy_match_text(self, text1, text2):
+        return fuzz.ratio(text1, text2)                                 # Fuzzy string matching of two story texts
+    
+    def find_matching_story_in_story_elements(self, c_index, story_text):
+        for storyid, story_df in self.story_elements_dict.items():      # Loop through dataframes for each story (subset of rows of the Elements table)
+            el_story_text = self.get_el_story_text(story_df)            # Concatenate the sentences in the current dataframe into a single story string
+            score = self.fuzzy_match_text(el_story_text, story_text)    # Check if the current story text is the same as the selected story text
+            if score >= 90:
+                return int(storyid)                                     # If the stories match, return the Elements storyid (the correct story id)
+        return c_index                                                  # Otherwise, return the default storyid given by the doclist model
+    
     def get_selected_indexes(self) -> Set[int]:
         m = self.doc_list.model().mapToSource
-        return {m(i).row() for i in self.doc_list.selectionModel().selectedRows()}
+        result = set()
+        for i in self.doc_list.selectionModel().selectedRows():         # Each i represents a new selected story
+            c_index = m(i).row()                                        # Get the currently selected story i index (int)
+            obj = self.regenerate_docs()[c_index]                       # get the story object at c_index location in the doc_list model, obj (str) : has the structure 'filename path/to/filename.ext story-text'
+            story_text = ' '.join(obj.split()[2:])                      # Only select the story text itself from obj (third component)
+            sentences = util.preprocess_text(story_text)                # Preprocess story i text to match similar output sentences to Elements table (sentences)
+            sen_fullstop = [sen+'.' for sen in sentences]               # Add a fullstop after each sentence
+            proc_story_text = ' '.join(sen_fullstop)                    # Concatenate sentences together to create a story string
+            correct_story_id = self.find_matching_story_in_story_elements(c_index, proc_story_text)     # Find the matching story in Elements table for story i
+            result.add(correct_story_id)                                # Add the correct story_id to the selected documents index
+        return result
+    # def get_selected_indexes(self) -> Set[int]:
+    #     m = self.doc_list.model().mapToSource
+    #     return {m(i).row() for i in self.doc_list.selectionModel().selectedRows()}
 
     def set_selection(self) -> None:
         """
@@ -814,14 +841,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.custom,
                             self.story_elements_dict[str(c_index)]
                         )
-                    # else:
-                    #     value = self.actiontagger.postag_text(
-                    #         value,
-                    #         self.past_vbz,
-                    #         self.present_vbz,
-                    #         self.custom,
-                    #         None
-                    #     )                        
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
                     value = self.__mark_text(self.original_text)
@@ -835,10 +854,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                     value = os.path.join(feature.attributes.get("origin", ""), value)
                     value = '<img src="{}"></img>'.format(value)
 
-                text += (
-                    f'<tr><td class="variables"><strong>{feature.name}:</strong></td>'
-                    f'<td class="content">{value}</td></tr>'
-                )
+                if feature.name.lower() == "content" or feature.name.lower() == "text":
+                    text += (
+                        # f'<tr><td class="variables"><strong>{feature.name}:</strong></td>'
+                        f'<td class="content">{value}</td></tr>'
+                    )
 
             parts.append(text)
 
