@@ -46,6 +46,7 @@ from orangecontrib.text.corpus import Corpus
 from storynavigation.modules.actoranalysis import ActorTagger
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
+import storynavigation.modules.error_handling as error_handling
 
 HTML = """
 <!doctype html>
@@ -329,6 +330,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         selected_customfreq_table = Output("Custom tag stats: selected", Table)
         customfreq_table = Output("Custom tag stats: all", Table)
 
+    class Error(OWWidget.Error):
+        wrong_input_for_stories = error_handling.wrong_input_for_stories
+        wrong_input_for_elements = error_handling.wrong_input_for_elements
+        residual_error = error_handling.residual_error
+        
+
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -556,9 +563,20 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.stories
     def set_stories(self, stories=None):
-        self.stories = stories
+        """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs.         
+        """
+        if (stories is not None):
+            if not isinstance(stories, Corpus):
+                self.Error.wrong_input_for_stories()
+            else:
+                self.stories = stories
+                self.Error.clear()
+        else:
+            self.Error.clear()
 
         if self.story_elements is not None:
+            self.Error.clear()
             self.start(
                 self.run, 
                 self.story_elements
@@ -571,25 +589,32 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
+        """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs."""
+
         if story_elements is not None:
-            self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
-            self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
-            self.start(
-                self.run, 
-                self.story_elements
-            )
-            self.postags_box.setEnabled(True)
+            if isinstance(story_elements, Corpus): 
+                self.Error.wrong_input_for_elements()
+            else:
+                self.Error.clear()
+                self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+                self.actortagger = ActorTagger(self.story_elements['lang'].tolist()[0])
+                self.start(
+                    self.run, 
+                    self.story_elements
+                )
+                self.postags_box.setEnabled(True)
         else:
             self.nc.setChecked(False)
             self.sc.setChecked(False)
             self.allc.setChecked(False)
             self.custom_tags.setChecked(False)
-
             self.custom_tags.setEnabled(False)
             self.postags_box.setEnabled(False)
             self.main_agents_box.setEnabled(False)
             self.metric_name_combo.setEnabled(False)
-
+            self.Error.clear()
+                
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
@@ -642,8 +667,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.filter_input.clear()
         # Models/vars
         self.doc_list_model.clear()
-        # Warnings
+        # Warnings and Errors
         self.Warning.clear()
+        self.Error.clear()
         # WebView
         self.doc_webview.setHtml("")
 
