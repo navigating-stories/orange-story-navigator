@@ -103,19 +103,18 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     def set_stories(self, stories=None):
         idx = 0
         self.stories = []
-        for document in stories:
-            text = ''
-            for field in stories.domain.metas:
-                text_field_name = str(field)
-                if text_field_name.lower() in ['text', 'content']:
-                    text = str(stories[idx, text_field_name])
+        if stories is not None:
+            for document in stories:
+                text = ''
+                for field in stories.domain.metas:
+                    text_field_name = str(field)
+                    if text_field_name.lower() in ['text', 'content']:
+                        text = str(stories[idx, text_field_name])
 
-            if len(text) > 0:
-                self.stories.append((text, idx))
-            else:
-                print(idx)
+                if len(text) > 0:
+                    self.stories.append((text, idx))
 
-            idx += 1
+                idx += 1
 
     @Inputs.custom_tag_dict
     def set_custom_tags(self, custom_tag_dict=None):
