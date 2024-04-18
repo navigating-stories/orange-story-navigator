@@ -327,10 +327,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        selected_story_results = Output("Actor stats: selected", Table)
-        story_collection_results = Output("Actor stats: all", Table)
-        selected_customfreq_table = Output("Custom tag stats: selected", Table)
-        customfreq_table = Output("Custom tag stats: all", Table)
+        # selected_story_results = Output("Actor stats: selected", Table)
+        story_collection_results = Output("Actor stats", Table)
+        # selected_customfreq_table = Output("Custom tag stats: selected", Table)
+        customfreq_table = Output("Custom tag stats", Table)
 
     class Error(OWWidget.Error):
         wrong_input_for_stories = error_handling.wrong_input_for_stories
@@ -781,22 +781,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
             self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
 
-            self.Outputs.selected_story_results.send(
-                table_from_frame(
-                    self.selected_actor_results_df
-                )
-            )
-
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
                 self.selected_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
                 self.full_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-
-                self.Outputs.selected_customfreq_table.send(
-                    table_from_frame(
-                        self.selected_custom_freq
-                    )
-                )
 
                 self.Outputs.customfreq_table.send(
                     table_from_frame(
@@ -953,8 +941,6 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         # deal with stories that do not have entry in story elements frame
         if self.stories is not None:
-            # print("3. (on_done func): ", self.stories)
-            # print()
             domain = Domain([], metas=self.display_features)
             metas = []
             for item in self.valid_stories:
@@ -968,20 +954,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
-        self.Outputs.selected_story_results.send(
-            table_from_frame(
-                self.selected_actor_results_df
-            )
-        )
-
         if util.frame_contains_custom_tag_columns(self.story_elements):
-
-            self.Outputs.selected_customfreq_table.send(
-                table_from_frame(
-                    self.selected_custom_freq
-                )
-            )
-
             self.Outputs.customfreq_table.send(
                 table_from_frame(
                     self.full_custom_freq
@@ -993,18 +966,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     @gui.deferred
     def commit(self):
-        # self.pos_checkboxes = [self.sc, self.nc]
-        # matched = unmatched = annotated_corpus = None
         if self.stories is not None:
             selected_docs = sorted(self.get_selected_indexes())
-            # matched = self.stories[selected_docs] if selected_docs else None
             mask = np.ones(len(self.stories), bool)
             mask[selected_docs] = 0
-            # unmatched = self.stories[mask] if mask.any() else None
-            # annotated_corpus = create_annotated_table(self.stories, selected_docs)
-        # self.Outputs.matching_docs.send(matched)
-        # self.Outputs.other_docs.send(unmatched)
-        # self.Outputs.corpus.send(annotated_corpus)
 
     def send_report(self):
         self.report_items(

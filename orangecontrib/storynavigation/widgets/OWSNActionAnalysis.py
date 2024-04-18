@@ -321,12 +321,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        selected_story_results = Output("Action stats: selected", Table)
-        story_collection_results = Output("Action stats: all", Table)
-        selected_customfreq_table = Output("Custom tag stats: selected", Table)
-        customfreq_table = Output("Custom tag stats: all", Table)
-        actor_action_table_selected = Output("Action table: selected", Table)
-        actor_action_table_full = Output("Action table: all", Table)
+        # selected_story_results = Output("Action stats: selected", Table)
+        story_collection_results = Output("Action stats", Table)
+        # selected_customfreq_table = Output("Custom tag stats: selected", Table)
+        customfreq_table = Output("Custom tag stats", Table)
+        # actor_action_table_selected = Output("Action table: selected", Table)
+        actor_action_table_full = Output("Action table", Table)
 
     class Error(OWWidget.Error):
         wrong_input_for_stories = error_handling.wrong_input_for_stories
@@ -567,31 +567,13 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
-        self.Outputs.selected_story_results.send(
-            table_from_frame(
-                self.selected_action_results_df
-            )
-        )
-
         self.Outputs.actor_action_table_full.send(
             table_from_frame(
                 self.full_action_table_df
             )
         )
 
-        self.Outputs.actor_action_table_selected.send(
-            table_from_frame(
-                self.selected_action_table_df
-            )
-        )
-
         if util.frame_contains_custom_tag_columns(self.story_elements):
-            self.Outputs.selected_customfreq_table.send(
-                table_from_frame(
-                    self.selected_custom_freq
-                )
-            )
-
             self.Outputs.customfreq_table.send(
                 table_from_frame(
                     self.full_custom_freq
@@ -771,33 +753,16 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
             self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
 
-            self.Outputs.selected_story_results.send(
-                table_from_frame(
-                    self.selected_action_results_df
-                )
-            )
-
             only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
             selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
 
             selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
             self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
 
-            self.Outputs.actor_action_table_selected.send(
-                table_from_frame(
-                    self.selected_action_table_df
-                )
-            )
-
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
                 self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
                 self.full_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-                self.Outputs.selected_customfreq_table.send(
-                    table_from_frame(
-                        self.selected_custom_freq
-                    )
-                )
 
                 self.Outputs.customfreq_table.send(
                     table_from_frame(

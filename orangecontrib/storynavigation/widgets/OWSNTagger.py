@@ -28,7 +28,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
     class Error(OWWidget.Error):
         wrong_story_input_for_elements = error_handling.wrong_story_input_for_elements
-        # wrong_input_for_customtagselements = error_handling.wrong_input_for_elements
         residual_error = error_handling.residual_error
 
     settingsHandler = DomainContextHandler()
@@ -58,7 +57,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
         self.controlArea.layout().addWidget(self.select_language_combo)
-
         self.select_word_column_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
@@ -82,7 +80,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         )
 
         self.controlArea.layout().addWidget(self.select_n_segments_combo)
-
         self.select_language_combo.setEnabled(True)
         self.select_word_column_combo.setEnabled(True)
         self.select_n_segments_combo.setEnabled(True)
@@ -195,11 +192,8 @@ if __name__ == "__main__":
 
     from orangecontrib.text.preprocess import BASE_TOKENIZER
 
-    # corpus_ = Corpus.from_file("book-excerpts")
     corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
     corpus_ = corpus_[:3]
     corpus_ = BASE_TOKENIZER(corpus_)
     previewer = WidgetPreview(OWSNTagger)
-    # breakpoint()
     previewer.run(set_stories=corpus_, no_exit=True)
-    # WidgetPreview(OWSNTagger).run(set_stories=corpus_)
