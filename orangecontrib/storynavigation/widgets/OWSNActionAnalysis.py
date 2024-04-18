@@ -328,13 +328,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         actor_action_table_selected = Output("Action table: selected", Table)
         actor_action_table_full = Output("Action table: all", Table)
 
-
     class Error(OWWidget.Error):
         wrong_input_for_stories = error_handling.wrong_input_for_stories
         wrong_input_for_elements = error_handling.wrong_input_for_elements
         residual_error = error_handling.residual_error
         
-
     settingsHandler = DomainContextHandler()
     settings_version = 2
     search_features: List[Variable] = ContextSetting([])
@@ -501,10 +499,13 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs.         
         """
-        if not isinstance(stories, Corpus):
-            self.Error.wrong_input_for_stories()
+        if stories is not None:
+            if not isinstance(stories, Corpus):
+                self.Error.wrong_input_for_stories()
+            else:
+                self.stories = stories
+                self.Error.clear()
         else:
-            self.stories = stories
             self.Error.clear()
 
         if self.story_elements is not None:
@@ -523,11 +524,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     def set_story_elements(self, story_elements=None):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs."""
-        if isinstance(story_elements, Corpus): 
-            self.Error.wrong_input_for_elements()
-        
-        else:
-            if story_elements is not None:
+
+        if story_elements is not None:
+            if isinstance(story_elements, Corpus): 
+                self.Error.wrong_input_for_elements()
+            else:
                 self.Error.clear()
                 self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
                 self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
@@ -535,11 +536,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                     self.run, 
                     self.story_elements
                 )
-                self.postags_box.setEnabled(True)
-            else:
-                self.custom_tags.setChecked(False)
-                self.custom_tags.setEnabled(False)
-                self.postags_box.setEnabled(False)
+                self.postags_box.setEnabled(True)     
+        else:
+            self.custom_tags.setChecked(False)
+            self.custom_tags.setEnabled(False)
+            self.postags_box.setEnabled(False)
+            self.Error.clear()
 
         self.setup_controls()
         self.doc_list.model().set_filter_string(self.regexp_filter)

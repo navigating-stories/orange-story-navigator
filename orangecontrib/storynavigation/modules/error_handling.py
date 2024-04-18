@@ -14,6 +14,12 @@ msg_wrong_input_for_elements = (
     "The input to `Stories` needs to be a `Corpus`."
 ) 
 
+msg_wrong_story_input_for_elements = (
+    "Wrong input to `Stories`. "
+    "The input to `Stories` needs to be a `Corpus`. \n"
+    "The input to `Custom tags` needs to be a `Table`."
+) 
+
 msg_residual_error = (
     "Could not process data. Check the inputs to the widget."
 )
@@ -21,6 +27,7 @@ msg_residual_error = (
 wrong_input_for_stories = Msg(msg_wrong_input_for_stories)
 residual_error = Msg(msg_residual_error)
 wrong_input_for_elements = Msg(msg_wrong_input_for_elements)
+wrong_story_input_for_elements = Msg(msg_wrong_story_input_for_elements)
 
 
 __all__ = [

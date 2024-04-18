@@ -11,6 +11,7 @@ from Orange.data.pandas_compat import table_from_frame
 from Orange.data.pandas_compat import table_to_frames
 import pandas as pd
 import numpy as np
+import storynavigation.modules.error_handling as error_handling
 
 class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     name = 'Elements'
@@ -24,6 +25,11 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
     class Outputs:
         dataset_level_data = Output('Story elements', Table)
+
+    class Error(OWWidget.Error):
+        wrong_story_input_for_elements = error_handling.wrong_story_input_for_elements
+        # wrong_input_for_customtagselements = error_handling.wrong_input_for_elements
+        residual_error = error_handling.residual_error
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -104,32 +110,42 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         idx = 0
         self.stories = []
         if stories is not None:
-            for document in stories:
-                text = ''
-                for field in stories.domain.metas:
-                    text_field_name = str(field)
-                    if text_field_name.lower() in ['text', 'content']:
-                        text = str(stories[idx, text_field_name])
+            if not isinstance(stories, Corpus):
+                self.Error.wrong_story_input_for_elements()
+            else:
+                self.Error.clear()
+                for document in stories:
+                    text = ''
+                    for field in stories.domain.metas:
+                        text_field_name = str(field)
+                        if text_field_name.lower() in ['text', 'content']:
+                            text = str(stories[idx, text_field_name])
 
-                if len(text) > 0:
-                    self.stories.append((text, idx))
+                    if len(text) > 0:
+                        self.stories.append((text, idx))
 
-                idx += 1
+                    idx += 1
+        else:
+            self.Error.clear()
 
     @Inputs.custom_tag_dict
     def set_custom_tags(self, custom_tag_dict=None):
         if custom_tag_dict is not None:
-            self.custom_tag_dict = pd.concat(table_to_frames(custom_tag_dict), axis=1) # convert the Orange data table to a pandas dataframe, the concat is needed to merge multiple dataframes (Orange splits into multiple frames whenever column uses a different data type)
-            if len(self.custom_tag_dict.columns) >= 2:
-                self.select_word_column_combo.setEnabled(True)
-                self.custom_tag_dict_columns = list(self.custom_tag_dict.columns)
-                self.select_word_column_combo.clear()
-                self.select_word_column_combo.addItems(self.custom_tag_dict_columns)
-                
+            if isinstance(custom_tag_dict, Corpus):
+                self.Error.wrong_story_input_for_elements()
+            else:
+                self.Error.clear()
+                self.custom_tag_dict = pd.concat(table_to_frames(custom_tag_dict), axis=1) # convert the Orange data table to a pandas dataframe, the concat is needed to merge multiple dataframes (Orange splits into multiple frames whenever column uses a different data type)
+                if len(self.custom_tag_dict.columns) >= 2:
+                    self.select_word_column_combo.setEnabled(True)
+                    self.custom_tag_dict_columns = list(self.custom_tag_dict.columns)
+                    self.select_word_column_combo.clear()
+                    self.select_word_column_combo.addItems(self.custom_tag_dict_columns)
         else:
             self.custom_tag_dict = None
             self.select_word_column_combo.clear()
             self.select_word_column_combo.setEnabled(False)
+            self.Error.clear()
 
     def reset_widget(self):
         self.stories = None
