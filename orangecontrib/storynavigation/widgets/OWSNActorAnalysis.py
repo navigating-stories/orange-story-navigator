@@ -834,13 +834,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 if feature.name.lower() == "content" or feature.name.lower() == "text":
                     if len(self.story_elements_dict) > 0:
                         value = self.actortagger.postag_text(
-                            value,
-                            self.nouns,
-                            self.subjs,
-                            self.custom,
-                            self.agent_prominence_metric,
-                            self.agent_prominence_score_min,
-                            self.story_elements_dict[str(c_index)]
+                            text=value,
+                            nouns=self.nouns,
+                            subjs=self.subjs,
+                            custom=self.custom,
+                            selected_prominence_metric=self.agent_prominence_metric,
+                            prominence_score_min=self.agent_prominence_score_min,
+                            story_elements_df=self.story_elements_dict[str(c_index)]
                         )                   
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
