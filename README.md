@@ -89,5 +89,18 @@ Steps to build and test from source:
 
 The Orange3 application should shortly start up with a splash screen
 
+## Testing
+
+Run tests with `pytest`.
+
+For coverage:
+
+```python
+coverage run -m pytest
+coverage report
+# or
+coverage html
+```
+
 ## Collaborators
 The Story Navigator is maintained by the [Netherlands eScience Center](https://www.esciencecenter.nl/) in collaboration with the [Faculty of Behavioural, Management and Social Sciences (BMS)](https://www.utwente.nl/en/bms/) at the [University of Twente](https://www.utwente.nl/en/).
