@@ -364,9 +364,9 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     # currently selected agent prominence metric
     agent_prominence_metric = constants.SELECTED_PROMINENCE_METRIC
     # minimum possible score for agent prominence
-    agent_prominence_score_min = 0.0
+    agent_prominence_score_min = 0
     # maximum possible score for agent prominence
-    agent_prominence_score_max = 15.0
+    agent_prominence_score_max = 15
 
     word_prominence_scores = {}
 
