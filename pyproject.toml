@@ -91,3 +91,6 @@ include-package-data = true
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.coverage.run]
+source = ['orangecontrib/storynavigation']
