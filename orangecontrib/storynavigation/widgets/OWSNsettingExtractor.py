@@ -11,7 +11,7 @@ from Orange.data import Table, StringVariable
 from Orange.data.util import get_unique_names
 from Orange.widgets.settings import Setting
 from Orange.widgets.widget import Output
-from storynavigation.widgets.OWSNsettingLLMbase import OWLocalLLMBase, MODELS
+from storynavigation.widgets.OWSNsettingLLMbase import OWLocalLLMBase
 
 
 class OWStorySetting(OWLocalLLMBase):
@@ -34,8 +34,14 @@ class OWStorySetting(OWLocalLLMBase):
     def on_done(self, answers: List[str]):
         data = self._data
         if len(answers) > 0:
-            name = get_unique_names(data.domain, "Text")
+            
+            #ensures that the new column name "story_setting" is unique within the data domain
+            name = get_unique_names(data.domain, "story_setting")
+            
+            #creates a new string variable with the specified name
             var = StringVariable(name)
+            
+            #add the new column with the specified name and the summary texts to the data table
             data = data.add_column(var, answers, to_metas=True)
         self.Outputs.data.send(data)
 
@@ -51,10 +57,11 @@ class OWStorySetting(OWLocalLLMBase):
             if state.is_interruption_requested():
                 raise Exception
             
-            #MODELS = ["sshleifer/distilbart-cnn-12-6"]
+            MODELS = "sshleifer/distilbart-cnn-12-6"
             
-            args = (MODELS[self.model_index],
-                    text.strip(), 
+            args = (#MODELS[self.model_index],
+                    MODELS,
+                    text.strip(),
                     self.prompt_start.strip(),
                     self.prompt_end.strip())
             

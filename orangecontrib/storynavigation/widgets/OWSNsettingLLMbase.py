@@ -11,7 +11,8 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.widget import OWWidget, Input, Msg
 
-MODELS = ["sshleifer/distilbart-cnn-12-6", "emozilla/mpt-7b-storysummarizer","facebook/bart-large-cnn"]
+#MODELS = ["sshleifer/distilbart-cnn-12-6", "emozilla/mpt-7b-storysummarizer","facebook/bart-large-cnn"]
+MODELS = ["sshleifer/distilbart-cnn-12-6"]
 
 class TextEdit(QTextEdit):
     sigEditFinished = Signal()
@@ -55,18 +56,19 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         
         # Initialize the Hugging Face summarization pipeline
         try:
-            self.summarizer = pipeline("summarization", model=MODELS[self.model_index])
+            #self.summarizer = pipeline("summarization", model=MODELS[self.model_index])
+            self.summarizer = pipeline(task =  "summarization", 
+                                       model = "sshleifer/distilbart-cnn-12-6")
                                        
             print("Summarization pipeline loaded successfully.")
             
         except Exception as ex:
             self.summarizer = None            
-            self.Error.model_load_error(ex)
-            
+            self.Error.model_load_error(ex)            
         
         self.setup_gui()
         self.test_model()  # Test the model to ensure it's working correctly
-
+                
     def setup_gui(self):
         box = gui.vBox(self.controlArea, "Model")       
         
@@ -97,7 +99,15 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         gui.rubber(self.controlArea)
 
         gui.auto_apply(self.buttonsArea, self, "auto_apply")
+        
+        # Add a button to clear the cache
+        gui.button(self.buttonsArea, self, "Clear Cache", callback=self.clear_cache)
 
+    def clear_cache(self):
+        """Clears the cache."""
+        self.cache = {}
+        print("Cache cleared successfully.")
+        
     def __on_start_text_edit_changed(self):
         prompt_start = self.__start_text_edit.toPlainText()
         if self.prompt_start != prompt_start:
@@ -129,8 +139,14 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
     def ask_llm(self):
         raise NotImplementedError()
         
+    #def run_summarizer_model(self, text: str) -> str:
+    #    summary = self.summarizer(text, max_length=100, min_length=30, do_sample=False)
+    #    return summary[0]['summary_text']
+    
     def run_summarizer_model(self, text: str) -> str:
-        summary = self.summarizer(text, max_length=100, min_length=30, do_sample=False)
+        full_text = f"{self.prompt_start.strip()}\n{text.strip()}\n{self.prompt_end.strip()}"
+        print(f"Full text before summarization:\n{full_text}")
+        summary = self.summarizer(full_text, max_length=100, min_length=30, do_sample=False)
         return summary[0]['summary_text']
     
     def on_exception(self, ex: Exception):
