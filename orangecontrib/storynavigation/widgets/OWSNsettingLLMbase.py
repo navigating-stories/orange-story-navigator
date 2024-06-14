@@ -11,7 +11,7 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.widget import OWWidget, Input, Msg
 
-MODELS = ["sshleifer/distilbart-cnn-12-6"]
+MODELS = ["sshleifer/distilbart-cnn-12-6", "emozilla/mpt-7b-storysummarizer","facebook/bart-large-cnn"]
 
 class TextEdit(QTextEdit):
     sigEditFinished = Signal()
@@ -55,13 +55,12 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         
         # Initialize the Hugging Face summarization pipeline
         try:
-            self.summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-12-6")
-                                       #model="facebook/bart-large-cnn")
+            self.summarizer = pipeline("summarization", model=MODELS[self.model_index])
+                                       
             print("Summarization pipeline loaded successfully.")
             
         except Exception as ex:
-            self.summarizer = None
-            #self.model = None
+            self.summarizer = None            
             self.Error.model_load_error(ex)
             
         
@@ -73,7 +72,7 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         
         gui.comboBox(box, self, "model_index", label="Model:",
                      orientation=Qt.Horizontal,
-                     items=["sshleifer/distilbart-cnn-12-6"], callback=self.commit.deferred)
+                     items=MODELS, callback=self.commit.deferred)
 
         gui.comboBox(self.controlArea, self, "text_var", "Data",
                      "Text variable:", model=self.__text_var_model,
@@ -145,7 +144,26 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         super().onDeleteWidget()
         
     def test_model(self):
-        test_text = "This is a test."
+        test_text = """
+    Bears are large mammals belonging to the family Ursidae. They are found in various habitats 
+    across the Northern Hemisphere and some parts of the Southern Hemisphere. Bears are omnivorous 
+    animals, meaning they eat both plants and animals. They have a diverse diet that includes berries, 
+    fish, insects, and occasionally larger mammals like deer.
+
+    Bears are known for their strength and agility. They have powerful limbs and claws adapted for 
+    digging, climbing, and catching prey. Despite their size, bears can move quickly and are capable 
+    of swimming long distances. They are also known for their hibernation habits, where they sleep 
+    through the winter months in dens they build or find.
+
+    There are several species of bears, including the grizzly bear, polar bear, black bear, and 
+    brown bear. Each species has its own unique characteristics and adaptations to its environment. 
+    Bears play important roles in their ecosystems as top predators and seed dispersers.
+
+    Bears have been featured prominently in human culture, folklore, and mythology for centuries. 
+    They are symbols of strength, courage, and sometimes danger. Conservation efforts are critical 
+    to protect bear populations and their habitats from threats such as habitat loss and human 
+    conflict."""
+    
         try:
             result = self.run_summarizer_model(test_text)
             print(f"Test result: {result}")

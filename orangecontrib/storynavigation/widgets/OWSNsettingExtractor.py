@@ -1,16 +1,9 @@
 """
 This code constructs a new text field using a Local LLM such has Ollama. It processes multiple texts
 from the input data, generates responses for each,and adds a new column to the data table with these
-responses. It build upon the base functionality provided by OWLocalLLMBase. It uses the Outputs class
-to send processed data back as an output, and adds a new column to the data table with the generated 
-responses and sends this modified data.
-
+responses. It build upon the base functionality provided by OWLocalLLMBase. 
 - Processes each text entry in the input data separately.
 - Caches responses to avoid redundant processing for the same inputs.
-Adds each response to a new column in the original data table.
-
--Does not have a main area for displaying results within the widget.
-
 """
 
 from typing import List
@@ -18,12 +11,12 @@ from Orange.data import Table, StringVariable
 from Orange.data.util import get_unique_names
 from Orange.widgets.settings import Setting
 from Orange.widgets.widget import Output
-from storynavigation.widgets.OWSNsettingLLMbase import OWLocalLLMBase
+from storynavigation.widgets.OWSNsettingLLMbase import OWLocalLLMBase, MODELS
 
 
-class OWLocalLLMConstructor(OWLocalLLMBase):
-    name = "LLM Constructor"
-    description = "Construct a text field using a Local LLM."
+class OWStorySetting(OWLocalLLMBase):
+    name = "StorySetting Extractor"
+    description = "Construct a text field with a description of the setting using a Local LLM."
     icon = "icons/storynavigator_logo.png"
     priority = 11
     keywords = ["text", "gpt"]
@@ -58,7 +51,7 @@ class OWLocalLLMConstructor(OWLocalLLMBase):
             if state.is_interruption_requested():
                 raise Exception
             
-            MODELS = ["sshleifer/distilbart-cnn-12-6"]
+            #MODELS = ["sshleifer/distilbart-cnn-12-6"]
             
             args = (MODELS[self.model_index],
                     text.strip(), 
@@ -80,4 +73,4 @@ if __name__ == "__main__":
     from Orange.widgets.utils.widgetpreview import WidgetPreview
     from Orange.data import Table
 
-    WidgetPreview(OWLocalLLMConstructor).run(set_data=Table("zoo"))
+    WidgetPreview(OWStorySetting).run(set_data=Table("zoo"))
