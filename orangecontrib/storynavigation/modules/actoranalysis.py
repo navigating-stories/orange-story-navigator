@@ -1,6 +1,6 @@
 """Modules required for Actor Analysis widget in Story Navigator.
 """
-
+import sys
 import os
 import pandas as pd
 import numpy as np
@@ -86,8 +86,9 @@ class ActorTagger:
         matched_sent_df = df[df['sentence'] == sent]
         matched_sent_df = matched_sent_df.copy()
         matched_sent_df.loc[:, 'sorting_key'] = matched_sent_df['sentence'].map(lambda value: order_mapping.get(value, len(sents)))
-        matched_sent_df_sorted = matched_sent_df.sort_values(by='sorting_key').drop('sorting_key', axis=1)
+        matched_sent_df_sorted = matched_sent_df.sort_values(by='sorting_key').drop('sorting_key', axis=1)        
         return matched_sent_df_sorted
+        
     
     def __do_custom_tagging(self, df, cust_tag_cols):
         df = df.copy()
@@ -142,7 +143,7 @@ class ActorTagger:
             return self.__print_html_no_highlighted_tokens(sentences)
         
         matched_df = None
-
+        
         for sentence in sentences:
             ents = []
             if custom:
@@ -150,7 +151,7 @@ class ActorTagger:
                 cents = []
                 new_color_map = constants.COLOR_MAP
                 if nouns or subjs:
-                    matched_df = self.__filter_rows(story_elements_df, pos_tags)
+                    matched_df = self.__filter_rows(story_elements_df, pos_tags)                    
                     matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(matched_df, sentence, sentences)
                     matched_sent_df_sorted['displacy_tag_strings'] = matched_sent_df_sorted['token_start_idx'] + ' | ' + matched_sent_df_sorted['token_end_idx'] + ' | ' + matched_sent_df_sorted['merged_tags']
                     nents = self.__do_tagging(matched_sent_df_sorted)
@@ -169,6 +170,7 @@ class ActorTagger:
             else:
                 matched_df = self.__filter_rows(story_elements_df, pos_tags)
                 matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(matched_df, sentence, sentences)
+                
                 matched_sent_df_sorted['displacy_tag_strings'] = matched_sent_df_sorted['token_start_idx'] + ' | ' + matched_sent_df_sorted['token_end_idx'] + ' | ' + matched_sent_df_sorted['merged_tags']
                 ents = self.__do_tagging(matched_sent_df_sorted)
                 options = {"ents": pos_tags, "colors": constants.COLOR_MAP}
@@ -182,6 +184,8 @@ class ActorTagger:
 
             doc = {"text": sentence, "ents": ents}    
             html += displacy.render(doc, style="ent", options=options, manual=True)
+            
+        
 
         if custom:
             self.html_result = util.remove_span_tags_except_custom(html)
@@ -207,11 +211,13 @@ class ActorTagger:
         Returns:
             string: HTML string representation of POS tagged text
         """
-
+                
+        story_elements_df['sentence_id'] = pd.to_numeric(story_elements_df['sentence_id'])
+        story_elements_df['storyid'] = pd.to_numeric(story_elements_df['storyid'])
         sorted_df = story_elements_df.sort_values(by=['storyid', 'sentence_id'], ascending=True)
-        sentences = sorted_df['sentence'].unique().tolist()
-        # sentences = util.preprocess_text(text)
-        
+        sentences_df = sorted_df[['sentence','storyid','sentence_id']].drop_duplicates()
+        sentences = sentences_df['sentence'].tolist()      
+                
         if story_elements_df is None or len(story_elements_df) == 0:
             return self.__print_html_no_highlighted_tokens(sentences)
 
