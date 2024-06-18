@@ -12,7 +12,16 @@ from Orange.widgets.settings import Setting, DomainContextHandler, ContextSettin
 from Orange.widgets.widget import OWWidget, Input, Msg
 
 #MODELS = ["sshleifer/distilbart-cnn-12-6", "emozilla/mpt-7b-storysummarizer","facebook/bart-large-cnn"]
-MODELS = ["sshleifer/distilbart-cnn-12-6"]
+MODELS = ["yhavinga/t5-base-dutch"] # https://huggingface.co/yhavinga/t5-base-dutch
+# https://huggingface.co/yhavinga/ul2-base-nl36-dutch
+
+#MODELS = ["yhavinga/ul2-base-nl36-dutch"]
+# see also yhavinga/t5-v1.1-base-dutch-cnn-test (https://www.linkedin.com/in/yeb-havinga-86530825/)
+# flax-community/t5-base-dutch-demo
+# ml6team/mbart-large-cc25-cnn-dailymail-xsum-nl : https://huggingface.co/ml6team/mbart-large-cc25-cnn-dailymail-xsum-nl
+
+# READ: https://www.linkedin.com/pulse/how-build-text-summarizer-using-huggingface-manish-m-shivanandhan-bmdjc/
+
 
 class TextEdit(QTextEdit):
     sigEditFinished = Signal()
@@ -57,8 +66,8 @@ class OWLocalLLMBase(OWWidget, ConcurrentWidgetMixin, openclass=True):
         # Initialize the Hugging Face summarization pipeline
         try:
             #self.summarizer = pipeline("summarization", model=MODELS[self.model_index])
-            self.summarizer = pipeline(task =  "summarization", 
-                                       model = "sshleifer/distilbart-cnn-12-6")
+            self.summarizer = pipeline(task =  "summarization",
+                                       model = "yhavinga/t5-base-dutch")
                                        
             print("Summarization pipeline loaded successfully.")
             
