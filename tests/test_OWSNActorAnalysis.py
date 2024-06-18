@@ -1,5 +1,4 @@
 import logging
-import unittest
 import os
 
 from storynavigation.widgets.OWSNActorAnalysis import OWSNActorAnalysis
@@ -37,7 +36,7 @@ class test_owsnactoranalysis(WidgetTest):
     def load(self):
         self.logger.info("loading data...")
         self.widget.corpus = Corpus.from_file(os.path.join(self.current_dir, constants.TEST_DATA_FILE_NAME))
-        self.send_signal(self.widget.Inputs.corpus, self.widget.corpus)
+        self.send_signal(self.widget.Inputs.stories, self.widget.corpus)
         self.logger.info("loading completed.")
 
     def test_tagging(self):
@@ -61,13 +60,13 @@ class test_owsnactoranalysis(WidgetTest):
 
             if len(value) > 0:
                 value = self.actortagger.postag_text(
-                    value,
-                    True,
-                    True,
-                    False,
-                    {},
-                    constants.SELECTED_PROMINENCE_METRIC,
-                    0.0
+                    text=value,
+                    nouns=True,
+                    subjs=True,
+                    custom=False,
+                    selected_prominence_metric=0,
+                    prominence_score_min=constants.SELECTED_PROMINENCE_METRIC,
+                    story_elements_df=None,
                 )
                 self.tagging_completed = True
 
@@ -89,6 +88,3 @@ class test_owsnactoranalysis(WidgetTest):
             self.logger.info("metrics calculated.")
         else:
             self.logger.info("metrics could not be calculated.")         
-
-if __name__ == '__main__':
-    unittest.main()

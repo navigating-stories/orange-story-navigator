@@ -21,7 +21,6 @@ flenv/
 .venv/
 
 data/
-workflows/
 
 navigator.code-workspace
 

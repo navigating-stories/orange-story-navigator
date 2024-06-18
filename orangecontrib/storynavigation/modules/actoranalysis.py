@@ -1,7 +1,10 @@
 """Modules required for Actor Analysis widget in Story Navigator.
 """
-import sys
+
+from __future__ import annotations
+
 import os
+import sys
 import pandas as pd
 import numpy as np
 import storynavigation.modules.constants as constants
@@ -195,7 +198,7 @@ class ActorTagger:
             return self.html_result
 
     def postag_text(
-        self, text, nouns, subjs, custom, selected_prominence_metric, prominence_score_min, story_elements_df
+        self, text, nouns: bool, subjs: bool, custom: bool, selected_prominence_metric: float, prominence_score_min: int, story_elements_df: pd.DataFrame | None
     ):
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -205,22 +208,23 @@ class ActorTagger:
             subjs (boolean): whether subject tokens should be tagged
             custom (boolean): whether custom tags should be highlighted or not
             selected_prominence_metric (float): the selected metric by which to calculate the word prominence score
-            prominence_score_min (float): the minimum prominence score for an entity which qualifies it to be tagged
+            prominence_score_min (int): the minimum prominence score for an entity which qualifies it to be tagged
             story_elements_df (pandas.DataFrame): a dataframe with all required nlp tagging information
 
         Returns:
             string: HTML string representation of POS tagged text
         """
-                
+
+        if story_elements_df is None or (len(story_elements_df) == 0):
+            sentences = util.preprocess_text(text)
+            return self.__print_html_no_highlighted_tokens(sentences)
+
         story_elements_df['sentence_id'] = pd.to_numeric(story_elements_df['sentence_id'])
         story_elements_df['storyid'] = pd.to_numeric(story_elements_df['storyid'])
         sorted_df = story_elements_df.sort_values(by=['storyid', 'sentence_id'], ascending=True)
         sentences_df = sorted_df[['sentence','storyid','sentence_id']].drop_duplicates()
         sentences = sentences_df['sentence'].tolist()      
-                
-        if story_elements_df is None or len(story_elements_df) == 0:
-            return self.__print_html_no_highlighted_tokens(sentences)
-
+        
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
         specific_tag_choice_html = (str(int(nouns)) + str(int(subjs)) + str(int(custom)))
         if selected_storyid in self.tagging_cache:
