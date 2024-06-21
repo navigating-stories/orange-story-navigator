@@ -2,7 +2,14 @@
  [
   "Orange Story Navigator",
   [
-   {
+    {
+    "text": "How to install the widget",
+    "doc": "widgets/install.md",
+    "icon": "../orangecontrib/storynavigation/widgets/images/storynavigator_logo.png",
+    "background": "#C0FF97",
+    "keywords": ["install", "Orange", "installation","Add-on"]
+       },
+    {
     "text": "Actor Analysis",
     "doc": "widgets/actoranalysis.md",
     "icon": "../orangecontrib/storynavigation/widgets/icons/actor_analysis_icon.png",
