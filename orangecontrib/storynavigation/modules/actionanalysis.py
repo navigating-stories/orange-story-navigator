@@ -184,8 +184,11 @@ class ActionTagger:
             sentences = util.preprocess_text(text)
             return self.__print_html_no_highlighted_tokens(sentences)
         
+        story_elements_df['sentence_id'] = pd.to_numeric(story_elements_df['sentence_id'])
+        story_elements_df['storyid'] = pd.to_numeric(story_elements_df['storyid'])
         sorted_df = story_elements_df.sort_values(by=['storyid', 'sentence_id'], ascending=True)
-        sentences = sorted_df['sentence'].unique().tolist()
+        sentences_df = sorted_df[['sentence','storyid','sentence_id']].drop_duplicates()
+        sentences = sentences_df['sentence'].tolist()
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
         specific_tag_choice_html = (str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom)))
