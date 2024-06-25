@@ -2,32 +2,29 @@ Contact Information
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
-
-# Contact Information
-
 If you have any questions, feedback, or need support, please feel free to reach out to us. Below are the primary contacts and useful links for your reference:
 
-## General Inquiries
+**General Inquiries**
 
 For general questions and information, you can reach the Principal Investigator Prof. dr. Gerben J. Westerhof:
 - **Email**: [g.j.westerhof@utwente.nl](mailto:g.j.westerhof@utwente.nl)
 - **Phone**: +31.53.489.6074
 - **Website**: https://personen.utwente.nl/g.j.westerhof
 
-## Technical Support
+**Technical Support**
 
 For technical support and troubleshooting, please contact our Lead Research Software Engineer Kody Moodley or visit the Orange Data Mining website for additional resources:
 - **Email**: [k.moodley@esciencecenter.nl](mailto:k.moodley@esciencecenter.nl)
 - **Orange**: [https://orangedatamining.com/](https://orangedatamining.com/)
 - **Documentation**: [https://orange-story-navigator.readthedocs.io/en/latest/](https://orange-story-navigator.readthedocs.io/en/latest/)
 
-## Collaboration
+**Collaboration**
 
 If you are interested in contributing, reach out at:
 - **Email**: [info@esciencecenter.nl](mailto:info@esciencecenter.nl)
 - **Github**: [https://github.com/navigating-stories/orange-story-navigator](mailto:https://github.com/navigating-stories/orange-story-navigator)
 
-## Follow Us
+**Follow Us**
 
 Stay updated on the projecty by following us on:
 - **RSD**: [Research Software Directory](https://research-software-directory.org/projects/navigating-stories)
