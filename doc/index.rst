@@ -23,8 +23,8 @@ Widgets
    :caption: Getting Started
 
    widgets/install
-   usage
-   known issues
+   widgets/usage
+   widgets/knownissues
 
 .. toctree::
    :maxdepth: 2
@@ -36,7 +36,11 @@ Widgets
    widgets/narrativenetwork
    widgets/settinganalysis
    
+.. toctree::
+   :maxdepth: 2
+   :caption: Contact Information
 
+   widgets/contact
 
    
 Indices and tables

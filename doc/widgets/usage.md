@@ -1,6 +1,5 @@
-How to enable StoryNavigator in Orange
+Usage
 =======
-![](../../doc/widgets/images/storynavigator_logo.png)
-
+![](../../doc/widgets/images/storynavigator_logo_small.png)
 
 Coming soon

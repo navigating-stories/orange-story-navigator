@@ -1,6 +1,6 @@
-How to enable StoryNavigator in Orange
+Install StoryNavigator Add-on
 =======
-![](../../doc/widgets/images/storynavigator_logo.png)
+![](../../doc/widgets/images/storynavigator_logo_small.png)
 
 
 To install the Orange3 StoryNavigator Add-on, use the following steps.
