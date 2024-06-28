@@ -26,7 +26,7 @@ If you are interested in contributing, reach out at:
 
 **Follow Us**
 
-Stay updated on the projecty by following us on:
+Stay updated on the project by following us on:
 - **RSD**: [Research Software Directory](https://research-software-directory.org/projects/navigating-stories)
 - **LinkedIn**: [https://www.linkedin.com/company/netherlands-escience-center/](https://www.linkedin.com/company/netherlands-escience-center/)
 - **Homepage**: [https://navigating-stories.github.io/](https://navigating-stories.github.io/)

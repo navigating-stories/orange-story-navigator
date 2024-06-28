@@ -1,7 +1,7 @@
-Usage
+Changelog 
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
-"Usage" will show how to use each widget. 
+"Changelog": list of featured added, removed / amended in each version
 
 Coming soon!

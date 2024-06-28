@@ -1,4 +1,4 @@
-Install StoryNavigator Add-on
+Installation
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 

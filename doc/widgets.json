@@ -3,7 +3,7 @@
   "Orange Story Navigator",
   [
     {
-    "text": "How to install the widget",
+    "text": "Installation",
     "doc": "widgets/install.md",
     "icon": "../orangecontrib/storynavigation/widgets/images/storynavigator_logo.png",
     "background": "#C0FF97",

@@ -1,9 +1,8 @@
-Known Issues
+Known issues
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
-
-The following is a list of known issues as part of working with the Orange3 StoryNavigator Add-on:
+Known issues: runtime issues that users might experience (with workarounds if available) and misconceptions about how SN works or what it is supposed to do. The following is a list of known issues as part of working with the Orange3 StoryNavigator Add-on:
 
 **1**
 

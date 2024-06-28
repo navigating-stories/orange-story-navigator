@@ -22,25 +22,37 @@ Widgets
    :maxdepth: 2
    :caption: Getting Started
 
-   widgets/install
+   widgets/installation
    widgets/usage
+   widgets/tutorials
    widgets/knownissues
 
 .. toctree::
    :maxdepth: 2
    :caption: Widgets
    
-   widgets/actionanalysis
-   widgets/actoranalysis
+   widgets/actions
+   widgets/actors
    widgets/elements
    widgets/narrativenetwork
-   widgets/settinganalysis
-   
+   widgets/setting
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contact Information
+   :caption: Developers
 
-   widgets/contact
+   widgets/buildingfromsource
+   widgets/contribute
+   widgets/changelog    
+
+.. toctree::
+   :maxdepth: 2
+   :caption: About
+
+   widgets/contact   
+   widgets/howtocite
+   widgets/inaction
+   widgets/faqs
 
    
 Indices and tables
