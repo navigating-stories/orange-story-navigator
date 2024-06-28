@@ -1,5 +1,5 @@
 ![Unit tests](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
-[![PyPI version](https://badge.fury.io/py/storynavigator.svg)](https://badge.fury.io/py/storynavigator)
+[![PyPI version](https://badge.fury.io/py/storynavigator.svg?branch=master&kill_cache=1)](https://badge.fury.io/py/storynavigator)
 [![Read the Docs](https://readthedocs.org/projects/orange-story-navigator/badge/?version=latest)](https://orange-story-navigator.readthedocs.io/en/latest/)
 
 <img src="orangecontrib/storynavigation/widgets/icons/storynavigator_logo.png" alt="setting_icon" width="300" height="auto">
@@ -88,6 +88,19 @@ Steps to build and test from source:
 6. Run ```orange-canvas``` or ```python -m Orange.canvas```
 
 The Orange3 application should shortly start up with a splash screen
+
+## Testing
+
+Run tests with `pytest`.
+
+For coverage:
+
+```python
+coverage run -m pytest
+coverage report
+# or
+coverage html
+```
 
 ## Collaborators
 The Story Navigator is maintained by the [Netherlands eScience Center](https://www.esciencecenter.nl/) in collaboration with the [Faculty of Behavioural, Management and Social Sciences (BMS)](https://www.utwente.nl/en/bms/) at the [University of Twente](https://www.utwente.nl/en/).

@@ -16,7 +16,14 @@ MANIFEST
 # virtual environment
 nv
 venv
+navigating/
 flenv/
+.venv/
+
+data/
+
+navigator.code-workspace
+
 
 # Cython generated files
 __pycache__

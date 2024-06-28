@@ -1,21 +1,96 @@
 [build-system]
-requires = ["setuptools", "wheel", "cython", "oldest-supported-numpy"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
-#[tool.pytest.ini_options]
-#pythonpath = [
-#  "."
-#]
-# testpaths = ["orangecontrib/storynavigation/tests"]
-#filterwarnings = [
-#    "ignore",
-#    "default:::orangecontrib.storynavigation"
-#]
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+[project]
+name = "storynavigator"
+version = "0.0.19"
+description = "Narrative analysis add-on for the Orange 3 data mining software package."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+	{name = "Kody Moodley"},
+]
+keywords = [
+    "orange3 add-on",
+    "story analysis",
+    "narrative theory",
+    "natural language processing",
+    "text mining",
+    "story networks",
+    "character networks"
+]
+license = {text = "GPL 3.0 or later"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+dependencies = [
+    "pyqt6 >= 6.6.0",
+    "pyqtwebengine >= 5.15.6",
+    "orange3 >= 3.36.2",
+    "orange3-text >= 1.15.0",
+    "orange3-network >= 1.9.0",
+    "pandas >= 2.1.2",
+    "spacy >= 3.7.2",
+    "scipy == 1.12.0",
+    "dhtmlparser3 >= 3.0.17",
+    "nltk >= 3.8.1",
+    "textblob >= 0.17.1",
+    "textblob-nl >= 0.0.1",
+    "pydot >= 1.4.2",
+    "graphviz >= 0.20.1",
+    "thefuzz >= 0.20.0",
+    "beautifulsoup4 >= 4.12.2",
+    "transformers >= 4.36.2",
+    "torch >= 2.1.0"
+]
 
-# [tool.coverage.run]
-# branch = true
-# source = ["orangecontrib/storynavigation"]
-# relative_files = true
+[project.urls]
+homepage = "https://github.com/navigating-stories/orange-story-navigator"
+issues = "https://github.com/navigating-stories/orange-story-navigator/issues"
+documentation = "https://orange-story-navigator.readthedocs.io"
+changelog = "https://github.com/navigating-stories/orange-story-navigator/releases"
+
+[project.optional-dependencies]
+develop = [
+    'coverage',
+    'pytest',
+    'sphinx',
+    'sphinx_rtd_theme',
+    'sphinx-autoapi <= 2.1.0',
+    'myst_parser',
+    'nbsphinx',
+    'black',
+    'pylint',
+]
+
+publishing = [
+    "twine",
+    "wheel",
+    "build",
+]
+
+# https://setuptools.pypa.io/en/latest/userguide/entry_point.html#entry-points-for-plugins
+[project.entry-points."orange3.addon"]
+"Story Navigator" = "storynavigation"
+
+[project.entry-points."orange.widgets"]
+"Story Navigator" = "storynavigation.widgets"
+
+[tool.setuptools]
+package-dir = {"storynavigation" = "orangecontrib/storynavigation" }
+include-package-data = true
 
 [tool.coverage.report]
 show_missing = true
+
+[tool.coverage.run]
+source = ['orangecontrib/storynavigation']

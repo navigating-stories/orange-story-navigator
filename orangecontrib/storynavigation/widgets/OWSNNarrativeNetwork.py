@@ -1,15 +1,11 @@
 import os
-import re
-import sre_constants
-from typing import Any, Iterable, List, Set
 import numpy as np
 import scipy.sparse as sp
 
-from Orange.data import Table, Domain, StringVariable
-from Orange.widgets import gui
-from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
+from Orange.data import Table
+from Orange.widgets.settings import Setting, DomainContextHandler
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin
-from Orange.widgets.widget import Input, Msg, Output, OWWidget
+from Orange.widgets.widget import Input, Output, OWWidget
 from Orange.data.pandas_compat import table_from_frame
 from orangecontrib.text.corpus import Corpus
 from orangecontrib.network.network import Network
@@ -22,16 +18,16 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 import pandas as pd
 from textblob import TextBlob
 from textblob_nl import PatternTagger, PatternAnalyzer
-from transformers import pipeline
+# from transformers import pipeline
 
 # Load the sentiment analysis pipeline
-sentiment_analysis = pipeline("sentiment-analysis", model="DTAI-KULeuven/robbert-v2-dutch-sentiment")
+# sentiment_analysis = pipeline("sentiment-analysis", model="DTAI-KULeuven/robbert-v2-dutch-sentiment")
 
 class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
-    name = '8) Narrative Network'
+    name = 'Narrative Network'
     description = 'Generates a network of entities and story units for visualisation'
     icon = 'icons/narrative_network_icon.png'
-    priority = 6430
+    priority = 15
 
     NL_SPACY_MODEL = "nl_core_news_sm" 
 
@@ -41,9 +37,7 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
     class Outputs:
         edge_data = Output('SVO tuples', Table)
         node_data = Output('Node data', Table)
-        # sentiment_data = Output('Sentiment Data', Table)
         network = Output('Network', Network)
-
 
     settingsHandler = DomainContextHandler()
     settings_version = 2
@@ -149,13 +143,13 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         # print("node: ", len(vals))
         node_df['prominence_score'] = prominence_scores
 
-        print()
-        print()
-        print('dictionary!')
-        print('------------')
-        print(self.prominence_scores)
-        print()
-        print()
+        # print()
+        # print()
+        # print('dictionary!')
+        # print('------------')
+        # print(self.prominence_scores)
+        # print()
+        # print()
 
         result = []
         node_labels = []
@@ -267,15 +261,11 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         sentiment_network_tuples = []
         for i in range(0, len(texts)):
             txt = str(texts[i, 'content'])
-            # print(len(str(txt)))
             sents = sent_tokenize(txt, language='dutch')
             print()
             print()
             for sent in sents:
-                result = sentiment_analysis(sent)
-                print(f"Sentence: '{sent}' | Sentiment: {result[0]['label']} | Score: {result[0]['score']:.4f}")
-
-                # blob = TextBlob(sent)
+                # result = sentiment_analysis(sent)
                 blob = TextBlob(sent, pos_tagger=PatternTagger(), analyzer=PatternAnalyzer())
                 sentiment_scores = blob.sentiment
                 tagged_sentence = self.nlp_nl(sent)
@@ -287,23 +277,12 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
                         sv_tuples, vo_tuples = self._get_tuples(tagged_sentence, token)
                         svo_tuples = self._merge_binary_tuplelsts_into_ternary_tuplelst(sv_tuples, vo_tuples)
                     elif ('N' in token.tag_.split('|')) or ('pron' in token.tag_.split('|')) or ('ik' in token.text.lower()):
-                        # print('here!! ', token.text)
-                        # print(token.tag_)
                         nouns.append((token, token.idx))
-                    else:
-                        print()
-                        # print('sdasds:', token.text)
-                        # print(token.tag_)
 
                 for item in svo_tuples:
                     tmp_data.append([text_id, "'" + sent + "'", item[0].lower().strip()+'_subj', item[1].lower().strip(), item[2].lower().strip()+'_obj'])
-
-                # print()
-                # print(nouns)
-                # print()
                 nouns = self.sort_tuple(nouns)
-                # print(nouns)
-                # print()
+
                 if len(nouns) > 0:
                     sentiment_subject = nouns[0][0].text
                     sentiment_object = nouns[len(nouns)-1][0].text
@@ -314,14 +293,6 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
 
         # filter only for top 10 prominence scores for subjects
         # sentiment_network_tuples = self.filter_top_n_lists(sentiment_network_tuples, 7)
-
-        print()
-        print()
-        print('dictionary!')
-        print('------------')
-        print(self.prominence_scores)
-        print()
-        print()
         
         # encode categorical data (subject, object, verb strings) into numerical identifiers
         # this is required in order to generate network data that is in the format expected
@@ -370,13 +341,12 @@ class OWSNNarrativeNetwork(OWWidget, ConcurrentWidgetMixin):
         
         self.Outputs.network.send(Network(items, edges))
         
-
-# if __name__ == "__main__":
-#     from orangewidget.utils.widgetpreview import WidgetPreview
+if __name__ == "__main__":
+    from orangewidget.utils.widgetpreview import WidgetPreview
 
 #     from orangecontrib.text.preprocess import BASE_TOKENIZER
 
 #     corpus_ = Corpus.from_file("book-excerpts")
 #     corpus_ = corpus_[:3]
 #     corpus_ = BASE_TOKENIZER(corpus_)
-#     WidgetPreview(OWSNDSGTagger).run(corpus_)
+    WidgetPreview(OWSNNarrativeNetwork).run()

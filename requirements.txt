@@ -5,11 +5,13 @@ Orange3-Text
 Orange3-network
 pandas
 spacy
+nltk
 dhtmlparser3
 textblob
 textblob-nl
 pydot
 graphviz
+scipy==1.12.0
 thefuzz
 beautifulsoup4
 coverage

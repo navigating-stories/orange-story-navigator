@@ -7,6 +7,7 @@ import os
 import string
 import pandas as pd
 import storynavigation.modules.constants as constants
+from nltk.tokenize import sent_tokenize
 
 def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
     """Verifies if token is valid word
@@ -89,15 +90,33 @@ def load_spacy_pipeline(name):
     if spacy.util.is_package(name):
         nlp = spacy.load(name)
     else:
-        os.system(f"spacy download {name}")
+        # os.system(f"spacy download {name}")
+        spacy.cli.download(name)
         nlp = spacy.load(name)
         nlp.add_pipe("merge_noun_chunks")
         nlp.add_pipe("merge_entities")
         nlp.add_pipe("sentencizer")
     return nlp
 
-
 def preprocess_text(text):
+    # Match all letter followed by whitespace following by newline character (no fullstop)
+    # Basically, add a fullstop where it should be and was forgotten
+    # e.g. "Its where Kody went   
+    #       He landed in India."
+    # replaced with:
+    # "Its where Kody went. He landed in India."
+    regex_pattern = r'([a-zA-Z])\s*\n([A-Z])'
+    replacement_pattern = r'\1. \2' # replace with first letter, fullstop, space and uppercase letter
+    processed_text_step1 = re.sub(regex_pattern, replacement_pattern, text)
+    # Change all newlines to spaces
+    processed_text_step2 = processed_text_step1.replace("\n", " ")
+    # Remove all quotes
+    quote_pattern = r'[\'\"‘’“”]'
+    processed_text_step3 = re.sub(quote_pattern, '', processed_text_step2)
+    # return sentences (tokenized from text)
+    return sent_tokenize(processed_text_step3)
+
+def preprocess_text_complex(text):
     """Preprocesses story text. A lot of stories in the Corona in de stad dataset
     have sentences with no period at the end followed immediately by newline characters.
     This function processes these and other issues to make the resulting text suitable for
@@ -114,7 +133,7 @@ def preprocess_text(text):
     for i in re.finditer("\n[A-Z]", text):
         startindex = i.start()
         match_indices.append(startindex + 1)
-    match_indices.append(None)
+    # match_indices.append(None)
     # split the text into clauses (based on regex matches) - clauses can be single or multiple sentences
     clauses = [
         text[match_indices[i] : match_indices[i + 1]]
@@ -151,28 +170,45 @@ def preprocess_text(text):
     return cleaned_sents
 
 def frame_contains_custom_tag_columns(story_elements_df):
-    start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
-    end_len = len(df_filtered.columns)
-    if end_len == (start_len - 14):
-        for colname in df_filtered.columns:
-            if ((not colname.startswith('is_')) or ('-scheme_' not in colname)):
-                return False
-        return True
+    df_filtered = pd.DataFrame()
+    if 'token_text_lowercase' in story_elements_df.columns:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['token_text_lowercase'])
     else:
-        return False
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+
+    if 'associated_action_lowercase' in df_filtered.columns:
+        df_filtered = df_filtered.drop(columns=['associated_action_lowercase'])
+
+    if len(df_filtered.columns) > 1:
+        return True
+    return False
+    
+def remove_custom_tag_columns(df):
+    dropcols = []
+    for col in df.columns:
+        if '-scheme_' in col:
+            dropcols.append(col)
+    df = df.drop(columns=dropcols)  
+    return df
     
 def get_custom_tags_list_and_columns(story_elements_df):
     postags = []
     columns = []
-    start_len = len(story_elements_df.columns)
-    df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
-    end_len = len(df_filtered.columns)
-    if end_len == (start_len - 14):
+    df_filtered = pd.DataFrame()
+    if 'token_text_lowercase' in story_elements_df.columns:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES+['token_text_lowercase'])
+    else:
+        df_filtered = story_elements_df.drop(columns=constants.TAGGING_DATAFRAME_COLUMNNAMES)
+
+    if 'associated_action_lowercase' in df_filtered.columns:
+        df_filtered = df_filtered.drop(columns=['associated_action_lowercase'])
+    
+    if len(df_filtered.columns) > 1:
         for colname in df_filtered.columns:
-            columns.append(colname)
-            colname_parts = colname.split('_')
-            postags.append(colname_parts[2])
+            if not colname.startswith('custom_'):
+                columns.append(colname)
+                postags.extend(df_filtered[colname].unique().tolist())
+    postags = list(set(postags))
     return columns, postags
 
 def convert_orangetable_to_dataframe(table):
