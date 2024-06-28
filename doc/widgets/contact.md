@@ -2,7 +2,8 @@ Contact Information
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
-If you have any questions, feedback, or need support, please feel free to reach out to us. Below are the primary contacts and useful links for your reference:
+
+The Story Navigator is maintained by the [Netherlands eScience Center](https://www.esciencecenter.nl/) in collaboration with the [Faculty of Behavioural, Management and Social Sciences (BMS)](https://www.utwente.nl/en/bms/) at the [University of Twente](https://www.utwente.nl/en/). If you have any questions, feedback, or need support, please feel free to reach out to us. Below are the primary contacts and useful links for your reference:
 
 **General Inquiries**
 
