@@ -89,8 +89,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             self,
             label="Extract story elements!",
             callback=self.__generate_dataset_level_data,
-            width=165,
-            height=45,
             toggleButton=False,
             sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
             styleSheet="""
