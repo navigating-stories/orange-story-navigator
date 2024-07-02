@@ -11,10 +11,10 @@ You can do this easily with one of these options:
 - The [citation file](CITATION.cff). #TODO: cff file in repo (see below)
 - If you prefer to copypaste, here you have the APA and BibTex strings:
  
-**APA**: Moodley, K. Hafner, F., Tjong Kim Sang, E. Smeets, S. & Vroegh, T. (2024). orange-story-navigator (Version 0.0.19) [Computer software]. https://github.com/navigating-stories/orange-story-navigator
+**APA**: Moodley, K. Hafner, F., Lüken, M., Tjong Kim Sang, E. Smeets, S. & Vroegh, T. (2024). orange-story-navigator (Version 0.0.19) [Computer software]. https://github.com/navigating-stories/orange-story-navigator
 
 **BibTex**: @software{orange-story-navigator,
-  author = {Smeets, Stef and Vroegh, Thijs},
+  author = {Moodley, Kody, Hafner, Flavio, Lüken, Malte, Tjong Kim Sang, Erik, Smeets, Stef. and Vroegh, Thijs},
   title = {orange-story-navigator (Version 0.0.19) [Computer software]},
   url = {https://github.com/navigating-stories/orange-story-navigator}
     
@@ -26,6 +26,22 @@ message: >-
   metadata from this file.
 type: software
 authors:
+  - given-names: Kody
+    family-names: Moodley
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0001-5666-1658'
+  - given-names: Flavio
+    family-names: Hafner
+    affiliation: Netherlands eScience Center
+    orcid: 'TODO: add ORCID'
+  - given-names: Malte
+    family-names: Lüken
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0001-7095-203X'
+  - given-names: Erik
+    family-names: Tjong Kim Sang
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0002-8431-081X'
   - given-names: Stef
     family-names: Smeets
     affiliation: Netherlands eScience Center

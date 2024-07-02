@@ -1,4 +1,4 @@
-Change log
+Changelog
 =======
 
 ![](../../doc/widgets/images/storynavigator_logo_small.png)

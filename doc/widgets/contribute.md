@@ -8,7 +8,7 @@ This section is for those who want to contribute to the Story Navigator add-on b
 
 Welcome! *Story Navigator* is an open-source project that helps analyzing textual stories using the lenses of narrative psychology, narrative analysis, and narrative theory. We aim to work with a a wide range of textual  data. If you're trying *Story Navigator* with your data, your experience, questions, bugs you encountered, and suggestions for improvement are important to the success of the project.
 
-We have a [Code of Conduct](CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
+We have a [Code of Conduct](../../doc/widgets/CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
 
 ## Questions, feedback, bugs
 
@@ -26,7 +26,7 @@ Contributions can come in the form of:
 - New features
 - Improvement of existing code
 - Updates to the documentation
-- ... ?
+- Etc
 
 We use the usual GitHub pull-request flow. For more info see [GitHub's own documentation](https://help.github.com/articles/using-pull-requests/).
 
