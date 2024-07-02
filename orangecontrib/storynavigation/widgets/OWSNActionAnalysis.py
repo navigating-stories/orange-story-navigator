@@ -499,6 +499,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs.         
         """
+        self.valid_stories = []
         if stories is not None:
             if not isinstance(stories, Corpus):
                 self.Error.wrong_input_for_stories()
@@ -525,6 +526,8 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs."""
 
+        self.valid_stories = []
+        
         if story_elements is not None:
             if isinstance(story_elements, Corpus): 
                 self.Error.wrong_input_for_elements()
