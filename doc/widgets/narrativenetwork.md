@@ -1,4 +1,4 @@
-Narrative Network 
+Narrative network 
 =================
 
 ![](../../orangecontrib/storynavigation/widgets/icons/narrative_network_icon.png)
