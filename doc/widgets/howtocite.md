@@ -1,3 +1,26 @@
+<style>
+.mint-green-code-block {
+    background-color: #98FF98; /* Mint green background */
+    color: black;              /* Black text color */
+    padding: 10px;             /* Padding around the text */
+    border-radius: 5px;        /* Rounded corners */
+    font-family: monospace;    /* Monospace font for code-like appearance */
+}
+.mint-green-code-block b {
+    font-weight: bold;         /* Bold text */
+}
+</style>
+
+<style>
+.gray-code-block {
+    background-color: lightgray;
+    color: black;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace;
+}
+</style>
+
 How to cite Story Navigator
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
@@ -10,15 +33,17 @@ You can do this easily with one of these options:
 - The 'cite this repository' menu in the right tab at https://github.com/navigating-stories/orange-story-navigator.
 - The [citation file](CITATION.cff). #TODO: cff file in repo (see below)
 - If you prefer to copypaste, here you have the APA and BibTex strings:
- 
-**APA**: Moodley, K. Hafner, F., Lüken, M., Tjong Kim Sang, E. Smeets, S. & Vroegh, T. (2024). orange-story-navigator (Version 0.0.19) [Computer software]. https://github.com/navigating-stories/orange-story-navigator
+  
+<pre class="mint-green-code-block">
+<b>APA</b>: Moodley, K. Hafner, F., Lüken, M., Tjong Kim Sang, E. Smeets, S. & Vroegh, T. (2024). orange-story-navigator (Version 0.0.19) [Computer software]. https://github.com/navigating-stories/orange-story-navigator
 
-**BibTex**: @software{orange-story-navigator,
+<b>BibTex</b>: @software{orange-story-navigator,
   author = {Moodley, Kody, Hafner, Flavio, Lüken, Malte, Tjong Kim Sang, Erik, Smeets, Stef. and Vroegh, Thijs},
   title = {orange-story-navigator (Version 0.0.19) [Computer software]},
   url = {https://github.com/navigating-stories/orange-story-navigator}
-    
+</pre>
 -----------------------------------------------
+<pre class="gray-code-block"> 
 cff-version: 1.2.0
 title: Unraphael
 message: >-
@@ -66,5 +91,5 @@ identifiers:
     value: 10.5281/zenodo.10994947
 license: GPL-3.0
 version: 0.0.19
-
+</pre>
 -----------------------------------------------
