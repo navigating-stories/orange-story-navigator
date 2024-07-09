@@ -1,0 +1,47 @@
+ YAML 1.2
+---
+authors:
+  - given-names: Kody
+    family-names: Moodley
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0001-5666-1658'
+  - given-names: Flavio
+    family-names: Hafner
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0009-0000-5893-9000'
+  - given-names: Malte
+    family-names: Lüken
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0001-7095-203X'
+  - given-names: Erik
+    family-names: Tjong Kim Sang
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0002-8431-081X'
+  - given-names: Stef
+    family-names: Smeets
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0001-5107-3531'
+  - given-names: Thijs
+    family-names: Vroegh
+    affiliation: Netherlands eScience Center
+    orcid: 'https://orcid.org/0000-0002-6311-0798'
+cff-version: "1.2.0"
+date-released: 2024-07-09
+abstract: >-
+  add-on for the Orange3 data mining platform which is able to analyse Dutch textual stories
+   using the lenses of narrative psychology, narrative analysis, and narrative theory
+keywords:
+  - stories
+  - text mining
+  - storytelling
+  - data analysis
+  - orange3
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.1310751
+license: GPL-3.0
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/navigating-stories"
+url: 'https://orange-story-navigator.readthedocs.io/en/latest/'
+title: "Navigating Stories"
+version: "0.0.19"
