@@ -27,9 +27,8 @@ authors:
     orcid: 'https://orcid.org/0000-0002-6311-0798'
 cff-version: "1.2.0"
 date-released: 2024-07-09
-abstract: >-
-  add-on for the Orange3 data mining platform which is able to analyse Dutch textual stories
-   using the lenses of narrative psychology, narrative analysis, and narrative theory
+abstract: add-on for the Orange3 data mining platform which is able to analyse Dutch textual stories
+          using the lenses of narrative psychology, narrative analysis, and narrative theory
 keywords:
   - stories
   - text mining
@@ -42,6 +41,6 @@ identifiers:
 license: GPL-3.0
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/navigating-stories"
-url: 'https://orange-story-navigator.readthedocs.io/en/latest/'
+url: "https://orange-story-navigator.readthedocs.io/en/latest/"
 title: "Navigating Stories"
 version: "0.0.19"
