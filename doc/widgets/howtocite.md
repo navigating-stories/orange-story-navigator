@@ -26,10 +26,13 @@ You can do this easily with one of these options:
 - If you prefer to copypaste, here you have the APA and BibTex strings:
   
 <pre class="mint-green-code-block">
-<b>APA</b>: Moodley, K. Hafner, F., Lüken, M., Tjong Kim Sang, E. Smeets, S. & Vroegh, T. (2024). orange-story-navigator (Version 0.0.19) [Computer software]. https://github.com/navigating-stories/orange-story-navigator
+<b>APA</b>: Moodley, K. Hafner, F., Lüken, M., Tjong Kim Sang, E. Smeets, S. & 
+Vroegh, T.(2024). Orange-story-navigator (Version 0.0.19) [Computer software].
+https://github.com/navigating-stories/orange-story-navigator
 
 <b>BibTex</b>: @software{orange-story-navigator,
-  author = {Moodley, Kody, Hafner, Flavio, Lüken, Malte, Tjong Kim Sang, Erik, Smeets, Stef. and Vroegh, Thijs},
-  title = {orange-story-navigator (Version 0.0.19) [Computer software]},
+  author = {Moodley, Kody, Hafner, Flavio, Lüken, Malte, Tjong Kim Sang, Erik,
+  Smeets, Stef. and Vroegh, Thijs}, title = {orange-story-navigator 
+  (Version 0.0.19) [Computer software]},
   url = {https://github.com/navigating-stories/orange-story-navigator}
 </pre>
