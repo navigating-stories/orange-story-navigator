@@ -46,8 +46,8 @@ class ActorTagger:
             current_frame['classification'] = c_col
             current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
             combined_df = pd.concat([combined_df, current_frame], axis=0)
-
-        combined_df = combined_df[combined_df['category'] != 'nan']
+        
+        combined_df = combined_df[combined_df['category'] != '?'] # was '!= 'nan'
         return combined_df.reset_index(drop=True)
 
     def __filter_rows(self, story_elements_df, pos_tags):
@@ -94,16 +94,16 @@ class ActorTagger:
         
     
     def __do_custom_tagging(self, df, cust_tag_cols):
-        df = df.copy()
-
+        df = df.copy()       
+        
         df_filtered = df.dropna(subset=cust_tag_cols, how='all')
         multi_custom_tags = []
         ents = []
 
         for index, row in df_filtered.iterrows():
             current_row_ents = []
-            for col in cust_tag_cols:
-                if not pd.isna(row[col]) and (row[col] != 'nan'):
+            for col in cust_tag_cols:                
+                if not pd.isna(row[col]) and (row[col] != '?'): # was '!= 'nan'
                     current_row_ents.append({"start": int(row['token_start_idx']), "end": int(row['token_end_idx']), "label": row[col]})                    
 
             # Convert each dictionary to a tuple of (key, value) pairs
@@ -119,7 +119,7 @@ class ActorTagger:
                 ents.append({"start": int(current_row_ents[0]['start']), "end": int(current_row_ents[0]['end']), "label": concat_labels})
             elif len(current_row_ents) == 1:
                 ents.extend(current_row_ents)
-
+        
         return ents, multi_custom_tags
 
     def __postag_sents(
@@ -160,13 +160,13 @@ class ActorTagger:
                     nents = self.__do_tagging(matched_sent_df_sorted)
                     matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(story_elements_df, sentence, sentences)
                     cents, multi_tags = self.__do_custom_tagging(matched_sent_df_sorted, custom_tag_columns)
-                    for custom_pos_tag in custom_tags + multi_tags:
+                    for custom_pos_tag in custom_tags + multi_tags:                        
                         new_color_map[custom_pos_tag] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
                     options = {"ents": pos_tags + custom_tags + multi_tags, "colors": new_color_map}
                 else:
                     matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(story_elements_df, sentence, sentences)
                     cents, multi_tags = self.__do_custom_tagging(matched_sent_df_sorted, custom_tag_columns)
-                    for custom_pos_tag in custom_tags + multi_tags:
+                    for custom_pos_tag in custom_tags + multi_tags:                        
                         new_color_map[custom_pos_tag] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
                     options = {"ents": custom_tags + multi_tags, "colors": new_color_map}
                 ents = nents + cents

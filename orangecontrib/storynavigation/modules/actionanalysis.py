@@ -76,7 +76,7 @@ class ActionTagger:
         for index, row in df_filtered.iterrows():
             current_row_ents = []
             for col in cust_tag_cols:
-                if (not pd.isna(row[col])) and (row[col] != 'nan'):
+                if (not pd.isna(row[col])) and (row[col] != '?'): # was '!= 'nan'
                     current_row_ents.append({"start": int(row['token_start_idx']), "end": int(row['token_end_idx']), "label": row[col]})                    
 
             # Convert each dictionary to a tuple of (key, value) pairs
@@ -222,7 +222,7 @@ class ActionTagger:
             current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
             combined_df = pd.concat([combined_df, current_frame], axis=0)
 
-        combined_df = combined_df[combined_df['category'] != 'nan']
+        combined_df = combined_df[combined_df['category'] != '?'] # was '!= 'nan'
         return combined_df.reset_index(drop=True)
     
     def calculate_customfreq_table(self, df, selected_stories=None):
