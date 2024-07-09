@@ -58,7 +58,7 @@ authors:
   - given-names: Flavio
     family-names: Hafner
     affiliation: Netherlands eScience Center
-    orcid: 'TODO: add ORCID'
+    orcid: 'https://orcid.org/0009-0000-5893-9000'
   - given-names: Malte
     family-names: Lüken
     affiliation: Netherlands eScience Center
