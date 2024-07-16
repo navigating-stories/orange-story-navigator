@@ -119,7 +119,6 @@ class ActorTagger:
                 ents.append({"start": int(current_row_ents[0]['start']), "end": int(current_row_ents[0]['end']), "label": concat_labels})
             elif len(current_row_ents) == 1:
                 ents.extend(current_row_ents)
-        
         return ents, multi_custom_tags
 
     def __postag_sents(
