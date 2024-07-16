@@ -76,7 +76,7 @@ class ActionTagger:
         for index, row in df_filtered.iterrows():
             current_row_ents = []
             for col in cust_tag_cols:
-                if (not pd.isna(row[col])) and (row[col] != '?'): # was '!= 'nan'
+                if (not pd.isna(row[col])) and (row[col] not in ['?', 'nan']):
                     current_row_ents.append({"start": int(row['token_start_idx']), "end": int(row['token_end_idx']), "label": row[col]})                    
 
             # Convert each dictionary to a tuple of (key, value) pairs
