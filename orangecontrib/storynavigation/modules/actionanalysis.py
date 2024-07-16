@@ -222,7 +222,7 @@ class ActionTagger:
             current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
             combined_df = pd.concat([combined_df, current_frame], axis=0)
 
-        combined_df = combined_df[combined_df['category'] != '?'] # was '!= 'nan'
+        combined_df = combined_df[combined_df['category'] not in ['?', 'nan']]
         return combined_df.reset_index(drop=True)
     
     def calculate_customfreq_table(self, df, selected_stories=None):
