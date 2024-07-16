@@ -94,7 +94,7 @@ class ActorTagger:
         
     
     def __do_custom_tagging(self, df, cust_tag_cols):
-        df = df.copy()       
+        df = df.copy()
         
         df_filtered = df.dropna(subset=cust_tag_cols, how='all')
         multi_custom_tags = []
