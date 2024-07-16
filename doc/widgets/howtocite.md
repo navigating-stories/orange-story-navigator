@@ -4,7 +4,6 @@
     color: black;              /* Black text color */
     padding: 10px;             /* Padding around the text */
     border-radius: 5px;        /* Rounded corners */
-    font-family: monospace;    /* Monospace font for code-like appearance */
 }
 .mint-green-code-block b {
     font-weight: bold;         /* Bold text */
