@@ -159,7 +159,7 @@ class ActorTagger:
                     nents = self.__do_tagging(matched_sent_df_sorted)
                     matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(story_elements_df, sentence, sentences)
                     cents, multi_tags = self.__do_custom_tagging(matched_sent_df_sorted, custom_tag_columns)
-                    for custom_pos_tag in custom_tags + multi_tags:                        
+                    for custom_pos_tag in custom_tags + multi_tags:
                         new_color_map[custom_pos_tag] = constants.CUSTOMTAG_HIGHLIGHT_COLOR
                     options = {"ents": pos_tags + custom_tags + multi_tags, "colors": new_color_map}
                 else:
