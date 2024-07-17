@@ -61,6 +61,7 @@ changelog = "https://github.com/navigating-stories/orange-story-navigator/releas
 
 [project.optional-dependencies]
 develop = [
+    'bump-my-version',
     'coverage',
     'pytest',
     'sphinx',
@@ -94,3 +95,26 @@ show_missing = true
 
 [tool.coverage.run]
 source = ['orangecontrib/storynavigation']
+
+[tool.bumpversion]
+current_version = "0.0.20"
+
+[[tool.bumpversion.files]]
+filename = "orangecontrib/storynavigation/__init__.py"
+search = "__version__ = '{current_version}'"
+replace = "__version__ = '{new_version}'"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "CITATION.cff"
+search = 'version: "{current_version}"'
+replace = 'version: "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "doc/widgets/howtocite.md"
+search = "(Version {current_version})"
+replace = "(Version {new_version})"
