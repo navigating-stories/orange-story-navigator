@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 [project]
 name = "storynavigator"
-version = "0.0.20"
+version = "0.0.21"
 description = "Narrative analysis add-on for the Orange 3 data mining software package."
 readme = "README.md"
 requires-python = ">=3.9"
