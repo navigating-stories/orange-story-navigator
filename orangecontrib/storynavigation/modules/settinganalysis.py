@@ -21,15 +21,16 @@ class SettingAnalyzer:
         text_tuples (list): each element of the list is a binary tuple. The first component is the text of the story (string) and 
         the second component is a number (int) uniquely identifying that story in the given list
     """
-    def __init__(self, lang, n_segments, text_tuples):
+    def __init__(self, lang, n_segments, text_tuples, callback=None):
         self.text_tuples = text_tuples
         self.n_segments = n_segments
+        self.callback = callback
 
         self.__setup_required_nlp_resources(lang)
         self.nlp = util.load_spacy_pipeline(self.model)
         # self.n = 20 # top n scoring tokens for all metrics
 
-        self.complete_data = self.__process_stories(self.nlp, self.text_tuples)
+        self.complete_data = self.__process_stories(self.nlp, self.text_tuples, self.callback)
     
 
     def __setup_required_nlp_resources(self, lang): # TODO: make fct reusable? it's also used in OWSNTagger
@@ -48,7 +49,7 @@ class SettingAnalyzer:
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
 
 
-    def __process_stories(self, nlp, text_tuples):
+    def __process_stories(self, nlp, text_tuples, callback):
         """Run NLP model, lemmatize tokens and collect them in a dataframe (one row per unique lemma).
 
         Args:
@@ -60,9 +61,11 @@ class SettingAnalyzer:
             pandas.DataFrame: a dataframe containing all tagging data for all stories in the given list
         """
         collection_df = pd.DataFrame()
-        for story_tuple in text_tuples:
+        for counter, story_tuple in enumerate(text_tuples):
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0, ignore_index=True)
+            if callback:
+                callback((100*(counter+1)/len(text_tuples)))
 
         return collection_df
     
