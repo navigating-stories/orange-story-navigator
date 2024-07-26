@@ -7,7 +7,8 @@ import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from collections import Counter
-
+from spacy.matcher import Matcher
+from spacy.tokens import Doc
 
 
 class SettingAnalyzer:
@@ -41,15 +42,18 @@ class SettingAnalyzer:
             lang (string): the ISO code for the language of the input texts (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.NL_SPACY_MODEL
+            self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif lang == constants.EN:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.EN_SPACY_MODEL
+            self.entity_list =   constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"settingsanalysis.py: unknown language {lang}")
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
+        self.entity_list = [line.split(",") for line in self.entity_list]
 
 
     def __process_texts(self, nlp, text_tuples, callback=None):
@@ -68,11 +72,27 @@ class SettingAnalyzer:
             results.extend(self.__process_text(text_tuple[1], text_tuple[0], nlp))
             if callback:
                 callback((100*(counter+1)/len(text_tuples)))
-        return pd.DataFrame(results, columns=["text", "label", "text id"])
+        return pd.DataFrame(results, columns=["text", "label", "text id", "character id"]).sort_values(by=["text id", "character id"]).reset_index(drop=True)
 
 
-    def __analyze_sentences(self, sentences, nlp):
-        return [ nlp(sentence) for sentence in sentences if (len(sentence.split()) > 0) ]
+    def __analyze_text_with_list(self, text, nlp, entity_list):
+        matcher = Matcher(nlp.vocab)
+        event_patterns = [[{"ORTH": entity_text}] 
+            for entity_label, entity_text in entity_list 
+                if entity_label == "EVENT"]
+        matcher.add("EVENT", event_patterns)
+        date_patterns = [[{"ORTH": entity_text}] 
+            for entity_label, entity_text in entity_list 
+                if entity_label in ["DATE", "TIME"]]
+        matcher.add("DATE", date_patterns)
+        location_patterns = [[{"ORTH": entity_text}] 
+            for entity_label, entity_text in entity_list 
+                if entity_label in ["LOC", "GPE"]]
+        matcher.add("LOC", location_patterns)
+        tokens = nlp(text)
+        return { tokens[m[1]].idx: {"text": tokens[m[1]].text, 
+                                    "label_": nlp.vocab.strings[m[0]]} 
+                 for m in matcher(tokens) } # presumes entities contain 1 token
 
 
     def __process_text(self, text_id, text, nlp):
@@ -86,11 +106,16 @@ class SettingAnalyzer:
         Returns:
             list of tuples with entity text, entity label and text id
         """
-        sentences = util.preprocess_text(text)
-        analyzed_sentences = self.__analyze_sentences(sentences, nlp)
-        return [(entity.text, entity.label_, 1 + int(text_id))
-                    for analyzed_sentence in analyzed_sentences 
-                        for entity in analyzed_sentence.ents 
-                            if entity.label_ in 
-                                ["DATE", "EVENT", "GPE", "LOC", "TIME"] ]
-
+        spacy_analysis = nlp(text)
+        list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
+        combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text, 
+                                                                  "label_": entity.label_}
+                              for entity in spacy_analysis.ents 
+                                  if entity.label_ in 
+                                     ["DATE", "EVENT", "GPE", "LOC", "TIME"] }
+        for start in list_analysis:
+            combined_analysis[start] = list_analysis[start]
+        return [(combined_analysis[start]["text"], 
+                 combined_analysis[start]["label_"],
+                 text_id + 1,
+                 start) for start in combined_analysis]
