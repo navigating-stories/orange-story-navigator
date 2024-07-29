@@ -23,6 +23,7 @@ class SettingAnalyzer:
         callback: function in widget to show the progress of this process
     """
 
+    ENTITY_GROUPS = [["EVENT"], ["DATE", "TIME"], ["LOC", "GPE"]]
 
     def __init__(self, lang, n_segments, text_tuples, callback=None):
         self.text_tuples = text_tuples
@@ -33,6 +34,7 @@ class SettingAnalyzer:
         self.nlp = util.load_spacy_pipeline(self.model)
 
         self.complete_data = self.__process_texts(self.nlp, self.text_tuples, self.callback)
+        self.complete_data = self.__select_best_entities(self.complete_data)
 
 
     def __setup_required_nlp_resources(self, lang): # TODO: make fct reusable? it's also used in OWSNTagger
@@ -77,21 +79,14 @@ class SettingAnalyzer:
 
     def __analyze_text_with_list(self, text, nlp, entity_list):
         matcher = Matcher(nlp.vocab)
-        event_patterns = [[{"ORTH": entity_text}] 
-            for entity_label, entity_text in entity_list 
-                if entity_label == "EVENT"]
-        matcher.add("EVENT", event_patterns)
-        date_patterns = [[{"ORTH": entity_text}] 
-            for entity_label, entity_text in entity_list 
-                if entity_label in ["DATE", "TIME"]]
-        matcher.add("DATE", date_patterns)
-        location_patterns = [[{"ORTH": entity_text}] 
-            for entity_label, entity_text in entity_list 
-                if entity_label in ["LOC", "GPE"]]
-        matcher.add("LOC", location_patterns)
+        for entity_group in self.ENTITY_GROUPS:
+            patterns = [[{"ORTH": entity_text}]
+                for entity_label, entity_text in entity_list
+                    if entity_label in entity_group]
+            matcher.add(entity_group[0], patterns)
         tokens = nlp(text)
-        return { tokens[m[1]].idx: {"text": tokens[m[1]].text, 
-                                    "label_": nlp.vocab.strings[m[0]]} 
+        return { tokens[m[1]].idx: {"text": tokens[m[1]].text,
+                                    "label_": nlp.vocab.strings[m[0]]}
                  for m in matcher(tokens) } # presumes entities contain 1 token
 
 
@@ -108,14 +103,59 @@ class SettingAnalyzer:
         """
         spacy_analysis = nlp(text)
         list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
-        combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text, 
+        combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text,
                                                                   "label_": entity.label_}
-                              for entity in spacy_analysis.ents 
-                                  if entity.label_ in 
+                              for entity in spacy_analysis.ents
+                                  if entity.label_ in
                                      ["DATE", "EVENT", "GPE", "LOC", "TIME"] }
         for start in list_analysis:
             combined_analysis[start] = list_analysis[start]
-        return [(combined_analysis[start]["text"], 
+        return [(combined_analysis[start]["text"],
                  combined_analysis[start]["label_"],
                  text_id + 1,
                  start) for start in combined_analysis]
+
+
+    def __normalize_entities(self, entity_data):
+        entity_data_copy = entity_data.copy(deep=True)
+        for index, row in entity_data_copy.iterrows():
+            for entity_list in self.ENTITY_GROUPS:
+                if len(entity_list) > 1 and row["label"] in entity_list[1:]:
+                    entity_data_copy.loc[index, "label"] = entity_list[0]
+                    break
+        return entity_data_copy
+
+
+    def __select_frequent_entities(self, entity_data):
+        counts_series = entity_data[["text", "label", "text id"]].value_counts()
+        counts_df = counts_series.reset_index(name="count")
+        selected_indices = {}
+        for index, row in counts_df.sort_values(by=["count", "text"],
+                                                ascending=[False, True]).iterrows():
+            key = " ".join([str(row["text id"]), row["label"]])
+            if key not in selected_indices.keys():
+                selected_indices[key] = [row["text"], row["label"], row["text id"]]
+        return list(selected_indices.values())
+
+
+    def __lookup_selected_values(self, entity_data, selected_values):
+        selected_column = len(entity_data) * [""]
+        for entity_data_index, row in entity_data.iterrows():
+            try:
+                selected_values_index = selected_values.index([row["text"],
+                                                               row["label"],
+                                                               row["text id"]])
+                selected_column[entity_data_index] = "selected"
+                selected_values.pop(selected_values_index)
+            except:
+                pass
+        return selected_column
+
+
+    def __select_best_entities(self, entity_data):
+        entity_data_copy = self.__normalize_entities(entity_data)
+        selected_values = self.__select_frequent_entities(entity_data_copy)
+        selected_column = self.__lookup_selected_values(entity_data_copy, 
+                                                        selected_values)
+        entity_data["selected"] = selected_column
+        return entity_data
