@@ -1,9 +1,12 @@
+import re
+
 from Orange.data import Table
 from Orange.widgets.settings import Setting, DomainContextHandler
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
 from orangecontrib.text.corpus import Corpus
-from AnyQt.QtWidgets import QSizePolicy
+from AnyQt.QtWidgets import QSizePolicy, QSplitter
+from AnyQt.QtCore import Qt
 from Orange.widgets import gui
 from Orange.data.pandas_compat import table_from_frame
 
@@ -21,7 +24,11 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     n_segments = 1
-
+    entity_colors = { "DATE": "lightblue",
+                      "EVENT": "salmon",
+                      "GPE": "lemonchiffon",
+                      "LOC": "lightgreen",
+                      "TIME": "thistle", }
 
     class Inputs:
         stories_in = Input("Corpus", Corpus, replaces=["Data"])
@@ -41,6 +48,10 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.make_language_selection_menu()
         self.make_segments_selection_menu()
         self.make_analyze_setting_button()
+        self.splitter = QSplitter(orientation=Qt.Horizontal, childrenCollapsible=False)
+        self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
+        self.doc_webview.setHtml("")
+        self.mainArea.layout().addWidget(self.splitter)
 
 
     def make_language_selection_menu(self):
@@ -125,7 +136,50 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def on_done(self, result) -> None:
-        self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.complete_data))
+        self.__visualize_text_data(self.stories_selected, self.analyzer.settings_analysis)
+        self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.settings_analysis))
+
+
+    def __make_entity_bar_for_html(self):
+        return " ".join(['<mark style="background-color:' +
+                           self.entity_colors[entity] +
+                           f'">{entity}</mark>' for entity in self.entity_colors ])
+
+
+    def __insert_entity_color_in_story_text(self, story_text, start, end, label):
+        story_text = story_text[:end] + "</mark>" + story_text[end:]
+        story_text = (story_text[:start] +
+                      '<mark style="background-color:' +
+                      self.entity_colors[label] +
+                      ';">' +
+                      story_text[start:])
+        return story_text
+
+
+    def __add_entity_colors_to_story_text(self, story_text, story_id, settings_analysis):
+        for index, row in settings_analysis.loc[
+                             settings_analysis["text id"] == story_id + 1].iloc[::-1].iterrows():
+           start = int(row["character id"])
+           end = start + len(row["text"])
+           story_text = self.__insert_entity_color_in_story_text(story_text,
+                                                                 start,
+                                                                 end,
+                                                                 row["label"])
+        return story_text
+
+
+    def __add_paragraphs_to_story_text(self, story_text):
+        return "<p>" + re.sub("\n\n", "<p>", story_text)
+
+
+    def __visualize_text_data(self, stories_selected, settings_analysis):
+        html_text = "<html><body>"
+        html_text += self.__make_entity_bar_for_html()
+        for story_text, story_id in stories_selected:
+            story_text = self.__add_entity_colors_to_story_text(story_text, story_id, settings_analysis)
+            html_text += "<hr>" + self.__add_paragraphs_to_story_text(story_text)
+        html_text += "</body></html>"
+        self.doc_webview.setHtml(html_text)
 
 
 if __name__ == "__main__":

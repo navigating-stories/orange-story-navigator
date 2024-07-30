@@ -33,8 +33,8 @@ class SettingAnalyzer:
         self.__setup_required_nlp_resources(lang)
         self.nlp = util.load_spacy_pipeline(self.model)
 
-        self.complete_data = self.__process_texts(self.nlp, self.text_tuples, self.callback)
-        self.complete_data = self.__select_best_entities(self.complete_data)
+        self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, self.callback)
+        self.settings_analysis = self.__select_best_entities(self.text_analysis)
 
 
     def __setup_required_nlp_resources(self, lang): # TODO: make fct reusable? it's also used in OWSNTagger
@@ -59,16 +59,6 @@ class SettingAnalyzer:
 
 
     def __process_texts(self, nlp, text_tuples, callback=None):
-        """Run NLP model, lemmatize tokens and collect them in a dataframe (one row per unique lemma).
-
-        Args:
-            nlp (list): list of (spacy.tokens.doc.Doc) objects - one for each element of 'sentences'
-            text_tuples (list): each element of the list is a binary tuple. The first component is the text of the text (string) and
-            the second component is a number (int) uniquely identifying that text in the given list
-
-        Returns:
-            pandas.DataFrame: a dataframe containing all tagging data for all texts in the given list
-        """
         results = []
         for counter, text_tuple in enumerate(text_tuples):
             results.extend(self.__process_text(text_tuple[1], text_tuple[0], nlp))
@@ -87,20 +77,10 @@ class SettingAnalyzer:
         tokens = nlp(text)
         return { tokens[m[1]].idx: {"text": tokens[m[1]].text,
                                     "label_": nlp.vocab.strings[m[0]]}
-                 for m in matcher(tokens) } # presumes entities contain 1 token
+                 for m in matcher(tokens) } # presumes list entities contain 1 token
 
 
     def __process_text(self, text_id, text, nlp):
-        """Extract sentences from text and run Spacy analysis on sentences
-
-        Args:
-            text_id (int): a number uniquely identifying a specific text
-            text (string): text referred to by text_id
-            nlp (spacy.language.Language): a spacy language model object to use on the input texts
-
-        Returns:
-            list of tuples with entity text, entity label and text id
-        """
         spacy_analysis = nlp(text)
         list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
         combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text,
@@ -155,7 +135,7 @@ class SettingAnalyzer:
     def __select_best_entities(self, entity_data):
         entity_data_copy = self.__normalize_entities(entity_data)
         selected_values = self.__select_frequent_entities(entity_data_copy)
-        selected_column = self.__lookup_selected_values(entity_data_copy, 
+        selected_column = self.__lookup_selected_values(entity_data_copy,
                                                         selected_values)
         entity_data["selected"] = selected_column
         return entity_data
