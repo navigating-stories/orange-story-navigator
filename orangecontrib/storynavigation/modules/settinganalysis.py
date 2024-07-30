@@ -70,14 +70,15 @@ class SettingAnalyzer:
     def __analyze_text_with_list(self, text, nlp, entity_list):
         matcher = Matcher(nlp.vocab)
         for entity_group in self.ENTITY_GROUPS:
-            patterns = [[{"ORTH": entity_text}]
+            patterns = [[{"lower": entity_token} for entity_token in entity_text.lower().split()]
                 for entity_label, entity_text in entity_list
                     if entity_label in entity_group]
             matcher.add(entity_group[0], patterns)
         tokens = nlp(text)
-        return { tokens[m[1]].idx: {"text": tokens[m[1]].text,
-                                    "label_": nlp.vocab.strings[m[0]]}
-                 for m in matcher(tokens) } # presumes list entities contain 1 token
+        return {tokens[m[1]].idx: {
+                    "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
+                    "label_": nlp.vocab.strings[m[0]]
+                } for m in matcher(tokens)}
 
 
     def __process_text(self, text_id, text, nlp):
