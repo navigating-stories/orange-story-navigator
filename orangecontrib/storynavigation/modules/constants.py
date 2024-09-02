@@ -40,6 +40,8 @@ NL_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_dutch.txt"
 NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
 # filename from which to retrieve a list of dutch entities
 NL_ENTITIES_FILENAME = "dutch_entities.csv"
+# filename from which to retrieve a list of dutch time words
+NL_TIME_WORDS_FILENAME = "dutch_time_words.csv"
 
 # filename from which to retrieve a list of english stopwords
 EN_STOPWORDS_FILENAME = "englishstopwords.txt"
@@ -53,6 +55,8 @@ EN_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_english.txt"
 EN_PRONOUNS_FILENAME = "englishpronouns.txt"
 # filename from which to retrieve a list of english entities
 EN_ENTITIES_FILENAME = "english_entities.csv"
+# filename from which to retrieve a list of english time words
+EN_TIME_WORDS_FILENAME = "english_time_words.csv"
 
 
 # package paths
@@ -105,6 +109,14 @@ NL_ENTITIES_FILE = (
 
 EN_ENTITIES_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_ENTITIES_FILENAME
+)
+
+NL_TIME_WORDS_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / NL_TIME_WORDS_FILENAME
+)
+
+EN_TIME_WORDS_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / EN_TIME_WORDS_FILENAME
 )
 
 # currently selected agent prominence metric

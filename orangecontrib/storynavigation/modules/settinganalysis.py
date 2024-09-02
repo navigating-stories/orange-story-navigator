@@ -1,7 +1,11 @@
 """Modules required for SettingAnalysis widget in the Orange Story Navigator add-on.
 """
 
+import json
 import os
+import re
+import requests
+import time
 import pandas as pd
 import numpy as np
 import storynavigation.modules.constants as constants
@@ -24,6 +28,8 @@ class SettingAnalyzer:
     """
 
     ENTITY_GROUPS = [["EVENT"], ["DATE", "TIME"], ["LOC", "GPE"]]
+    ENTITY_CACHE_FILE_NAME = "entity_cache.json"
+
 
     def __init__(self, lang, n_segments, text_tuples, callback=None):
         self.text_tuples = text_tuples
@@ -47,10 +53,12 @@ class SettingAnalyzer:
             self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.NL_SPACY_MODEL
             self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
+            self.time_words = constants.NL_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif lang == constants.EN:
             self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.EN_SPACY_MODEL
-            self.entity_list =   constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
+            self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
+            self.time_words = constants.EN_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"settingsanalysis.py: unknown language {lang}")
 
@@ -64,7 +72,7 @@ class SettingAnalyzer:
             results.extend(self.__process_text(text_tuple[1], text_tuple[0], nlp))
             if callback:
                 callback((100*(counter+1)/len(text_tuples)))
-        return pd.DataFrame(results, columns=["text", "label", "text id", "character id"]).sort_values(by=["text id", "character id"]).reset_index(drop=True)
+        return pd.DataFrame(results, columns=["text", "label", "text id", "character id", "location type"]).sort_values(by=["text id", "character id"]).reset_index(drop=True)
 
 
     def __analyze_text_with_list(self, text, nlp, entity_list):
@@ -81,9 +89,7 @@ class SettingAnalyzer:
                 } for m in matcher(tokens)}
 
 
-    def __process_text(self, text_id, text, nlp):
-        spacy_analysis = nlp(text)
-        list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
+    def __combine_analyses(self, spacy_analysis, list_analysis):
         combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text,
                                                                   "label_": entity.label_}
                               for entity in spacy_analysis.ents
@@ -91,10 +97,46 @@ class SettingAnalyzer:
                                      ["DATE", "EVENT", "GPE", "LOC", "TIME"] }
         for start in list_analysis:
             combined_analysis[start] = list_analysis[start]
+        return combined_analysis
+
+
+    def __expand_locations(self, combined_analysis):
+        for start in combined_analysis:
+            combined_analysis[start]["location type"] = ""
+        entities_to_add = {}
+        for start in combined_analysis.keys():
+            if combined_analysis[start]["label_"] in ["GPE", "LOC"]:
+                wikidata_info = self.__get_wikidata_info(combined_analysis[start]["text"])
+                if len(wikidata_info) > 0 and "description" in wikidata_info[0]:
+                    combined_analysis[start]["location type"] = re.sub("^.* ", "", wikidata_info[0]["description"])
+        for start in entities_to_add:
+            combined_analysis[start] = entities_to_add[start]
+        return combined_analysis
+
+
+    def __filter_dates(self, combined_analysis):
+        to_be_deleted = []
+        for start in combined_analysis.keys():
+            if combined_analysis[start]["label_"] in [ "DATE", "TIME" ]:
+                words = combined_analysis[start]["text"].lower().split()
+                if len(words) > 0 and words[-1] in self.time_words:
+                    to_be_deleted.append(start)
+        for start in to_be_deleted:
+            del(combined_analysis[start])
+        return combined_analysis
+
+
+    def __process_text(self, text_id, text, nlp):
+        spacy_analysis = nlp(text)
+        list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
+        combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
+        combined_analysis = self.__expand_locations(combined_analysis)
+        combined_analysis = self.__filter_dates(combined_analysis)
         return [(combined_analysis[start]["text"],
                  combined_analysis[start]["label_"],
                  text_id + 1,
-                 start) for start in combined_analysis]
+                 start,
+                 combined_analysis[start]["location type"]) for start in combined_analysis]
 
 
     def __normalize_entities(self, entity_data):
@@ -108,15 +150,36 @@ class SettingAnalyzer:
 
 
     def __select_frequent_entities(self, entity_data):
-        counts_series = entity_data[["text", "label", "text id"]].value_counts()
+        counts_series = entity_data[["text", "label", "text id", "location type"]].value_counts()
         counts_df = counts_series.reset_index(name="count")
         selected_indices = {}
         for index, row in counts_df.sort_values(by=["count", "text"],
                                                 ascending=[False, True]).iterrows():
             key = " ".join([str(row["text id"]), row["label"]])
-            if key not in selected_indices.keys():
-                selected_indices[key] = [row["text"], row["label"], row["text id"]]
+            if key not in selected_indices.keys() or (
+                row["label"] in ["GPE", "LOC"] and
+                (len(selected_indices[key][3]) == 0 or not re.search("[A-Z]",selected_indices[key][3][0])) and
+                len(row["location type"]) > 0 and re.search("[A-Z]",row["location type"][0])):
+                selected_indices[key] = [row["text"], row["label"], row["text id"], row["location type"]]
         return list(selected_indices.values())
+
+
+    def __select_earliest_entities(self, entity_data):
+        counts_series = entity_data[["text", "label", "text id", "location type"]].value_counts()
+        counts_df = counts_series.reset_index(name="count").set_index(["text", "label", "text id"])
+        selected_indices = {}
+        for index, row in entity_data.sort_values(by=["text id", "character id"]).iterrows():
+            key = " ".join([str(row["text id"]), row["label"]])
+            if (key not in selected_indices.keys() and
+                (row["label"] not in ["GPE", "LOC"] or 
+                 (re.search("^[A-Z]", row["text"]) and
+                  re.search("^[A-Z]", row["location type"])))):
+                selected_indices[key] = [row["text"],
+                                         row["label"],
+                                         row["text id"],
+                                         row["location type"],
+                                         counts_df.loc[row["text"], row["label"], row["text id"]]["count"]]
+        return [list(x)[:4] for x in selected_indices.values()]
 
 
     def __lookup_selected_values(self, entity_data, selected_values):
@@ -125,7 +188,8 @@ class SettingAnalyzer:
             try:
                 selected_values_index = selected_values.index([row["text"],
                                                                row["label"],
-                                                               row["text id"]])
+                                                               row["text id"],
+                                                               row["location type"]])
                 selected_column[entity_data_index] = "selected"
                 selected_values.pop(selected_values_index)
             except:
@@ -135,8 +199,43 @@ class SettingAnalyzer:
 
     def __select_best_entities(self, entity_data):
         entity_data_copy = self.__normalize_entities(entity_data)
-        selected_values = self.__select_frequent_entities(entity_data_copy)
+        selected_values = self.__select_earliest_entities(entity_data_copy)
         selected_column = self.__lookup_selected_values(entity_data_copy,
                                                         selected_values)
         entity_data["selected"] = selected_column
         return entity_data
+
+
+    def __get_wikidata_info(self, entity_name, find_property=False):
+        if os.path.isfile(self.ENTITY_CACHE_FILE_NAME):
+            with open(self.ENTITY_CACHE_FILE_NAME, "r") as cache_file:
+                cache = json.load(cache_file)
+            cache_file.close()
+
+        else:
+            cache = {}
+        if entity_name in cache:
+            return cache[entity_name]
+        print("__get_wikidata_info: looking up", entity_name)
+        url = f"https://www.wikidata.org/w/api.php"
+        params = {
+            "action": "wbsearchentities",
+            "format": "json",
+            "language": "nl",
+            "limit": 10,
+            "uselang": "nl",
+            "search": entity_name
+        }
+        if find_property:
+            params["type"] = "property"
+        response = requests.get(url, params=params)
+        time.sleep(1)
+        data = response.json()
+        if 'search' in data.keys():
+            cache[entity_name] = data["search"]
+        else:
+            cache[entity_name] = []
+        with open(self.ENTITY_CACHE_FILE_NAME, "w") as cache_file:
+            json.dump(cache, cache_file)
+        cache_file.close()
+        return cache[entity_name]
