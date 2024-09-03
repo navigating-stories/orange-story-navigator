@@ -46,8 +46,7 @@ class ActorTagger:
             current_frame['classification'] = c_col
             current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
             combined_df = pd.concat([combined_df, current_frame], axis=0)
-        
-        #combined_df = combined_df[combined_df['category'] not in ['?', 'nan']]
+                
         combined_df = combined_df[~combined_df['category'].isin(['?', 'nan'])]
 
         return combined_df.reset_index(drop=True)
