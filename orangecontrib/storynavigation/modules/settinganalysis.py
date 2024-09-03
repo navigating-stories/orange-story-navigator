@@ -27,7 +27,11 @@ class SettingAnalyzer:
         callback: function in widget to show the progress of this process
     """
 
-    ENTITY_GROUPS = [["EVENT"], ["DATE", "TIME"], ["LOC", "GPE"]]
+    DATE_LABELS = ["DATE", "TIME"]
+    EVENT_LABELS = ["EVENT"]
+    LOCATION_LABELS = ["LOC", "FAC", "GPE"]
+    ENTITY_GROUPS = [DATE_LABELS, EVENT_LABELS, LOCATION_LABELS]
+    ENTITY_LABELS = DATE_LABELS + EVENT_LABELS + LOCATION_LABELS
     ENTITY_CACHE_FILE_NAME = "entity_cache.json"
 
 
@@ -93,8 +97,7 @@ class SettingAnalyzer:
         combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text,
                                                                   "label_": entity.label_}
                               for entity in spacy_analysis.ents
-                                  if entity.label_ in
-                                     ["DATE", "EVENT", "GPE", "LOC", "TIME"] }
+                                  if entity.label_ in self.ENTITY_LABELS }
         for start in list_analysis:
             combined_analysis[start] = list_analysis[start]
         return combined_analysis
@@ -105,7 +108,7 @@ class SettingAnalyzer:
             combined_analysis[start]["location type"] = ""
         entities_to_add = {}
         for start in combined_analysis.keys():
-            if combined_analysis[start]["label_"] in ["GPE", "LOC"]:
+            if combined_analysis[start]["label_"] in self.LOCATION_LABELS:
                 wikidata_info = self.__get_wikidata_info(combined_analysis[start]["text"])
                 if len(wikidata_info) > 0 and "description" in wikidata_info[0]:
                     combined_analysis[start]["location type"] = re.sub("^.* ", "", wikidata_info[0]["description"])
@@ -117,7 +120,7 @@ class SettingAnalyzer:
     def __filter_dates(self, combined_analysis):
         to_be_deleted = []
         for start in combined_analysis.keys():
-            if combined_analysis[start]["label_"] in [ "DATE", "TIME" ]:
+            if combined_analysis[start]["label_"] in self.DATE_LABELS:
                 words = combined_analysis[start]["text"].lower().split()
                 if len(words) > 0 and words[-1] in self.time_words:
                     to_be_deleted.append(start)
@@ -157,7 +160,7 @@ class SettingAnalyzer:
                                                 ascending=[False, True]).iterrows():
             key = " ".join([str(row["text id"]), row["label"]])
             if key not in selected_indices.keys() or (
-                row["label"] in ["GPE", "LOC"] and
+                row["label"] in self.LOCATION_LABELS and
                 (len(selected_indices[key][3]) == 0 or not re.search("[A-Z]",selected_indices[key][3][0])) and
                 len(row["location type"]) > 0 and re.search("[A-Z]",row["location type"][0])):
                 selected_indices[key] = [row["text"], row["label"], row["text id"], row["location type"]]
@@ -171,7 +174,7 @@ class SettingAnalyzer:
         for index, row in entity_data.sort_values(by=["text id", "character id"]).iterrows():
             key = " ".join([str(row["text id"]), row["label"]])
             if (key not in selected_indices.keys() and
-                (row["label"] not in ["GPE", "LOC"] or 
+                (row["label"] not in self.LOCATION_LABELS or 
                  (re.search("^[A-Z]", row["text"]) and
                   re.search("^[A-Z]", row["location type"])))):
                 selected_indices[key] = [row["text"],

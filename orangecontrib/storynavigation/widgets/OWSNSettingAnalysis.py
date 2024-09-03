@@ -26,6 +26,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     n_segments = 1
     entity_colors = { "DATE": "lightblue",
                       "EVENT": "salmon",
+                      "FAC": "silver",
                       "GPE": "lemonchiffon",
                       "LOC": "lightgreen",
                       "TIME": "thistle", }
