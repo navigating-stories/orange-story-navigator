@@ -152,7 +152,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
     def run(self, lang, n_segments, text_tuples, tuple, state: TaskState):
         def advance(progress):
-            print("tagging", type(state))
             if state.is_interruption_requested():
                 raise InterruptedError
             state.set_progress_value(progress)

@@ -23,7 +23,7 @@ class SettingAnalyzer:
     Args:
         lang (str): ISO string of the language of the input text
         n_segments (int): Number of segments to split each text into
-        text_tuples (list): binary tuple: text (str) and text id
+        text_tuples (list): binary tuple: text (str) and storyid
         callback: function in widget to show the progress of this process
     """
 
@@ -70,13 +70,19 @@ class SettingAnalyzer:
         self.entity_list = [line.split(",") for line in self.entity_list]
 
 
+    def __sort_and_filter_results(self, results):
+        results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id", "location type"]).sort_values(by=["text id", "character id"])
+        results_df.insert(3, "storyid", ["ST" + str(text_id) for text_id in results_df["text id"]])
+        return results_df[["text", "label", "storyid", "character id", "location type"]].reset_index(drop=True)
+
+
     def __process_texts(self, nlp, text_tuples, callback=None):
         results = []
         for counter, text_tuple in enumerate(text_tuples):
             results.extend(self.__process_text(text_tuple[1], text_tuple[0], nlp))
             if callback:
                 callback((100*(counter+1)/len(text_tuples)))
-        return pd.DataFrame(results, columns=["text", "label", "text id", "character id", "location type"]).sort_values(by=["text id", "character id"]).reset_index(drop=True)
+        return self.__sort_and_filter_results(results)
 
 
     def __analyze_text_with_list(self, text, nlp, entity_list):
@@ -137,7 +143,7 @@ class SettingAnalyzer:
         combined_analysis = self.__filter_dates(combined_analysis)
         return [(combined_analysis[start]["text"],
                  combined_analysis[start]["label_"],
-                 text_id + 1,
+                 text_id,
                  start,
                  combined_analysis[start]["location type"]) for start in combined_analysis]
 
@@ -153,35 +159,35 @@ class SettingAnalyzer:
 
 
     def __select_frequent_entities(self, entity_data):
-        counts_series = entity_data[["text", "label", "text id", "location type"]].value_counts()
+        counts_series = entity_data[["text", "label", "storyid", "location type"]].value_counts()
         counts_df = counts_series.reset_index(name="count")
         selected_indices = {}
         for index, row in counts_df.sort_values(by=["count", "text"],
                                                 ascending=[False, True]).iterrows():
-            key = " ".join([str(row["text id"]), row["label"]])
+            key = " ".join([str(row["storyid"]), row["label"]])
             if key not in selected_indices.keys() or (
                 row["label"] in self.LOCATION_LABELS and
                 (len(selected_indices[key][3]) == 0 or not re.search("[A-Z]",selected_indices[key][3][0])) and
                 len(row["location type"]) > 0 and re.search("[A-Z]",row["location type"][0])):
-                selected_indices[key] = [row["text"], row["label"], row["text id"], row["location type"]]
+                selected_indices[key] = [row["text"], row["label"], row["storyid"], row["location type"]]
         return list(selected_indices.values())
 
 
     def __select_earliest_entities(self, entity_data):
-        counts_series = entity_data[["text", "label", "text id", "location type"]].value_counts()
-        counts_df = counts_series.reset_index(name="count").set_index(["text", "label", "text id"])
+        counts_series = entity_data[["text", "label", "storyid", "location type"]].value_counts()
+        counts_df = counts_series.reset_index(name="count").set_index(["text", "label", "storyid"])
         selected_indices = {}
-        for index, row in entity_data.sort_values(by=["text id", "character id"]).iterrows():
-            key = " ".join([str(row["text id"]), row["label"]])
+        for index, row in entity_data.sort_values(by=["storyid", "character id"]).iterrows():
+            key = " ".join([str(row["storyid"]), row["label"]])
             if (key not in selected_indices.keys() and
                 (row["label"] not in self.LOCATION_LABELS or 
                  (re.search("^[A-Z]", row["text"]) and
                   re.search("^[A-Z]", row["location type"])))):
                 selected_indices[key] = [row["text"],
                                          row["label"],
-                                         row["text id"],
+                                         row["storyid"],
                                          row["location type"],
-                                         counts_df.loc[row["text"], row["label"], row["text id"]]["count"]]
+                                         counts_df.loc[row["text"], row["label"], row["storyid"]]["count"]]
         return [list(x)[:4] for x in selected_indices.values()]
 
 
@@ -191,7 +197,7 @@ class SettingAnalyzer:
             try:
                 selected_values_index = selected_values.index([row["text"],
                                                                row["label"],
-                                                               row["text id"],
+                                                               row["storyid"],
                                                                row["location type"]])
                 selected_column[entity_data_index] = "selected"
                 selected_values.pop(selected_values_index)
