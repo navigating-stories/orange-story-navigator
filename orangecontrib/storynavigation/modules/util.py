@@ -13,7 +13,7 @@ def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in taggin
     """Verifies if token is valid word
 
     Args:
-        token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
+        token (spacy.tokens.token.Token): tagged Token | tuple : 6 components - (text, tag, fine-grained tag, dependency, ne tag, spacy analysis)
         stopwords (list): list of stopwords to ignore
 
     Returns:
@@ -59,7 +59,7 @@ def get_normalized_token(token):
     """cleans punctuation from token and verifies length is more than one character
 
     Args:
-        token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
+        token (spacy.tokens.token.Token): tagged Token | tuple : 6 components - (text, tag, fine-grained tag, dependency, ne tag, spacy analysis)
 
     Returns:
         string: cleaned token text
@@ -300,7 +300,7 @@ def find_verb_ancestor(token):
             if verb_ancestor:
                 return verb_ancestor
     elif isinstance(token, tuple):
-        return find_verb_ancestor(token[4])
+        return find_verb_ancestor(token[-1])
 
     # If no verb ancestor found, return None
     return None
