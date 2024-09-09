@@ -235,7 +235,6 @@ class Tagger:
     def __process_dutch_potential_action(self, tag):
         # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
         if (tag[-1].pos_ == "VERB" and tag[-1].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
-            print(tag[-1].pos_, tag[-1].tag_)
             # Present tense == WW|pv|tgw or WW|pv|conj
             #   * Potentially include WW|inf category (see below)
             # Past tense == WW|pv|verl
@@ -288,7 +287,6 @@ class Tagger:
         row = None
         if self.__is_valid_token(tag):
             tense_value = self.__process_potential_action(tag)
-            print(tense_value)
             row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], tag[4], False, False, False, '-']
         return row
     
