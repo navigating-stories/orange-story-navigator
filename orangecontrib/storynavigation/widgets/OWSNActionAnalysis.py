@@ -348,6 +348,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     # Parts of speech (POS) checkbox selected initialization
     past_vbz = Setting(True)
     present_vbz = Setting(True)
+    future_vbz = Setting(True)
     all_pos = Setting(True)
     zero_pos = Setting(False)
     custom = Setting(True)
@@ -420,6 +421,13 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             "Actions - present tense",
             callback=self.pos_selection_changed,
         )
+        self.futurevc = gui.checkBox(
+            self.postags_box,
+            self,
+            "future_vbz",
+            "Actions - future tense",
+            callback=self.pos_selection_changed,
+        )
 
         self.custom_tags = gui.checkBox(
             self.postags_box,
@@ -435,7 +443,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
         self.allc.setChecked(False)
         self.allc.stateChanged.connect(self.on_state_changed_pos)
-        self.pos_checkboxes = [self.pastvc, self.presentvc, self.custom_tags]
+        self.pos_checkboxes = [self.pastvc, self.presentvc, self.futurevc, self.custom_tags]
 
         self.controlArea.layout().addWidget(self.postags_box)
         # Auto-commit box
@@ -806,6 +814,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                             value,
                             self.past_vbz,
                             self.present_vbz,
+                            self.future_vbz,
                             self.custom,
                             self.story_elements_dict[str(c_index)]
                         )

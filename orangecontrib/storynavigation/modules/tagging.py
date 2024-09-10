@@ -250,6 +250,7 @@ class Tagger:
             return "-"
 
     def __process_dutch_potential_action(self, tag):
+        
         # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
         if (tag[4].pos_ in ["VERB", "AUX"] and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
             # Present tense == WW|pv|tgw or WW|pv|conj
@@ -264,7 +265,10 @@ class Tagger:
             # VERB WW|inf subcategory	                        4207 cases 
 
             # Classify verb as either past or present tense
-            if (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
+            # 1. If the lemma is 'zullen', classify as FUTURE_VB and set future_verb_triggered
+            if tag[4].lemma_ == "zullen":                
+                return "FUTURE_VB"        
+            elif (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
                 return "PRES_VB"
             elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
                 return "PAST_VB"
@@ -273,6 +277,41 @@ class Tagger:
                 return "-"
         else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
             return "-"
+        
+    # new function that includes future tense verbs
+    # def __process_dutch_potential_action(self, tags):
+    # # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
+    # future_verb_triggered = False
+    
+    # for tag in tags:  # Loop through each word's tag in the sentence
+    #     # First check Spacy's dependency parser to classify as Verb
+    #     if (tag.pos_ in ["VERB", "AUX"] and tag.tag_.split('|')[0] == "WW"):  # Spacy recognizes word as a Verb
+            
+    #         # 1. If the lemma is 'zullen', classify as FUTURE_VB
+    #         if tag.lemma_ == "zullen":
+    #             future_verb_triggered = True  # We've encountered 'zullen', so trigger future tense flag
+    #             return "FUTURE_VB"  # Mark the auxiliary verb as FUTURE_VB
+            
+    #         # 2. If we have seen a 'zullen' conjugation earlier and the verb is in the infinitive form, mark it as FUTURE_VB
+    #         elif future_verb_triggered and tag.tag_.startswith('WW|inf|'):
+    #             return "FUTURE_VB"  # Mark any infinitive verb after 'zullen' as FUTURE_VB
+            
+    #         # Classify verb as either past or present tense if not future tense
+    #         elif (tag.tag_.startswith('WW|pv|tgw|') or tag.tag_.startswith('WW|pv|conj|') or tag.tag_.startswith('WW|inf|')):
+    #             return "PRES_VB"  # Present tense
+                
+    #         elif (tag.tag_.startswith('WW|pv|verl|') or tag.tag_.startswith('WW|vd|')):
+    #             return "PAST_VB"  # Past tense
+                
+    #         else:
+    #             return "-"  # For unknown verb forms, return no tense
+            
+    #     else:
+    #         return "-"  # Spacy doesn't recognize the word as a verb
+    
+    # After processing the entire sentence, reset the trigger for future tense verbs
+    # future_verb_triggered = False
+    
 
     def __process_potential_action(self, tag):
         if self.lang == constants.NL:
