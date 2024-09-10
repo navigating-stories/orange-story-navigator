@@ -35,7 +35,7 @@ class SettingAnalyzer:
     ENTITY_CACHE_FILE_NAME = "entity_cache.json"
 
 
-    def __init__(self, lang, n_segments, text_tuples, callback=None):
+    def __init__(self, lang, n_segments, text_tuples, story_elements, callback=None):
         self.text_tuples = text_tuples
         self.n_segments = n_segments
         self.callback = callback
@@ -43,8 +43,46 @@ class SettingAnalyzer:
         self.__setup_required_nlp_resources(lang)
         self.nlp = util.load_spacy_pipeline(self.model)
 
-        self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, self.callback)
+        entities = self.extract_entities_from_table(story_elements)
+        self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, entities, self.callback)
         self.settings_analysis = self.__select_best_entities(self.text_analysis)
+
+
+    def extract_entities_from_table(self, story_elements):
+        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+        last_story_id = -1
+        last_sentence = ""
+        char_offset = 0
+        entities = []
+        for index, row in story_elements_df.iterrows():
+            story_id = row["storyid"]
+            if story_id != last_story_id:
+                entities.append({})
+                last_entity_class = "O"
+                last_entity_start_id = -1
+                last_sentence = ""
+                char_offset = 0
+            sentence = row["sentence"]
+            if sentence != last_sentence:
+                if len(last_sentence) > 0:
+                    char_offset += 1 if char_offset > 0 else 0
+                    char_offset += len(last_sentence)
+                last_sentence = sentence
+            if row["spacy_ne"] == "O":
+                last_entity_class = "O"
+                last_entity_start_id = -1
+            else:
+                entity_class = re.sub("^.-", "", row["spacy_ne"])
+                entity_iob = re.sub("-.*$", "", row["spacy_ne"])
+                entity_start_id = int(row["token_start_idx"]) + char_offset
+                if entity_class != last_entity_class or entity_iob == "B" or story_id != last_story_id:
+                    entities[-1][entity_start_id] = { "text": row["token_text"], "label_": entity_class }
+                    last_entity_start_id = entity_start_id
+                    last_entity_class = entity_class
+                else:
+                    entities[-1][last_entity_start_id]["text"] += " " + row["token_text"]
+            last_story_id = story_id
+        return entities
 
 
     def __setup_required_nlp_resources(self, lang): # TODO: make fct reusable? it's also used in OWSNTagger
@@ -76,12 +114,14 @@ class SettingAnalyzer:
         return results_df[["text", "label", "storyid", "character id", "location type"]].reset_index(drop=True)
 
 
-    def __process_texts(self, nlp, text_tuples, callback=None):
+    def __process_texts(self, nlp, text_tuples, entities, callback=None):
         results = []
-        for counter, text_tuple in enumerate(text_tuples):
-            results.extend(self.__process_text(text_tuple[1], text_tuple[0], nlp))
+        index = 0
+        for entities_per_text in entities:
+            results.extend(self.__process_text(text_tuples[index][1], text_tuples[index][0], nlp, entities_per_text))
             if callback:
-                callback((100*(counter+1)/len(text_tuples)))
+                callback((100*(index+1)/len(entities)))
+            index += 1
         return self.__sort_and_filter_results(results)
 
 
@@ -100,10 +140,9 @@ class SettingAnalyzer:
 
 
     def __combine_analyses(self, spacy_analysis, list_analysis):
-        combined_analysis = { spacy_analysis[entity.start].idx: { "text": entity.text,
-                                                                  "label_": entity.label_}
-                              for entity in spacy_analysis.ents
-                                  if entity.label_ in self.ENTITY_LABELS }
+        combined_analysis = { entity_start_id:spacy_analysis[entity_start_id] 
+                              for entity_start_id in spacy_analysis.keys()
+                              if spacy_analysis[entity_start_id]["label_"] in self.ENTITY_LABELS }
         for start in list_analysis:
             combined_analysis[start] = list_analysis[start]
         return combined_analysis
@@ -135,8 +174,8 @@ class SettingAnalyzer:
         return combined_analysis
 
 
-    def __process_text(self, text_id, text, nlp):
-        spacy_analysis = nlp(text)
+    def __process_text(self, text_id, text, nlp, spacy_analysis):
+        # spacy_analysis = nlp(text)
         list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
         combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
         combined_analysis = self.__expand_locations(combined_analysis)

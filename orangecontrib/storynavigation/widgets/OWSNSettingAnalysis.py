@@ -33,6 +33,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     class Inputs:
         stories_in = Input("Corpus", Corpus, replaces=["Data"])
+        story_elements = Input("Story elements", Table)
 
 
     class Outputs:
@@ -42,7 +43,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __init__(self):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
-        self.stories_selected = True
+        self.stories_selected = []
+        self.story_elements = []
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
 
@@ -113,6 +115,16 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
                         if len(text := str(stories_in[idx, str(field)])) > 0 ]
 
 
+    @Inputs.story_elements
+    def set_story_elements(self, story_elements=None):
+        """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
+        misses wrongly connected inputs."""
+
+        if story_elements is not None:
+            self.story_elements = story_elements
+            self.__action_analyze_setting_wrapper()
+
+
     def reset_widget(self):
         self.corpus = None
         self.Warning.clear()
@@ -132,6 +144,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
              lang=self.language,
              n_segments=int(self.n_segments),
              text_tuples=self.stories_selected,
+             story_elements=self.story_elements,
              callback=move_progress_bar
         )
 
