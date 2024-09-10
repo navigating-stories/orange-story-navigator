@@ -126,6 +126,9 @@ img {{
 <mark class="entity" style="background: #DB7093; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
     Action | present tense
 </mark>
+<mark class="entity" style="background: #C7BFC2; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">
+    Action | future tense
+</mark>
 {}
 </div>
 <br/>
