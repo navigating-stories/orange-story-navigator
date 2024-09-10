@@ -231,7 +231,7 @@ class Tagger:
         return row
     
     def __process_english_potential_action(self, tag):
-        if (tag[4].pos_ == "VERB"):
+        if (tag[4].pos_ in ["VERB", "AUX"]):
             # VB  --  verb, base form
             # VBD  --  verb, past tense
             # VBG  --  verb, gerund or present participle
@@ -251,7 +251,7 @@ class Tagger:
 
     def __process_dutch_potential_action(self, tag):
         # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
-        if (tag[4].pos_ == "VERB" and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
+        if (tag[4].pos_ in ["VERB", "AUX"] and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
             # Present tense == WW|pv|tgw or WW|pv|conj
             #   * Potentially include WW|inf category (see below)
             # Past tense == WW|pv|verl
