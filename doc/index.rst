@@ -23,8 +23,7 @@ Widgets
    :caption: Getting Started
 
    widgets/installation
-   widgets/usage
-   widgets/tutorials
+   widgets/usage   
    widgets/knownissues
 
 .. toctree::
@@ -36,6 +35,15 @@ Widgets
    widgets/elements
    widgets/narrativenetwork
    widgets/setting
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   widgets/tutorial1
+   widgets/tutorial2
+   widgets/tutorial3
+   widgets/tutorial4
 
 .. toctree::
    :maxdepth: 2
