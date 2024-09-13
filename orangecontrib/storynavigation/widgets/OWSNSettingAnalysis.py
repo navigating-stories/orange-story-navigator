@@ -12,6 +12,7 @@ from Orange.data.pandas_compat import table_from_frame
 
 import storynavigation.modules.constants as constants
 from storynavigation.modules.settinganalysis import SettingAnalyzer
+import storynavigation.modules.util as util
 
 
 class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
@@ -32,7 +33,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
                       "TIME": "thistle", }
 
     class Inputs:
-        stories_in = Input("Corpus", Corpus, replaces=["Data"])
         story_elements = Input("Story elements", Table)
 
 
@@ -105,16 +105,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         )
 
 
-    @Inputs.stories_in
-    def set_stories(self, stories_in=None):
-        self.stories_selected = [ (text, idx)
-            for idx, document in enumerate(stories_in)
-                for field in stories_in.domain.metas
-                    if (text_field_name := str(field)).lower() in ['text',
-                                                                   'content']
-                        if len(text := str(stories_in[idx, str(field)])) > 0 ]
-
-
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
@@ -122,7 +112,30 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         if story_elements is not None:
             self.story_elements = story_elements
+            self.text_tuples = self.make_text_tuples(story_elements)
             self.__action_analyze_setting_wrapper()
+
+
+    def make_text_tuples(self, story_elements):
+        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+        current_story = ""
+        current_story_id = ""
+        last_sentence = ""
+        text_tuples = []
+        for index, row in story_elements_df.iterrows():
+            story_id = row["storyid"]
+            if story_id != current_story_id:
+                if current_story_id != "":
+                    text_tuples.append((current_story, current_story_id))
+                current_story = ""
+                current_story_id = story_id
+                last_sentence = ""
+            if row["sentence"] != last_sentence:
+                current_story += row["sentence"] if current_story == "" else " " + row["sentence"]
+                last_sentence = row["sentence"]
+        if current_story != "":
+            text_tuples.append((current_story, current_story_id))
+        return text_tuples
 
 
     def reset_widget(self):
@@ -143,14 +156,14 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.analyzer = SettingAnalyzer(
              lang=self.language,
              n_segments=int(self.n_segments),
-             text_tuples=self.stories_selected,
+             text_tuples=self.text_tuples,
              story_elements=self.story_elements,
              callback=move_progress_bar
         )
 
 
     def on_done(self, result) -> None:
-        self.__visualize_text_data(self.stories_selected, self.analyzer.settings_analysis)
+        self.__visualize_text_data(self.text_tuples, self.analyzer.settings_analysis)
         self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.settings_analysis))
 
 
@@ -186,10 +199,10 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         return "<p>" + re.sub("\n\n", "<p>", story_text)
 
 
-    def __visualize_text_data(self, stories_selected, settings_analysis):
+    def __visualize_text_data(self, text_tuples, settings_analysis):
         html_text = "<html><body>"
         html_text += self.__make_entity_bar_for_html()
-        for story_text, story_id in stories_selected:
+        for story_text, story_id in text_tuples:
             story_text = self.__add_entity_colors_to_story_text(story_text, story_id, settings_analysis)
             html_text += "<hr>" + self.__add_paragraphs_to_story_text(story_text)
         html_text += "</body></html>"
@@ -201,5 +214,4 @@ if __name__ == "__main__":
 
     corpus_ = Corpus.from_file("tests/storynavigator-testdata.tab")
     previewer = WidgetPreview(OWSNSettingAnalysis)
-    previewer.run(set_stories=corpus_)
 

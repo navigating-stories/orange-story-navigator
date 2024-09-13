@@ -12,7 +12,6 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from collections import Counter
 from spacy.matcher import Matcher
-from spacy.tokens import Doc
 
 
 class SettingAnalyzer:
@@ -65,8 +64,7 @@ class SettingAnalyzer:
             sentence = row["sentence"]
             if sentence != last_sentence:
                 if len(last_sentence) > 0:
-                    char_offset += 1 if char_offset > 0 else 0
-                    char_offset += len(last_sentence)
+                    char_offset += 1 + len(last_sentence)
                 last_sentence = sentence
             if row["spacy_ne"] == "O":
                 last_entity_class = "O"
@@ -92,19 +90,16 @@ class SettingAnalyzer:
             lang (string): the ISO code for the language of the input texts (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.NL_SPACY_MODEL
             self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.NL_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif lang == constants.EN:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.model = constants.EN_SPACY_MODEL
             self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.EN_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"settingsanalysis.py: unknown language {lang}")
 
-        self.stopwords = [item for item in self.stopwords if len(item) > 0]
         self.entity_list = [line.split(",") for line in self.entity_list]
 
 
@@ -175,7 +170,6 @@ class SettingAnalyzer:
 
 
     def __process_text(self, text_id, text, nlp, spacy_analysis):
-        # spacy_analysis = nlp(text)
         list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
         combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
         combined_analysis = self.__expand_locations(combined_analysis)
