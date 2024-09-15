@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<scheme version="2.0" title="" description="">
+	<nodes>
+		<node id="0" name="Import Documents" qualified_name="orangecontrib.text.widgets.owimportdocuments.OWImportDocuments" project_name="Orange3-Text" version="" title="Import Documents" position="(133.57142857142858, 440.7142857142857)" />
+	</nodes>
+	<links />
+	<annotations />
+	<thumbnail />
+	<node_properties>
+		<properties node_id="0" format="pickle">gASV+wIAAAAAAAB9lCiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjAtjdXJyZW50UGF0aJSMOUM6L1By
+b2plY3RzL05hdmlnYXRpbmdTdG9yaWVzL29yYW5nZS1zdG9yeS1uYXZpZ2F0b3IvZGF0YZSMCGxl
+bW1hX2NilIiMBm5lcl9jYpSJjAZwb3NfY2KUiYwMcmVjZW50X3BhdGhzlF2UKIweb3Jhbmdld2lk
+Z2V0LnV0aWxzLmZpbGVkaWFsb2dzlIwKUmVjZW50UGF0aJSTlCmBlH2UKIwHYWJzcGF0aJSMOUM6
+L1Byb2plY3RzL05hdmlnYXRpbmdTdG9yaWVzL29yYW5nZS1zdG9yeS1uYXZpZ2F0b3IvZGF0YZSM
+BnByZWZpeJROjAdyZWxwYXRolE6MBXRpdGxllIwAlIwFc2hlZXSUaBOMC2ZpbGVfZm9ybWF0lE51
+YmgLKYGUfZQoaA6MYEM6L1Byb2plY3RzL05hdmlnYXRpbmdTdG9yaWVzL0RhdGEvU2FhcnRqZS9V
+dkEgQ29yb25hIGluIGRlIHN0YWQvVXZBIENvcm9uYSBpbiBkZSBzdGFkX2Rvd25sb2Fkc5RoEE5o
+EU5oEmgTaBRoE2gVTnViZYwLcmVjZW50X3VybHOUXZSME3NhdmVkV2lkZ2V0R2VvbWV0cnmUQ0IB
+2dDLAAMAAAAABEAAAAIxAAAFwQAAA3MAAARBAAACUAAABcAAAANyAAAAAAAAAAAKAAAABEEAAAJQ
+AAAFwAAAA3KUjAZzb3VyY2WUSwCMC19fdmVyc2lvbl9flEsBjBBjb250ZXh0X3NldHRpbmdzlF2U
+KIwVb3Jhbmdld2lkZ2V0LnNldHRpbmdzlIwHQ29udGV4dJSTlCmBlH2UKIwGdmFsdWVzlH2UKIwI
+bGFuZ3VhZ2WUjAVEdXRjaJRoHksBdYwOZG9jdW1lbnRzX2hhc2iUigisODxeofpRUHViaCMpgZR9
+lChoJn2UKGgoaCloHksBdWgqigjMlFl4bvJe5nViZXUu
+</properties>
+	</node_properties>
+	<session_state>
+		<window_groups />
+	</session_state>
+</scheme>

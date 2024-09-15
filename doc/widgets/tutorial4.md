@@ -1,4 +1,4 @@
-Tutorials
+Tutorial 4
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
