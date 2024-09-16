@@ -49,8 +49,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.controlArea.setSizePolicy(size_policy)
 
         self.make_language_selection_menu()
-        self.make_segments_selection_menu()
-        self.make_analyze_setting_button()
+
         self.splitter = QSplitter(orientation=Qt.Horizontal, childrenCollapsible=False)
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
         self.doc_webview.setHtml("")
@@ -65,44 +64,11 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
             value="language",
             items=constants.SUPPORTED_LANGUAGES,
             sendSelectedValue=True,
-            currentIndex=0,
+            currentIndex=1,
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
-        self.select_language_combo.setEnabled(True)
         self.controlArea.layout().addWidget(self.select_language_combo)
-
-
-    def make_segments_selection_menu(self):
-        self.select_n_segments_combo = gui.comboBox(
-            widget=self.controlArea,
-            master=self,
-            label="Number of segments per story",
-            value="n_segments",
-            items=constants.N_STORY_SEGMENTS,
-            sendSelectedValue=True,
-            currentIndex=0,
-            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
-        )
-        self.controlArea.layout().addWidget(self.select_n_segments_combo)
-        self.select_n_segments_combo.setEnabled(True)
-
-
-    def make_analyze_setting_button(self):
-        self.compute_data_button = gui.button(
-            self.controlArea,
-            self,
-            label="Analyze setting!",
-            callback=self.__action_analyze_setting_wrapper,
-            toggleButton=False,
-            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
-            styleSheet="""
-                QPushButton {
-                    border: 2px solid #555; /* Add border for visibility */
-                    border-radius: 10px;
-                    padding: 10px;
-                }
-            """
-        )
+        self.select_language_combo.setEnabled(True)
 
 
     @Inputs.story_elements
@@ -154,7 +120,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
             state.set_progress_value(progress)
 
         self.analyzer = SettingAnalyzer(
-             lang=self.language,
+             language=self.language,
              n_segments=int(self.n_segments),
              text_tuples=self.text_tuples,
              story_elements=self.story_elements,

@@ -20,7 +20,7 @@ class SettingAnalyzer:
     https://pypi.org/project/storynavigator/0.0.11/
 
     Args:
-        lang (str): ISO string of the language of the input text
+        language (str): ISO string of the language of the input text
         n_segments (int): Number of segments to split each text into
         text_tuples (list): binary tuple: text (str) and storyid
         callback: function in widget to show the progress of this process
@@ -34,12 +34,12 @@ class SettingAnalyzer:
     ENTITY_CACHE_FILE_NAME = "entity_cache.json"
 
 
-    def __init__(self, lang, n_segments, text_tuples, story_elements, callback=None):
+    def __init__(self, language, n_segments, text_tuples, story_elements, callback=None):
         self.text_tuples = text_tuples
         self.n_segments = n_segments
         self.callback = callback
 
-        self.__setup_required_nlp_resources(lang)
+        self.__setup_required_nlp_resources(language)
         self.nlp = util.load_spacy_pipeline(self.model)
 
         entities = self.extract_entities_from_table(story_elements)
@@ -83,27 +83,28 @@ class SettingAnalyzer:
         return entities
 
 
-    def __setup_required_nlp_resources(self, lang): # TODO: make fct reusable? it's also used in OWSNTagger
+    def __setup_required_nlp_resources(self, language):
         """Loads and initialises all language and nlp resources required by the tagger based on the given language
 
         Args:
-            lang (string): the ISO code for the language of the input texts (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
+            language (string): the ISO code for the language of the input texts (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
-        if lang == constants.NL:
+        if language == constants.NL:
             self.model = constants.NL_SPACY_MODEL
             self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.NL_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
-        elif lang == constants.EN:
+        elif language == constants.EN:
             self.model = constants.EN_SPACY_MODEL
             self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.EN_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
-            raise ValueError(f"settingsanalysis.py: unknown language {lang}")
+            raise ValueError(f"settingsanalysis.py: unknown language {language}")
 
         self.entity_list = [line.split(",") for line in self.entity_list]
 
 
     def __sort_and_filter_results(self, results):
+        results = [(x[0], x[1], int(x[2]), x[3], x[4]) for x in results]
         results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id", "location type"]).sort_values(by=["text id", "character id"])
         results_df.insert(3, "storyid", ["ST" + str(text_id) for text_id in results_df["text id"]])
         return results_df[["text", "label", "storyid", "character id", "location type"]].reset_index(drop=True)
@@ -191,26 +192,11 @@ class SettingAnalyzer:
         return entity_data_copy
 
 
-    def __select_frequent_entities(self, entity_data):
-        counts_series = entity_data[["text", "label", "storyid", "location type"]].value_counts()
-        counts_df = counts_series.reset_index(name="count")
-        selected_indices = {}
-        for index, row in counts_df.sort_values(by=["count", "text"],
-                                                ascending=[False, True]).iterrows():
-            key = " ".join([str(row["storyid"]), row["label"]])
-            if key not in selected_indices.keys() or (
-                row["label"] in self.LOCATION_LABELS and
-                (len(selected_indices[key][3]) == 0 or not re.search("[A-Z]",selected_indices[key][3][0])) and
-                len(row["location type"]) > 0 and re.search("[A-Z]",row["location type"][0])):
-                selected_indices[key] = [row["text"], row["label"], row["storyid"], row["location type"]]
-        return list(selected_indices.values())
-
-
     def __select_earliest_entities(self, entity_data):
         counts_series = entity_data[["text", "label", "storyid", "location type"]].value_counts()
         counts_df = counts_series.reset_index(name="count").set_index(["text", "label", "storyid"])
         selected_indices = {}
-        for index, row in entity_data.sort_values(by=["storyid", "character id"]).iterrows():
+        for index, row in entity_data.iterrows():
             key = " ".join([str(row["storyid"]), row["label"]])
             if (key not in selected_indices.keys() and
                 (row["label"] not in self.LOCATION_LABELS or 
