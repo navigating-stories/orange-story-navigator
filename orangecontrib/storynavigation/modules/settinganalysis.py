@@ -102,7 +102,6 @@ class SettingAnalyzer:
 
         self.entity_list = [line.split(",") for line in self.entity_list]
 
-
     def __sort_and_filter_results(self, results):
         results = [(x[0], x[1], int(x[2]), x[3], x[4]) for x in results]
         results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id", "location type"]).sort_values(by=["text id", "character id"])
