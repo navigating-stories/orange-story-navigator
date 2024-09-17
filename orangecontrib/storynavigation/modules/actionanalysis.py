@@ -383,8 +383,8 @@ class ActionTagger:
             lang (string): the ISO code for the language of the input stories (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
         else:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
