@@ -23,6 +23,7 @@ class SettingAnalyzer:
         language (str): ISO string of the language of the input text
         n_segments (int): Number of segments to split each text into
         text_tuples (list): binary tuple: text (str) and storyid
+        story_elements (list of lists): tokens with their Spacy analysis
         callback: function in widget to show the progress of this process
     """
 
@@ -34,9 +35,10 @@ class SettingAnalyzer:
     ENTITY_CACHE_FILE_NAME = "entity_cache.json"
 
 
-    def __init__(self, language, n_segments, text_tuples, story_elements, callback=None):
+    def __init__(self, language, n_segments, text_tuples, story_elements, user_defined_entities, callback=None):
         self.text_tuples = text_tuples
         self.n_segments = n_segments
+        self.user_defined_entities = user_defined_entities
         self.callback = callback
 
         self.__setup_required_nlp_resources(language)
@@ -91,16 +93,16 @@ class SettingAnalyzer:
         """
         if language == constants.NL:
             self.model = constants.NL_SPACY_MODEL
-            self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
+            #self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.NL_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif language == constants.EN:
             self.model = constants.EN_SPACY_MODEL
-            self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
+            #self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.EN_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"settingsanalysis.py: unknown language {language}")
 
-        self.entity_list = [line.split(",") for line in self.entity_list]
+        # self.entity_list = [line.split(",") for line in self.entity_list]
 
     def __sort_and_filter_results(self, results):
         results = [(x[0], x[1], int(x[2]), x[3], x[4]) for x in results]
@@ -120,11 +122,11 @@ class SettingAnalyzer:
         return self.__sort_and_filter_results(results)
 
 
-    def __analyze_text_with_list(self, text, nlp, entity_list):
+    def __analyze_text_with_list(self, text, nlp, user_defined_entities):
         matcher = Matcher(nlp.vocab)
         for entity_group in self.ENTITY_GROUPS:
             patterns = [[{"lower": entity_token} for entity_token in entity_text.lower().split()]
-                for entity_label, entity_text in entity_list
+                for entity_text, entity_label in list(user_defined_entities.items())
                     if entity_label in entity_group]
             matcher.add(entity_group[0], patterns)
         tokens = nlp(text)
@@ -170,7 +172,7 @@ class SettingAnalyzer:
 
 
     def __process_text(self, text_id, text, nlp, spacy_analysis):
-        list_analysis = self.__analyze_text_with_list(text, nlp, self.entity_list)
+        list_analysis = self.__analyze_text_with_list(text, nlp, self.user_defined_entities)
         combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
         combined_analysis = self.__expand_locations(combined_analysis)
         combined_analysis = self.__filter_dates(combined_analysis)
