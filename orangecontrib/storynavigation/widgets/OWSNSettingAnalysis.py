@@ -1,7 +1,8 @@
+import os
 import re
 
 from Orange.data import Table
-from Orange.widgets.settings import Setting, DomainContextHandler
+from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
 from orangecontrib.text.corpus import Corpus
@@ -15,7 +16,7 @@ from storynavigation.modules.settinganalysis import SettingAnalyzer
 import storynavigation.modules.util as util
 
 from AnyQt.QtWidgets import QAbstractItemView, QHeaderView, QTableView
-from storynavigation.widgets.OWSNActorAnalysis import DocumentTableView, DocumentListModel, DocumentsFilterProxyModel
+from storynavigation.widgets.OWSNActorAnalysis import DocumentTableView, DocumentListModel, DocumentsFilterProxyModel, _count_matches
 from typing import Set
 from orangecontrib.text.widgets.utils import widgets
 from Orange.data.io import FileFormat
@@ -31,6 +32,12 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     n_segments = 1
+    user_defined_entities_file = os.path.join(os.getcwd(),
+        "orangecontrib/storynavigation/resources",
+        ("dutch" if language == "nl" else "english") + "_entities.csv")
+    recent_files = [user_defined_entities_file]
+    ENTITIES_FILE_YES = "yes: use this file"
+    ENTITIES_FILE_NO = "no: skip this file"
     entity_colors = { "DATE": "lightblue",
                       "EVENT": "salmon",
                       "FAC": "silver",
@@ -59,23 +66,77 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.story_elements = []
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
-
-        self.make_language_selection_menu()
-
-        self.recent_files = []
         self.user_defined_entities = {}
-        # next 9 lines copied from Corpus widget
-        fbox = gui.widgetBox(self.controlArea, "Corpus file", orientation=0)
+        self.use_user_defined_entities_file = self.ENTITIES_FILE_YES
+        self.read_entities_file(self.user_defined_entities_file)
+
+        self.__make_language_selection_menu()
+        self.__make_entities_file_dialog()
+        self.__make_regexp_filter_dialog()
+        self.__make_document_viewer()
+
+
+    def __make_language_selection_menu(self):
+        self.select_language_combo = gui.comboBox(
+            widget=self.controlArea,
+            master=self,
+            label="Language",
+            value="language",
+            items=constants.SUPPORTED_LANGUAGES,
+            sendSelectedValue=True,
+            currentIndex=1,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+        self.controlArea.layout().addWidget(self.select_language_combo)
+        self.select_language_combo.setEnabled(True)
+
+
+    def __make_entities_file_selection_menu(self):
+        self.select_language_combo = gui.comboBox(
+            widget=self.controlArea,
+            master=self,
+            label="",
+            value="use_user_defined_entities_file",
+            items=[self.ENTITIES_FILE_YES, self.ENTITIES_FILE_NO],
+            sendSelectedValue=True,
+            currentIndex=0,
+            callback=self.__process_use_user_defined_entities_file_change,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+        self.controlArea.layout().addWidget(self.select_language_combo)
+        self.select_language_combo.setEnabled(True)
+
+
+    def __make_entities_file_dialog(self):
+        # code copied from Corpus widget
+        fbox = gui.widgetBox(self.controlArea, "Entities file", orientation=0)
         self.file_widget = widgets.FileWidget(
             recent_files=self.recent_files, icon_size=(16, 16),
-            on_open=self.open_file, dialog_format=self.dlgFormats,
-            dialog_title='Open Orange Document Corpus',
+            on_open=self.read_entities_file, dialog_format=self.dlgFormats,
+            dialog_title='Open entities file',
             reload_label='Reload', browse_label='Browse',
-            allow_empty=False, minimal_width=250,
+            allow_empty=False, minimal_width=150,
         )
         fbox.layout().addWidget(self.file_widget)
+        self.__make_entities_file_selection_menu()
 
-        # next 18 lines copied from CorpusViewer widget
+
+    def __make_regexp_filter_dialog(self):
+        # code copied from CorpusViewer widget
+        self.regexp_filter = ""
+        self.filter_input = gui.lineEdit(
+            self.mainArea,
+            self,
+            "regexp_filter",
+            orientation=Qt.Horizontal,
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+            label="RegExp Filter:",
+            callback=self.refresh_search,
+        )
+
+
+    def __make_document_viewer(self):
+        # code copied from CorpusViewer widget
         self.splitter = QSplitter(orientation=Qt.Horizontal, childrenCollapsible=False)
         self.doc_list = DocumentTableView()
         self.doc_list.setSelectionBehavior(QTableView.SelectRows)
@@ -95,14 +156,35 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.mainArea.layout().addWidget(self.splitter)
 
 
-    def open_file(self, user_defined_entities_file):
+    def __update_stories_selected(self):
+        self.stories_selected = []
+        regexp = re.compile(self.regexp_filter)
+        for i in range(0, len(self.text_tuples)):
+            if regexp.search(self.text_tuples[i][0]):
+                self.stories_selected.append(i)
+
+
+    def refresh_search(self):
+        if self.text_tuples is not None:
+            self.doc_list.model().set_filter_string(self.regexp_filter)
+            self.__update_stories_selected()
+            self.__visualize_text_data()
+
+
+    def read_entities_file(self, user_defined_entities_file):
+        self.user_defined_entities_file = user_defined_entities_file
         self.user_defined_entities = {}
-        with open(user_defined_entities_file) as file:
-            for line in file:
-                fields = line.strip().split(",")
-                self.user_defined_entities[fields[1]] = fields[0]
+        if self.use_user_defined_entities_file == self.ENTITIES_FILE_YES:
+            with open(user_defined_entities_file) as file:
+                for line in file:
+                    fields = line.strip().split(",")
+                    self.user_defined_entities[fields[1]] = fields[0]
         if self.story_elements:
-            self.set_story_elements(self.story_elements)
+            self.reset_story_elements(self.story_elements)
+
+
+    def __process_use_user_defined_entities_file_change(self):
+        self.read_entities_file(self.user_defined_entities_file)
 
 
     def get_selected_indexes(self) -> Set[int]:
@@ -115,32 +197,23 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.__visualize_text_data()
 
 
-    def make_language_selection_menu(self):
-        self.select_language_combo = gui.comboBox(
-            widget=self.controlArea,
-            master=self,
-            label="Language",
-            value="language",
-            items=constants.SUPPORTED_LANGUAGES,
-            sendSelectedValue=True,
-            currentIndex=1,
-            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
-        )
-        self.controlArea.layout().addWidget(self.select_language_combo)
-        self.select_language_combo.setEnabled(True)
-
-
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs."""
 
         if story_elements is not None:
+            self.stories_selected = []
             self.story_elements = story_elements
+            self.reset_story_elements(story_elements)
+
+
+    def reset_story_elements(self, story_elements=None):
+        if story_elements is not None:
             self.text_tuples = self.make_text_tuples(story_elements)
             self.__action_analyze_setting_wrapper()
 
-            self.doc_list_model.setup_data(self.make_document_names(self.text_tuples), None)
+            self.doc_list_model.setup_data(self.make_document_names(self.text_tuples), [text for text, text_id in self.text_tuples])
 
 
     def make_document_names(self, text_tuples):
@@ -198,7 +271,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def on_done(self, result) -> None:
-        self.__visualize_text_data()
+        self.refresh_search()
         self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.settings_analysis))
 
 
