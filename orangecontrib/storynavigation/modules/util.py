@@ -7,7 +7,7 @@ import os
 import string
 import pandas as pd
 import storynavigation.modules.constants as constants
-from nltk.tokenize import sent_tokenize
+import nltk
 nltk.download('punkt_tab')
 
 
@@ -116,7 +116,7 @@ def preprocess_text(text):
     quote_pattern = r'[\'\"‘’“”]'
     processed_text_step3 = re.sub(quote_pattern, '', processed_text_step2)
     # return sentences (tokenized from text)
-    return sent_tokenize(processed_text_step3)
+    return nltk.sent_tokenize(processed_text_step3)
 
 def preprocess_text_complex(text):
     """Preprocesses story text. A lot of stories in the Corona in de stad dataset
