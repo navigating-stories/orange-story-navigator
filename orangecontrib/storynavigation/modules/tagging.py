@@ -496,19 +496,19 @@ class Tagger:
             lang (string): the ISO code for the language of the input stories (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.pronouns = constants.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            self.pronouns = constants.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split("\n")
             self.model = constants.NL_SPACY_MODEL
-            self.past_tense_verbs = constants.NL_PAST_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.present_tense_verbs = constants.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.false_positive_verbs = constants.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.past_tense_verbs = constants.NL_PAST_TENSE_FILE.read_text(encoding="utf-8").split("\n")
+            self.present_tense_verbs = constants.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split("\n")
+            self.false_positive_verbs = constants.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split("\n")
         else:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.pronouns = constants.EN_PRONOUNS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            self.pronouns = constants.EN_PRONOUNS_FILE.read_text(encoding="utf-8").split("\n")
             self.model = constants.EN_SPACY_MODEL
-            self.past_tense_verbs = constants.EN_PAST_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.present_tense_verbs = constants.EN_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split(os.linesep)
-            self.false_positive_verbs = constants.EN_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.past_tense_verbs = constants.EN_PAST_TENSE_FILE.read_text(encoding="utf-8").split("\n")
+            self.present_tense_verbs = constants.EN_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split("\n")
+            self.false_positive_verbs = constants.EN_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split("\n")
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
         self.pronouns = [item for item in self.pronouns if len(item) > 0]
