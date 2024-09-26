@@ -8,6 +8,8 @@ import string
 import pandas as pd
 import storynavigation.modules.constants as constants
 from nltk.tokenize import sent_tokenize
+nltk.download('punkt_tab')
+
 
 def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
     """Verifies if token is valid word
