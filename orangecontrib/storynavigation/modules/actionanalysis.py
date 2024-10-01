@@ -76,7 +76,7 @@ class ActionTagger:
         for index, row in df_filtered.iterrows():
             current_row_ents = []
             for col in cust_tag_cols:
-                if (not pd.isna(row[col])) and (row[col] != 'nan'):
+                if (not pd.isna(row[col])) and (row[col] not in ['?', 'nan']):
                     current_row_ents.append({"start": int(row['token_start_idx']), "end": int(row['token_end_idx']), "label": row[col]})                    
 
             # Convert each dictionary to a tuple of (key, value) pairs
@@ -221,8 +221,8 @@ class ActionTagger:
             current_frame['classification'] = c_col
             current_frame.rename(columns={cust_tag_col: 'category'}, inplace=True)
             combined_df = pd.concat([combined_df, current_frame], axis=0)
-
-        combined_df = combined_df[combined_df['category'] != 'nan']
+        
+        combined_df = combined_df[~combined_df['category'].isin(['?', 'nan'])]
         return combined_df.reset_index(drop=True)
     
     def calculate_customfreq_table(self, df, selected_stories=None):
@@ -383,8 +383,8 @@ class ActionTagger:
             lang (string): the ISO code for the language of the input stories (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
         else:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
+            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]

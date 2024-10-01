@@ -24,7 +24,6 @@ def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in taggin
     word = get_normalized_token(token)
     return (word not in stopwords) and len(word) > 1 and is_only_punctuation(word) != '-'
 
-
 def entity_tag_already_exists(ents, start, end):
     for ent in ents:
         if (ent['start'] == start and ent['end'] == end):
@@ -306,3 +305,18 @@ def find_verb_ancestor(token):
 
     # If no verb ancestor found, return None
     return None
+
+def tupelize_corpus(corpus: Corpus):
+    "Transform an Orange text corpus into a list of tuples of (text, story id)"
+    stories = []
+    for idx, _ in enumerate(corpus):
+        text = ''
+        for field in corpus.domain.metas:
+            text_field_name = str(field)
+            if text_field_name.lower() in ['text', 'content']:
+                text = str(corpus[idx, text_field_name])
+
+        if len(text) > 0:
+            stories.append((text, idx))
+
+    return stories

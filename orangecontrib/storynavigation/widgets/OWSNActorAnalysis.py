@@ -4,6 +4,8 @@ import re
 import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
+import pandas as pd
+from storynavigation.modules import util
 
 # Imports from Qt
 from AnyQt.QtCore import (
@@ -568,6 +570,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs.         
         """
+        self.valid_stories = []
         if (stories is not None):
             if not isinstance(stories, Corpus):
                 self.Error.wrong_input_for_stories()
@@ -594,6 +597,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs."""
 
+        self.valid_stories = []
+        
         if story_elements is not None:
             if isinstance(story_elements, Corpus): 
                 self.Error.wrong_input_for_elements()
