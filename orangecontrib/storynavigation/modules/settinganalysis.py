@@ -93,11 +93,9 @@ class SettingAnalyzer:
         """
         if language == constants.NL:
             self.model = constants.NL_SPACY_MODEL
-            #self.entity_list = constants.NL_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.NL_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif language == constants.EN:
             self.model = constants.EN_SPACY_MODEL
-            #self.entity_list = constants.EN_ENTITIES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
             self.time_words = constants.EN_TIME_WORDS_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"settingsanalysis.py: unknown language {language}")

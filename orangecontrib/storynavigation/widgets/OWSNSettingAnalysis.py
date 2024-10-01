@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 
 from Orange.data import Table
@@ -32,10 +33,11 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     n_segments = 1
-    user_defined_entities_file = os.path.join(os.getcwd(),
-        "orangecontrib/storynavigation/resources",
+    user_defined_entities_file_name = os.path.join(
+        str(constants.PKG),
+        str(constants.RESOURCES_SUBPACKAGE),
         ("dutch" if language == "nl" else "english") + "_entities.csv")
-    recent_files = [user_defined_entities_file]
+    recent_files = [user_defined_entities_file_name]
     ENTITIES_FILE_YES = "yes: use this file"
     ENTITIES_FILE_NO = "no: skip this file"
     entity_colors = { "DATE": "lightblue",
@@ -68,7 +70,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.controlArea.setSizePolicy(size_policy)
         self.user_defined_entities = {}
         self.use_user_defined_entities_file = self.ENTITIES_FILE_YES
-        self.read_entities_file(self.user_defined_entities_file)
+        self.read_entities_file(self.user_defined_entities_file_name)
 
         self.__make_language_selection_menu()
         self.__make_entities_file_dialog()
@@ -171,20 +173,23 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.__visualize_text_data()
 
 
-    def read_entities_file(self, user_defined_entities_file):
-        self.user_defined_entities_file = user_defined_entities_file
+    def read_entities_file(self, user_defined_entities_file_name):
+        self.user_defined_entities_file_name = user_defined_entities_file_name
         self.user_defined_entities = {}
         if self.use_user_defined_entities_file == self.ENTITIES_FILE_YES:
-            with open(user_defined_entities_file) as file:
-                for line in file:
-                    fields = line.strip().split(",")
-                    self.user_defined_entities[fields[1]] = fields[0]
+            user_defined_entities_lines = pathlib.Path(user_defined_entities_file_name).read_text(encoding="utf-8").strip().split("\n")
+            for line in user_defined_entities_lines:
+                try:
+                    entity_class, entity_token = line.strip().split(",")
+                    self.user_defined_entities[entity_token] = entity_class
+                except:
+                    pass
         if self.story_elements:
             self.reset_story_elements(self.story_elements)
 
 
     def __process_use_user_defined_entities_file_change(self):
-        self.read_entities_file(self.user_defined_entities_file)
+        self.read_entities_file(self.user_defined_entities_file_name)
 
 
     def get_selected_indexes(self) -> Set[int]:
