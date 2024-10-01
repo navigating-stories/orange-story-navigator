@@ -26,6 +26,7 @@ class Tagger:
         self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
+        # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
         self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
         if custom_tags_and_word_column is not None:

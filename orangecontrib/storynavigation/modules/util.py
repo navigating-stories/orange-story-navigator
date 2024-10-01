@@ -7,6 +7,7 @@ import os
 import string
 import pandas as pd
 import storynavigation.modules.constants as constants
+from orangecontrib.text.corpus import Corpus
 import nltk
 nltk.download('punkt_tab')
 
