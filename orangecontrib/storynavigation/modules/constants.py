@@ -38,8 +38,6 @@ NL_PRESENT_TENSE_FILENAME = "present_tense_verbs_dutch.txt"
 NL_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_dutch.txt"
 # filename from which to retrieve a list of dutch stopwords
 NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
-# filename from which to retrieve a list of dutch entities
-NL_ENTITIES_FILENAME = "dutch_entities.csv"
 # filename from which to retrieve a list of dutch time words
 NL_TIME_WORDS_FILENAME = "dutch_time_words.csv"
 
@@ -53,8 +51,6 @@ EN_PRESENT_TENSE_FILENAME = "present_tense_verbs_english.txt"
 EN_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_english.txt"
 # filename from which to retrieve a list of english stopwords
 EN_PRONOUNS_FILENAME = "englishpronouns.txt"
-# filename from which to retrieve a list of english entities
-EN_ENTITIES_FILENAME = "english_entities.csv"
 # filename from which to retrieve a list of english time words
 EN_TIME_WORDS_FILENAME = "english_time_words.csv"
 
@@ -101,14 +97,6 @@ EN_PRESENT_TENSE_FILE = (
 
 EN_FALSE_POSITIVE_VERB_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_FALSE_POSITIVE_VERB_FILENAME
-)
-
-NL_ENTITIES_FILE = (
-    PKG / RESOURCES_SUBPACKAGE / NL_ENTITIES_FILENAME
-)
-
-EN_ENTITIES_FILE = (
-    PKG / RESOURCES_SUBPACKAGE / EN_ENTITIES_FILENAME
 )
 
 NL_TIME_WORDS_FILE = (
