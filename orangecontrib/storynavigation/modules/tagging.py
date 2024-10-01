@@ -26,7 +26,8 @@ class Tagger:
         self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
+        # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -155,7 +156,8 @@ class Tagger:
             tags = []
             # store all spacy nlp tags and dependency info for each token in the sentence in a tuple
             for token in tagged_sentence:
-                tags.append((token.text, token.pos_, token.tag_, token.dep_, token)) # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, the spacy token object itself)
+                token_ne = "O" if token.ent_iob_ == "O" else token.ent_iob_ + "-" + token.ent_type_
+                tags.append((token.text, token.pos_, token.tag_, token.dep_, token_ne, token)) # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, named entity tag, the spacy token object itself)
 
             tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+") # word tokenizer
             spans = list(tokenizer.span_tokenize(sentence)) # generate token spans in sentence (start and end indices)
@@ -165,10 +167,11 @@ class Tagger:
                 if story_df_row is not None:
                     story_df_rows.append(story_df_row)
 
-            # special case: first word in a sent can be a pronoun
-            if any(word == first_word_in_sent for word in self.pronouns):
-                tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
-                story_df_rows.append(tmp_row)
+# 20240909 ET: why? commented away
+#           # special case: first word in a sent can be a pronoun
+#           if any(word == first_word_in_sent for word in self.pronouns):
+#               tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
+#               story_df_rows.append(tmp_row)
 
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
         return story_df
@@ -179,11 +182,13 @@ class Tagger:
         Args:
             storyid (int): a number uniquely identifying a specific story
             sentence (string): a sentence within this story
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
             span (tuple): 2-component tuple. First component is the matching start index in the sentence of the given tag.text. Second component is the matching end index.
 
@@ -192,46 +197,25 @@ class Tagger:
         """
         row = None
         if self.__is_valid_token(tag):
+            vb = util.find_verb_ancestor(tag)
+            vb_text = '-' if vb is None else vb.text
             if self.__is_subject(tag):
-                vb = util.find_verb_ancestor(tag)
-                vb_text = '-'
-                if vb is not None:
-                    vb_text = vb.text
-                if self.__is_pronoun(tag):
-                    if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, True, vb_text]
-                    else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SP", tag[1], tag[2], tag[3], True, True, False, vb_text]
-                else:
-                    if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, True, vb_text]
-                    else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "SNP", tag[1], tag[2], tag[3], False, True, False, vb_text]
+                story_navigator_tag = "SP" if self.__is_pronoun(tag) else "SNP"
+            elif self.__is_pronoun(tag):
+                story_navigator_tag = "NSP"
+            elif self.__is_noun_but_not_pronoun(tag):
+                story_navigator_tag = "NSNP"
             else:
-                if self.__is_pronoun(tag):
-                    vb = util.find_verb_ancestor(tag)
-                    vb_text = '-'
-                    if vb is not None:
-                        vb_text = vb.text
-                    if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, True, vb_text]
-                    else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSP", tag[1], tag[2], tag[3], True, False, False, vb_text]
-                elif self.__is_noun_but_not_pronoun(tag):
-                    vb = util.find_verb_ancestor(tag)
-                    vb_text = '-'
-                    if vb is not None:
-                        vb_text = vb.text
-                    if self.__is_active_voice_subject(tag):
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, True, vb_text]
-                    else:
-                        row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), "NSNP", tag[1], tag[2], tag[3], False, False, False, vb_text]
-                else:
-                    row = self.__process_non_noun_tag(storyid, sentence, tag)
+                story_navigator_tag = "-"
+            if story_navigator_tag == "-":
+                row = self.__process_non_noun_tag(storyid, sentence, tag)
+            else:
+                row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), story_navigator_tag,
+                       tag[1], tag[2], tag[3], tag[4], True, True, self.__is_active_voice_subject(tag), vb_text]
         return row
     
     def __process_english_potential_action(self, tag):
-        if (tag[4].pos_ == "VERB"):
+        if (tag[-1].pos_ == "VERB"):
             # VB  --  verb, base form
             # VBD  --  verb, past tense
             # VBG  --  verb, gerund or present participle
@@ -240,9 +224,9 @@ class Tagger:
             # VBZ  --  verb, 3rd person singular present
             
             # Classify verb as either past or present tense
-            if tag[4].tag_ in ['VB', 'VBG', 'VBP', 'VBZ']:
+            if tag[-1].tag_ in ['VB', 'VBG', 'VBP', 'VBZ']:
                 return "PRES_VB"
-            elif tag[4].tag_ in ['VBD', 'VBN']:
+            elif tag[-1].tag_ in ['VBD', 'VBN']:
                 return "PAST_VB"
             else:                                                                                                                                       
                 return "-"
@@ -251,7 +235,7 @@ class Tagger:
 
     def __process_dutch_potential_action(self, tag):
         # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
-        if (tag[4].pos_ == "VERB" and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
+        if (tag[-1].pos_ == "VERB" and tag[-1].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
             # Present tense == WW|pv|tgw or WW|pv|conj
             #   * Potentially include WW|inf category (see below)
             # Past tense == WW|pv|verl
@@ -264,9 +248,9 @@ class Tagger:
             # VERB WW|inf subcategory	                        4207 cases 
 
             # Classify verb as either past or present tense
-            if (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
+            if (tag[-1].tag_.startswith('WW|pv|tgw|') or tag[-1].tag_.startswith('WW|pv|conj|') or tag[-1].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
                 return "PRES_VB"
-            elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
+            elif (tag[-1].tag_.startswith('WW|pv|verl|') or tag[-1].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
                 return "PAST_VB"
             else:                                                                                                                                       # Cannot infer from fine-grained Verb tags whether this is present or past tense, rather don't give the Verb a tense at all and don't even tag it as a Verb (to be safe)
                 # WW|od cases will pass through here
@@ -288,11 +272,13 @@ class Tagger:
         Args:
             storyid (int): a number uniquely identifying a specific story
             sentence (string): a sentence within this story
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
             span (tuple): 2-component tuple. First component is the matching start index in the sentence of the given tag.text. Second component is the matching end index.
 
@@ -302,30 +288,33 @@ class Tagger:
         row = None
         if self.__is_valid_token(tag):
             tense_value = self.__process_potential_action(tag)
-            row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], False, False, False, '-']
+            row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], tag[4], False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):
         """Verifies if token is valid word
 
         Args:
-            token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
+            token (spacy.tokens.token.Token): tagged Token | tuple : 5 components - (text, tag, fine-grained tag, dependency)
 
         Returns:
             string, boolean : cleaned token text, True if the input token is a valid word, False otherwise
         """
         word = util.get_normalized_token(token)
+
         return (word not in self.stopwords) and len(word) > 1 and util.is_only_punctuation(word) != '-'
 
     def __is_subject(self, tag):
         """Checks whether a given pos-tagged token is a subject of its sentence or not
 
         Args:
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
         Returns:
             boolean: True if the given token is a subject of its sentence - False otherwise
@@ -339,11 +328,13 @@ class Tagger:
         """Checks whether a given pos-tagged token is involved in an active voice subject role in the sentence
 
         Args:
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
         Returns:
             boolean: True if the given token is an active voice subject of its sentence - False otherwise
@@ -356,11 +347,13 @@ class Tagger:
         """Checks whether a given pos-tagged token is a pronoun or not
 
         Args:
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
         Returns:
             boolean: True if the given token is a pronoun - False otherwise
@@ -381,11 +374,13 @@ class Tagger:
         """Checks whether a given pos-tagged token is a non-pronoun noun (or not)
 
         Args:
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
         Returns:
             boolean: True if the given token is a non-pronoun noun - False otherwise
@@ -440,11 +435,13 @@ class Tagger:
         """Creates a Python dictionary where the keys are each column name generated by `__generate_customtag_column_names()` and the values are a list of strings which belong to the category / tag / label represented by the key
 
         Args:
-            tag (tuple): a tuple with 4 components:
+            tag (tuple): a tuple with 6 components:
                         1) text: the text of the given token
                         2) pos_: the coarse-grained POS tag of token (string)
                         3) tag_: the fine-grained POS tag of token (string)
                         4) dep_: the syntactic linguistic dependency relation of the token (string)
+                        5) the named entity tag of the token
+                        6) the complete spacy analysis of the token
 
         Returns:
             list: a list where the nth element is a boolean value (either True or False) indicating whether tag.text belongs to the category represented by the nth custom tag column in self.customtag_column_names

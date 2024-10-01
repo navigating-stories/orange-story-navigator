@@ -35,7 +35,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     word_column = 'word'
-    n_segments = 0 # this selects the the first entry in the list constants.N_STORY_SEGMENTS 
+    n_segments = 1
 
     def __init__(self):
         super().__init__()
@@ -164,8 +164,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
     def __generate_dataset_level_data(self):
         n_segments = int(self.n_segments)
-        if n_segments == 0: # if the user does not choose explicitly the value in the menu, the value will be 0.
-            n_segments = 1 
         if self.stories is not None:
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:

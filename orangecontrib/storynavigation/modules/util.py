@@ -8,7 +8,22 @@ import string
 import pandas as pd
 import storynavigation.modules.constants as constants
 from orangecontrib.text.corpus import Corpus
-from nltk.tokenize import sent_tokenize
+import nltk
+nltk.download('punkt_tab')
+
+
+def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
+    """Verifies if token is valid word
+
+    Args:
+        token (spacy.tokens.token.Token): tagged Token | tuple : 6 components - (text, tag, fine-grained tag, dependency, ne tag, spacy analysis)
+        stopwords (list): list of stopwords to ignore
+
+    Returns:
+        string, boolean : cleaned token text, True if the input token is a valid word, False otherwise
+    """
+    word = get_normalized_token(token)
+    return (word not in stopwords) and len(word) > 1 and is_only_punctuation(word) != '-'
 
 def entity_tag_already_exists(ents, start, end):
     for ent in ents:
@@ -46,7 +61,7 @@ def get_normalized_token(token):
     """cleans punctuation from token and verifies length is more than one character
 
     Args:
-        token (spacy.tokens.token.Token): tagged Token | tuple : 4 components - (text, tag, fine-grained tag, dependency)
+        token (spacy.tokens.token.Token): tagged Token | tuple : 6 components - (text, tag, fine-grained tag, dependency, ne tag, spacy analysis)
 
     Returns:
         string: cleaned token text
@@ -101,7 +116,7 @@ def preprocess_text(text):
     quote_pattern = r'[\'\"‘’“”]'
     processed_text_step3 = re.sub(quote_pattern, '', processed_text_step2)
     # return sentences (tokenized from text)
-    return sent_tokenize(processed_text_step3)
+    return nltk.sent_tokenize(processed_text_step3)
 
 def preprocess_text_complex(text):
     """Preprocesses story text. A lot of stories in the Corona in de stad dataset
@@ -287,7 +302,7 @@ def find_verb_ancestor(token):
             if verb_ancestor:
                 return verb_ancestor
     elif isinstance(token, tuple):
-        return find_verb_ancestor(token[4])
+        return find_verb_ancestor(token[-1])
 
     # If no verb ancestor found, return None
     return None
