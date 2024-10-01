@@ -98,7 +98,7 @@ show_missing = true
 source = ['orangecontrib/storynavigation']
 
 [tool.bumpversion]
-current_version = "0.0.20"
+current_version = "0.0.23"
 
 [[tool.bumpversion.files]]
 filename = "orangecontrib/storynavigation/__init__.py"
