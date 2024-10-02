@@ -75,11 +75,30 @@ class Tagger:
             if callback:
                 callback((c / len(text_tuples) * 100))
 
+        # Check if custom tags and word column are provided
         if self.custom_tags is not None and self.word_column is not None:
+            
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
             collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
-            collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
+            
+            def lemmatize_if_verb(token_text, spacy_tag):                
+                if spacy_tag == "VERB" or spacy_tag == "AUX":
+                    doc = nlp(token_text)
+                    # Return the lemma if the token is a verb
+                    return ' '.join([token.lemma_ for token in doc])
+                else:
+                    # Return the original token_text if it's not a verb
+                    return token_text
+
+            # Apply lemmatization based on the spacy_tag
+            collection_df['lemmatized_' + self.word_column] = collection_df.apply(
+                lambda row: lemmatize_if_verb(row['custom_' + self.word_column], row['spacy_tag']), axis=1
+            )
+
+            # Merge the custom word list into elements using the new lemmatized column
+            collection_df = pd.merge(collection_df, self.custom_tags, left_on='lemmatized_' + self.word_column, right_on=self.word_column, how='left')            
             collection_df = collection_df.drop(columns=[self.word_column])
+        
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
