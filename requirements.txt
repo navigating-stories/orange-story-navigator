@@ -24,3 +24,6 @@ openTSNE==1.0.2
 pyqtgraph==0.13.7
 orange-canvas-core==0.2.2
 matplotlib==3.9.2
+scikit-learn==1.4.2
+python-louvain==0.16
+shapely==2.0.6
