@@ -12,6 +12,7 @@ import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from collections import Counter
 from spacy.matcher import Matcher
+from pathlib import Path
 
 
 class SettingAnalyzer:
@@ -32,7 +33,7 @@ class SettingAnalyzer:
     LOCATION_LABELS = ["LOC", "FAC", "GPE"]
     ENTITY_GROUPS = [DATE_LABELS, EVENT_LABELS, LOCATION_LABELS]
     ENTITY_LABELS = DATE_LABELS + EVENT_LABELS + LOCATION_LABELS
-    ENTITY_CACHE_FILE_NAME = "entity_cache.json"
+    ENTITY_CACHE_FILE_NAME = os.path.join(str(Path.home()), "orange_story_navigator_wikidata_entity_cache.json")
 
 
     def __init__(self, language, n_segments, text_tuples, story_elements, user_defined_entities, callback=None):
