@@ -1,16 +1,11 @@
 """Modules required for tagger widget in the Orange Story Navigator add-on.
 """
 
-import os
-import string
 import pandas as pd
-import math
 import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
-from Orange.data.pandas_compat import table_to_frames
-import spacy
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -19,13 +14,15 @@ class Tagger:
 
     Args:
         n_segments (int): Number of segments to split each story into.
+        use_infinitives (bool): Whether to use infinitives for verbs.
     """
-    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None, callback=None):
+    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None, callback=None, use_infinitives=False):
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
+        self.use_infinitives = use_infinitives
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
         self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
@@ -55,6 +52,7 @@ class Tagger:
             num_words_in_sentence_column.append(len(spans))
         return num_words_in_sentence_column
 
+    
     def __process_stories(self, nlp, text_tuples, callback):
         """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
 
@@ -68,46 +66,53 @@ class Tagger:
 
         collection_df = pd.DataFrame()
         c = 1
+
+        # Process each story in the text_tuples
         for story_tuple in text_tuples:
+            # Process the story and append the result to collection_df
             story_df = self.__process_story(story_tuple[1], story_tuple[0], nlp)
             collection_df = pd.concat([collection_df, story_df], axis=0)
-            c+=1
+            c += 1
             if callback:
                 callback((c / len(text_tuples) * 100))
-
-        # Check if custom tags and word column are provided
+        
+        # Process custom tags and word column if provided
         if self.custom_tags is not None and self.word_column is not None:
-            
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
-            collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
+            collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!""-')
             
-            def lemmatize_if_verb(token_text, spacy_tag):                
-                if spacy_tag == "VERB" or spacy_tag == "AUX":
-                    doc = nlp(token_text)
-                    # Return the lemma if the token is a verb
-                    return ' '.join([token.lemma_ for token in doc])
-                else:
-                    # Return the original token_text if it's not a verb
-                    return token_text
+            if self.use_infinitives:
+                # Process the entire collection at once instead of token by token
+                def batch_lemmatization(text_column):
+                    # Apply spaCy NLP to the entire column
+                    docs = list(nlp.pipe(text_column))
+                    lemmatized_words = []
+                    for doc in docs:
+                        lemmatized_sentence = ' '.join([token.lemma_ if token.pos_ in {"VERB", "AUX"} else token.text for token in doc])
+                        lemmatized_words.append(lemmatized_sentence)
+                    return lemmatized_words
+                
+                # Apply batch processing on the 'custom_word_column'
+                collection_df['lemmatized_' + self.word_column] = batch_lemmatization(collection_df['custom_' + self.word_column])
+            else:
+                # If not using infinitives, simply copy the custom word column
+                collection_df['lemmatized_' + self.word_column] = collection_df['custom_' + self.word_column]
 
-            # Apply lemmatization based on the spacy_tag
-            collection_df['lemmatized_' + self.word_column] = collection_df.apply(
-                lambda row: lemmatize_if_verb(row['custom_' + self.word_column], row['spacy_tag']), axis=1
-            )
-
-            # Merge the custom word list into elements using the new lemmatized column
-            collection_df = pd.merge(collection_df, self.custom_tags, left_on='lemmatized_' + self.word_column, right_on=self.word_column, how='left')            
+            # Merge the custom tags with lemmatized column
+            collection_df = pd.merge(collection_df, self.custom_tags, left_on='lemmatized_' + self.word_column, right_on=self.word_column, how='left')
             collection_df = collection_df.drop(columns=[self.word_column])
         
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
+        # Clean up associated action columns
+        collection_df['associated_action'] = collection_df['associated_action'].str.lstrip('0123456789@#$!""-')
         collection_df['associated_action'] = collection_df['associated_action'].str.lstrip('0123456789@#$!“"-')
         collection_df['associated_action_lowercase'] = collection_df['associated_action'].str.lower()
-        lang_col_values = [self.lang] * len(collection_df)
-        collection_df['lang'] = lang_col_values
-        story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
-        collection_df['num_words_in_sentence'] = story_wordcount_values
+
+        # Add language column and word count
+        collection_df['lang'] = [self.lang] * len(collection_df)
+        collection_df['num_words_in_sentence'] = self.__calculate_story_wordcounts(collection_df)
         
         return collection_df
     

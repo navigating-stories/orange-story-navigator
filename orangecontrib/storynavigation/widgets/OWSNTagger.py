@@ -36,13 +36,19 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     language = 'nl'
     word_column = 'word'
     n_segments = 1
+    use_infinitives = Setting(False)  # New setting for infinitives option
 
     def __init__(self):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
+        
+        # Initialize tagger as None
+        self.tagger = None
+        
         self.stories = None # initialise list of documents (corpus)
         self.custom_tag_dict = None
         self.custom_tag_dict_columns = ['']
+        self.use_infinitives = False  # Initialize the use_infinitives attribute
         
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
@@ -68,7 +74,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         )
 
         self.controlArea.layout().addWidget(self.select_word_column_combo)
-
         self.select_n_segments_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
@@ -99,6 +104,18 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                 }
             """
         )
+
+        # Add the new checkbox for infinitives option
+        self.infinitives_checkbox = gui.checkBox(
+            widget=self.controlArea,
+            master=self,
+            value='use_infinitives',
+            label='Use infinitives to merge custom words',
+            callback=self.on_infinitives_changed,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+
+        self.controlArea.layout().addWidget(self.infinitives_checkbox)
 
     @Inputs.stories
     def set_stories(self, stories=None):
@@ -150,15 +167,22 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))                
 
+    def on_infinitives_changed(self):
+        # This method will be called when the checkbox state changes
+        # You can add any additional logic here if needed
+        pass
+
     def run(self, lang, n_segments, text_tuples, tuple, state: TaskState):
         def advance(progress):
             if state.is_interruption_requested():
                 raise InterruptedError
             state.set_progress_value(progress)
 
+        # Assign tagger here
         self.tagger = Tagger(
             lang=lang, n_segments=n_segments, text_tuples=text_tuples, 
-            custom_tags_and_word_column=tuple, callback=advance)
+            custom_tags_and_word_column=tuple, callback=advance,
+            use_infinitives=self.use_infinitives)
         
         return self.tagger.complete_data
 
