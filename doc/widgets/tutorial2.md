@@ -1,4 +1,4 @@
-Tutorial 2: Analyzing Evolving Sentiment in Fairytales
+# Tutorial 2: Analyzing Evolving Sentiment in Fairytales
 =======
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 

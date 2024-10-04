@@ -7,7 +7,7 @@ This tutorial is part of a series demonstrating the use of StoryNavigator widget
 ---
 
 ### Step 0: Research Question
-In this session, we will explore the distribution of tense (past, present, and future) across characters and actions within a corpus of stories. In adition, it shows how to combine data from multiple storynavigator widgets. The tutorial walks through each step of a predefined Orange workflow to answer the research question:
+In this session, we will explore the distribution of tense (past, present, and future) across characters and actions within a story or corpus of stories. In adition, it shows how to combine data from multiple storynavigator widgets. The tutorial walks through each step of a predefined Orange workflow to answer the research question:
 
 - Do characters perform more actions in the past, present, or future tense?
 
