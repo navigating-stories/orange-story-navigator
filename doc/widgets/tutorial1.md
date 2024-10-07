@@ -1,4 +1,4 @@
-# Tutorial 1: Examining Agency in a corpus of Dutch fairytales
+# Tutorial 1: Examining agency in a corpus of Dutch fairytales
 
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 

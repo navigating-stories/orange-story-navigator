@@ -1,4 +1,4 @@
-# Tutorial 6: Examining Tense Distribution in a Narrative Corpus
+# Tutorial 6: Examining tense distribution in a narrative corpus
 
 ![StoryNavigator Logo](../../doc/widgets/images/storynavigator_logo_small.png)
 

@@ -1,4 +1,4 @@
-# Tutorial 4: Creating a Radar Plot for Individual Characters Using Custom Word Lists in a Dutch Fairytale Corpus
+# Tutorial 4: Creating a radar plot for individual characters using custom word lists in a Dutch fairytale corpus
 
 ![StoryNavigator Logo](../../doc/widgets/images/storynavigator_logo_small.png)
 

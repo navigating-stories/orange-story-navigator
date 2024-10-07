@@ -1,4 +1,4 @@
-# Tutorial 5: Extracting Story Settings Using the Setting Widget
+# Tutorial 5: Extracting story settings using the setting widget
 
 ![StoryNavigator Logo](../../doc/widgets/images/storynavigator_logo_small.png)
 
