@@ -2,15 +2,14 @@
 """
 
 import os
-import string
 import pandas as pd
-import math
 import numpy as np
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 from nltk.tokenize import RegexpTokenizer
 from Orange.data.pandas_compat import table_to_frames
 import spacy
+nlp_spacy = spacy.load("nl_core_news_sm")
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -26,7 +25,11 @@ class Tagger:
         self.n_segments = n_segments
         self.custom_tags = None
         self.word_column = None
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 
+                                      'token_end_idx', 'story_navigator_tag', 'spacy_tag', 
+                                      'spacy_finegrained_tag', 'spacy_dependency', 'is_pronoun_boolean',
+                                      'is_sentence_subject_boolean', 'active_voice_subject_boolean',
+                                      'associated_action', 'tense']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -55,7 +58,8 @@ class Tagger:
         return num_words_in_sentence_column
 
     def __process_stories(self, nlp, text_tuples, callback):
-        """This function runs the nlp tagging process on a list of input stories and stores the resulting tagging information in a dataframe.
+        """This function runs the nlp tagging process on a list of input stories and 
+        stores the resulting tagging information in a dataframe.
 
         Args:
             nlp (list): list of (spacy.tokens.doc.Doc) objects - one for each element of 'sentences'
@@ -92,7 +96,10 @@ class Tagger:
         return collection_df
     
     def __process_story(self, storyid, story_text, nlp):
-        """Given a story text, this function preprocesses the text, then runs and stores the tagging information for each sentence in the story in memory. It then uses this information to generate a dataframe synthesising all the tagging information for downstream analysis.
+        """Given a story text, this function preprocesses the text, then runs 
+        and stores the tagging information for each sentence in the story in memory. 
+        It then uses this information to generate a dataframe synthesising all the 
+        tagging information for downstream analysis.
 
         Args:
             storyid (int): a number uniquely identifying a specific story
@@ -100,7 +107,8 @@ class Tagger:
             nlp (spacy.language.Language): a spacy language model object to use on the input stories
 
         Returns:
-            pandas.DataFrame: a dataframe containing all tagging data for the given story, and a column with the segment.
+            pandas.DataFrame: a dataframe containing all tagging data for the given story, 
+            and a column with the segment.
             The segment is the segment number of the corresponding sentence in a given story.
         """
         story_df = pd.DataFrame()
@@ -108,6 +116,7 @@ class Tagger:
 
         # generate and store nlp tagged models for each sentence
         tagged_sentences = []
+        
         for sentence in sentences:
             if (len(sentence.split()) > 0): # sentence has at least one word in it
                 tagged_sentence = nlp(sentence)
@@ -138,7 +147,9 @@ class Tagger:
         return story_df
         
     def __parse_tagged_story(self, storyid, sentences, tagged_sentences):
-        """Given a list of sentences in a given story and a list of nlp tagging information for each sentence, this function processes and appends nlp tagging data about these sentences to the master output dataframe
+        """Given a list of sentences in a given story and a list of nlp tagging 
+        information for each sentence, this function processes and appends nlp 
+        tagging data about these sentences to the master output dataframe
 
         Args:
             storyid (int): a number uniquely identifying a specific story
@@ -150,6 +161,7 @@ class Tagger:
         """
         story_df = pd.DataFrame()
         story_df_rows = []
+        
         for sentence, tagged_sentence in zip(sentences, tagged_sentences):
             first_word_in_sent = sentence.split()[0].lower().strip()
             tags = []
@@ -159,10 +171,32 @@ class Tagger:
 
             tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+") # word tokenizer
             spans = list(tokenizer.span_tokenize(sentence)) # generate token spans in sentence (start and end indices)
+            
+            # Analyze verbs in the sentence
+            tense_df = self.__process_dutch_potential_action(nlp_spacy(sentence))
+            #tense_df is a pandas.core.frame.DataFrame
 
             for tag, span in zip(tags, spans):
                 story_df_row = self.__process_tag(storyid, sentence, tag, span)
+                # story_df_row is a list representing a row of the master story elements dataframe
+                
                 if story_df_row is not None:
+                    # Merge tense information with the current row, if needed (# Matching the token text to get tense info)
+                    # tag[0] is a string representing the text of the token (the actual word or symbol in the sentence).                    
+                    # tense_row is also a string, representing the tense of the token (if it is a verb) 
+                    tense_row = tense_df.loc[tense_df['text'] == tag[0]]
+                    
+                    if not tense_row.empty:
+                        #Ensure that tense_row['tense'] exists and has at least one value
+                        if 'tense' in tense_row and len(tense_row['tense']) > 0:
+                            # Fetch the tense value safely
+                            tense_value = tense_row['tense'].values[0] # string (str)
+                            # Append tense_value at the end of the row
+                            story_df_row.append(tense_value)
+                            
+                        else:
+                            print(f"Warning: 'tense' column missing or empty in tense_row for tag: {tag[0]}")
+                        
                     story_df_rows.append(story_df_row)
 
             # special case: first word in a sent can be a pronoun
@@ -170,11 +204,26 @@ class Tagger:
                 tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
                 story_df_rows.append(tmp_row)
 
-        story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
+        # Ensure that self.complete_data_columns is a list of strings
+        if not isinstance(self.complete_data_columns, list):
+            print(f"Warning: complete_data_columns is not a list: {self.complete_data_columns}")
+
+        # Create the final DataFrame safely
+        if isinstance(story_df_rows, list):
+            try:
+                story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
+            except Exception as e:
+                print(f"Error creating DataFrame: {e}")
+                print(f"story_df_rows: {story_df_rows}")
+                print(f"complete_data_columns: {self.complete_data_columns}")
+        else:
+            print(f"Error: story_df_rows is not a list: {story_df_rows}")
+
         return story_df
         
     def __process_tag(self, storyid, sentence, tag, span):
-        """Given a tagged token in a sentence within a specific story, this function processes and appends data about this token to the master output dataframe
+        """Given a tagged token in a sentence within a specific story, this function
+        processes and appends data about this token to the master output dataframe
 
         Args:
             storyid (int): a number uniquely identifying a specific story
@@ -249,75 +298,138 @@ class Tagger:
         else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
             return "-"
 
-    def __process_dutch_potential_action(self, tag):
+    # def __process_dutch_potential_action(self, tag):
         
-        # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
-        if (tag[4].pos_ in ["VERB", "AUX"] and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
-            # Present tense == WW|pv|tgw or WW|pv|conj
-            #   * Potentially include WW|inf category (see below)
-            # Past tense == WW|pv|verl
-            #   * Potentially include WW|vd category (see below)
-            # Verb forms covering in training data
-            # "VERB WW|" all verbs in training data	            19682 cases
-            # VERB WW|pv subcategory	                        9589 cases
-            # VERB WW|vd subcategory	                        5165 cases
-            # VERB WW|od subcategory                            721 cases (Adjectival form of verb  so N/A)
-            # VERB WW|inf subcategory	                        4207 cases 
+    #     # First check Spacy's dependency parser to classify as Verb and if so, past or present tense Verb?
+    #     if (tag[4].pos_ in ["VERB", "AUX"] and tag[4].tag_.split('|')[0] == "WW"):                                                                               # Spacy recognizes word as a Verb
+    #         # Present tense == WW|pv|tgw or WW|pv|conj
+    #         #   * Potentially include WW|inf category (see below)
+    #         # Past tense == WW|pv|verl
+    #         #   * Potentially include WW|vd category (see below)
+    #         # Verb forms covering in training data
+    #         # "VERB WW|" all verbs in training data	            19682 cases
+    #         # VERB WW|pv subcategory	                        9589 cases
+    #         # VERB WW|vd subcategory	                        5165 cases
+    #         # VERB WW|od subcategory                            721 cases (Adjectival form of verb  so N/A)
+    #         # VERB WW|inf subcategory	                        4207 cases 
 
-            # Classify verb as either past or present tense
-            # 1. If the lemma is 'zullen', classify as FUTURE_VB and set future_verb_triggered
-            if tag[4].lemma_ == "zullen":                
-                return "FUTURE_VB"        
-            elif (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
-                return "PRES_VB"
-            elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
-                return "PAST_VB"
-            else:                                                                                                                                       # Cannot infer from fine-grained Verb tags whether this is present or past tense, rather don't give the Verb a tense at all and don't even tag it as a Verb (to be safe)
-                # WW|od cases will pass through here
-                return "-"
-        else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
-            return "-"
+    #         # Classify verb as either past or present tense
+    #         # 1. If the lemma is 'zullen', classify as FUTURE_VB and set future_verb_triggered
+    #         if tag[4].lemma_ == "zullen":                
+    #             return "FUTURE_VB"        
+    #         elif (tag[4].tag_.startswith('WW|pv|tgw|') or tag[4].tag_.startswith('WW|pv|conj|') or tag[4].tag_.startswith('WW|inf|')):                    # PRESENT TENSE
+    #             return "PRES_VB"
+    #         elif (tag[4].tag_.startswith('WW|pv|verl|') or tag[4].tag_.startswith('WW|vd|')):                                                           # PAST TENSE
+    #             return "PAST_VB"
+    #         else:                                                                                                                                       # Cannot infer from fine-grained Verb tags whether this is present or past tense, rather don't give the Verb a tense at all and don't even tag it as a Verb (to be safe)
+    #             # WW|od cases will pass through here
+    #             return "-"
+    #     else:   # Not Verb                                                                                                                                      # Spacy doesn't recognise word as a Verb, maybe Spacy got it wrong. Check predefined Verb dictionaries as well
+    #         return "-"
         
-    # new function that includes future tense verbs
+    # #new function that includes future tense verbs
     # def __process_dutch_potential_action(self, tags):
-    # # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
-    # future_verb_triggered = False
-    
-    # for tag in tags:  # Loop through each word's tag in the sentence
-    #     # First check Spacy's dependency parser to classify as Verb
-    #     if (tag.pos_ in ["VERB", "AUX"] and tag.tag_.split('|')[0] == "WW"):  # Spacy recognizes word as a Verb
-            
-    #         # 1. If the lemma is 'zullen', classify as FUTURE_VB
-    #         if tag.lemma_ == "zullen":
-    #             future_verb_triggered = True  # We've encountered 'zullen', so trigger future tense flag
-    #             return "FUTURE_VB"  # Mark the auxiliary verb as FUTURE_VB
-            
-    #         # 2. If we have seen a 'zullen' conjugation earlier and the verb is in the infinitive form, mark it as FUTURE_VB
-    #         elif future_verb_triggered and tag.tag_.startswith('WW|inf|'):
-    #             return "FUTURE_VB"  # Mark any infinitive verb after 'zullen' as FUTURE_VB
-            
-    #         # Classify verb as either past or present tense if not future tense
-    #         elif (tag.tag_.startswith('WW|pv|tgw|') or tag.tag_.startswith('WW|pv|conj|') or tag.tag_.startswith('WW|inf|')):
-    #             return "PRES_VB"  # Present tense
+    #     # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
+    #     future_verb_triggered = False
+        
+    #     for tag in tags:  # Loop through each word's tag in the sentence
+    #         # First check Spacy's dependency parser to classify as Verb
+    #         if (tag.pos_ in ["VERB", "AUX"] and tag.tag_.split('|')[0] == "WW"):  # Spacy recognizes word as a Verb
                 
-    #         elif (tag.tag_.startswith('WW|pv|verl|') or tag.tag_.startswith('WW|vd|')):
-    #             return "PAST_VB"  # Past tense
+    #             # 1. If the lemma is 'zullen', classify as FUTURE_VB
+    #             if tag.lemma_ == "zullen":
+    #                 future_verb_triggered = True  # We've encountered 'zullen', so trigger future tense flag
+    #                 return "FUTURE_VB"  # Mark the auxiliary verb as FUTURE_VB
+                
+    #             # 2. If we have seen a 'zullen' conjugation earlier and the verb is in the infinitive form, mark it as FUTURE_VB
+    #             elif future_verb_triggered and tag.tag_.startswith('WW|inf|'):
+    #                 return "FUTURE_VB"  # Mark any infinitive verb after 'zullen' as FUTURE_VB
+                
+    #             # Classify verb as either past or present tense if not future tense
+    #             elif (tag.tag_.startswith('WW|pv|tgw|') or tag.tag_.startswith('WW|pv|conj|') or tag.tag_.startswith('WW|inf|')):
+    #                 return "PRES_VB"  # Present tense
+                    
+    #             elif (tag.tag_.startswith('WW|pv|verl|') or tag.tag_.startswith('WW|vd|')):
+    #                 return "PAST_VB"  # Past tense
+                    
+    #             else:
+    #                 return "-"  # For unknown verb forms, return no tense
                 
     #         else:
-    #             return "-"  # For unknown verb forms, return no tense
-            
-    #     else:
-    #         return "-"  # Spacy doesn't recognize the word as a verb
+    #             return "-"  # Spacy doesn't recognize the word as a verb
     
-    # After processing the entire sentence, reset the trigger for future tense verbs
-    # future_verb_triggered = False
+    #     #After processing the entire sentence, reset the trigger for future tense verbs
+    #     future_verb_triggered = False
     
+    def __process_dutch_potential_action(self, sentence):
+        """Process a tagged sentence to analyze verbs and their tenses.
+        
+        Args:
+            sentence (spacy.tokens.doc.Doc): A spacy Doc object representing a sentence.
 
-    def __process_potential_action(self, tag):
+        Returns:
+            pandas.DataFrame: DataFrame containing the tense data for the verbs in the sentence.
+        """
+        # Ensure the sentence is processed by spaCy if it's not already a Doc object
+        if isinstance(sentence, str):
+            sentence = nlp_spacy(sentence)  # Replace nlp_spacy with your spaCy pipeline
+        
+        future_verb_triggered = False  # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
+        rows = []  # List to hold the data for each token
+
+        for tag in sentence:  # Loop through each token in the tagged sentence
+            # First check Spacy's dependency parser to classify as Verb
+            if (tag.pos_ in ["VERB", "AUX"] and tag.tag_.split('|')[0] == "WW"):  # Spacy recognizes word as a Verb
+                
+                # 1. If the lemma is 'zullen', classify as FUTURE_VB
+                if tag.lemma_ == "zullen":
+                    future_verb_triggered = True  # Triggered by 'zullen'
+                    tense_value = "FUTURE_VB"  # Mark the auxiliary verb as FUTURE_VB
+                
+                # 2. If we have seen a 'zullen' conjugation earlier and the verb is in the infinitive form, mark it as FUTURE_VB
+                elif future_verb_triggered and tag.tag_.startswith('WW|inf|'):
+                    tense_value = "FUTURE_VB"  # Mark any infinitive verb after 'zullen' as FUTURE_VB
+                
+                # Classify verb as either past or present tense if not future tense
+                elif (tag.tag_.startswith('WW|pv|tgw|') or tag.tag_.startswith('WW|pv|conj|') or tag.tag_.startswith('WW|inf|')):
+                    tense_value = "PRES_VB"  # Present tense
+                    
+                elif (tag.tag_.startswith('WW|pv|verl|') or tag.tag_.startswith('WW|vd|')):
+                    tense_value = "PAST_VB"  # Past tense
+                    
+                else:
+                    tense_value = "-"  # For unknown verb forms, return no tense
+                
+                # Append the token data to the rows
+                rows.append({
+                    "text": tag.text,
+                    "idx": tag.idx,
+                    "tense": tense_value,
+                    "pos": tag.pos_,
+                    "fine_tag": tag.tag_,
+                    "dep": tag.dep_,
+                    "future_verb_triggered": future_verb_triggered
+                })
+            else:
+                # Append data for non-verb tokens
+                rows.append({
+                    "text": tag.text,
+                    "idx": tag.idx,
+                    "tense": "-",
+                    "pos": tag.pos_,
+                    "fine_tag": tag.tag_,
+                    "dep": tag.dep_,
+                    "future_verb_triggered": future_verb_triggered
+                })
+                
+             # Convert the collected rows into a DataFrame
+        return pd.DataFrame(rows)
+
+    def __process_potential_action(self, sentence):
         if self.lang == constants.NL:
-            return self.__process_dutch_potential_action(tag)
+            return self.__process_dutch_potential_action(sentence)
         elif self.lang == constants.EN:
-            return self.__process_english_potential_action(tag)
+            return self.__process_english_potential_action(sentence)
         else: 
             return "-"
         
@@ -340,7 +452,7 @@ class Tagger:
         """
         row = None
         if self.__is_valid_token(tag):
-            tense_value = self.__process_potential_action(tag)
+            tense_value = self.__process_potential_action(sentence)
             row = [storyid, sentence, tag[0], tag[4].idx, tag[4].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], False, False, False, '-']
         return row
     
