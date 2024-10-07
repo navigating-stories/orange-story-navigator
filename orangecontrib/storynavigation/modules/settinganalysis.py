@@ -33,7 +33,10 @@ class SettingAnalyzer:
     LOCATION_LABELS = ["LOC", "FAC", "GPE"]
     ENTITY_GROUPS = [DATE_LABELS, EVENT_LABELS, LOCATION_LABELS]
     ENTITY_LABELS = DATE_LABELS + EVENT_LABELS + LOCATION_LABELS
-    ENTITY_CACHE_FILE_NAME = os.path.join(str(Path.home()), "orange_story_navigator_wikidata_entity_cache.json")
+    ENTITY_CACHE_FILE_NAME = "orange_story_navigator_wikidata_entity_cache.json"
+    LINUX_TMP_DIR = "/tmp"
+    WINDOWS_TMP_DIR = os.path.join(str(Path.home()), "AppData/Local/Temp")
+    ENTITY_CACHE_FILE = os.path.join(LINUX_TMP_DIR, ENTITY_CACHE_FILE_NAME) if os.path.isdir(LINUX_TMP_DIR) else (os.path.join(WINDOWS_TMP_DIR, ENTITY_CACHE_FILE_NAME) if os.path.isdir(WINDOWS_TMP_DIR) else None)
 
 
     def __init__(self, language, n_segments, text_tuples, story_elements, user_defined_entities, callback=None):
@@ -235,11 +238,10 @@ class SettingAnalyzer:
 
 
     def __get_wikidata_info(self, entity_name, find_property=False):
-        if os.path.isfile(self.ENTITY_CACHE_FILE_NAME):
-            with open(self.ENTITY_CACHE_FILE_NAME, "r") as cache_file:
+        if self.ENTITY_CACHE_FILE:
+            with open(self.ENTITY_CACHE_FILE, "r") as cache_file:
                 cache = json.load(cache_file)
             cache_file.close()
-
         else:
             cache = {}
         if entity_name in cache:
@@ -263,7 +265,8 @@ class SettingAnalyzer:
             cache[entity_name] = data["search"]
         else:
             cache[entity_name] = []
-        with open(self.ENTITY_CACHE_FILE_NAME, "w") as cache_file:
-            json.dump(cache, cache_file)
+        if self.ENTITY_CACHE_FILE:
+            with open(self.ENTITY_CACHE_FILE, "w") as cache_file:
+                json.dump(cache, cache_file)
         cache_file.close()
         return cache[entity_name]
