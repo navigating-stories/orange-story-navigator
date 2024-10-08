@@ -27,7 +27,7 @@ class Tagger:
         self.custom_tags = None
         self.word_column = None
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -167,12 +167,6 @@ class Tagger:
                 if story_df_row is not None:
                     story_df_rows.append(story_df_row)
 
-# 20240909 ET: why? commented away
-#           # special case: first word in a sent can be a pronoun
-#           if any(word == first_word_in_sent for word in self.pronouns):
-#               tmp_row = [storyid, sentence, first_word_in_sent, 0, len(first_word_in_sent), "SP", '-', '-', '-', '-', True, True, True, self.__lookup_existing_association(first_word_in_sent, sentence, pd.DataFrame(story_df_rows, columns=self.complete_data_columns))]
-#               story_df_rows.append(tmp_row)
-
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
         return story_df
         
@@ -211,7 +205,8 @@ class Tagger:
                 row = self.__process_non_noun_tag(storyid, sentence, tag)
             else:
                 row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), story_navigator_tag,
-                       tag[1], tag[2], tag[3], tag[4], True, True, self.__is_active_voice_subject(tag), vb_text]
+                       tag[1], tag[2], tag[3], tag[4], tag[-1].lemma_, tag[-1].head.text, tag[-1].head.idx, 
+                       True, True, self.__is_active_voice_subject(tag), vb_text]
         return row
     
     def __process_english_potential_action(self, tag):
@@ -288,7 +283,9 @@ class Tagger:
         row = None
         if self.__is_valid_token(tag):
             tense_value = self.__process_potential_action(tag)
-            row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, tag[1], tag[2], tag[3], tag[4], False, False, False, '-']
+            row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, 
+                   tag[1], tag[2], tag[3], tag[4], tag[-1].lemma_, tag[-1].head.text, tag[-1].head.idx,
+                   False, False, False, '-']
         return row
     
     def __is_valid_token(self, token):
