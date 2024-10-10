@@ -34,9 +34,6 @@ class SettingAnalyzer:
     ENTITY_GROUPS = [DATE_LABELS, EVENT_LABELS, LOCATION_LABELS]
     ENTITY_LABELS = DATE_LABELS + EVENT_LABELS + LOCATION_LABELS
     ENTITY_CACHE_FILE_NAME = "orange_story_navigator_wikidata_entity_cache.json"
-    LINUX_TMP_DIR = "/tmp"
-    WINDOWS_TMP_DIR = os.path.join(str(Path.home()), "AppData/Local/Temp")
-    ENTITY_CACHE_FILE = os.path.join(LINUX_TMP_DIR, ENTITY_CACHE_FILE_NAME) if os.path.isdir(LINUX_TMP_DIR) else (os.path.join(WINDOWS_TMP_DIR, ENTITY_CACHE_FILE_NAME) if os.path.isdir(WINDOWS_TMP_DIR) else None)
 
 
     def __init__(self, language, n_segments, text_tuples, story_elements, user_defined_entities, callback=None):
@@ -238,13 +235,13 @@ class SettingAnalyzer:
 
 
     def __get_wikidata_info(self, entity_name, find_property=False):
-        if self.ENTITY_CACHE_FILE:
-            with open(self.ENTITY_CACHE_FILE, "r") as cache_file:
+        if self.ENTITY_CACHE_FILE_NAME and os.path.isfile(self.ENTITY_CACHE_FILE_NAME):
+            with open(self.ENTITY_CACHE_FILE_NAME, "r") as cache_file:
                 cache = json.load(cache_file)
             cache_file.close()
         else:
             cache = {}
-        if entity_name in cache:
+        if entity_name in cache and len(cache[entity_name]) > 0:
             return cache[entity_name]
         print("__get_wikidata_info: looking up", entity_name)
         url = f"https://www.wikidata.org/w/api.php"
@@ -258,15 +255,22 @@ class SettingAnalyzer:
         }
         if find_property:
             params["type"] = "property"
-        response = requests.get(url, params=params)
-        time.sleep(1)
-        data = response.json()
-        if 'search' in data.keys():
+        try:
+            response = requests.get(url, params=params)
+            time.sleep(1)
+            data = response.json()
+        except:
+            print("lookup failure: no network connection?")
+            data = {}
+        if 'search' in data.keys() and len(data["search"]) > 0:
             cache[entity_name] = data["search"]
         else:
-            cache[entity_name] = []
-        if self.ENTITY_CACHE_FILE:
-            with open(self.ENTITY_CACHE_FILE, "w") as cache_file:
-                json.dump(cache, cache_file)
-        cache_file.close()
+            cache[entity_name] = [{"not found": True}]
+        if self.ENTITY_CACHE_FILE_NAME:
+            try:
+                with open(self.ENTITY_CACHE_FILE_NAME, "w") as cache_file:
+                    json.dump(cache, cache_file)
+                cache_file.close()
+            except:
+                pass
         return cache[entity_name]
