@@ -20,10 +20,11 @@ class Tagger:
     Args:
         n_segments (int): Number of segments to split each story into.
     """
-    def __init__(self, lang, n_segments, text_tuples, custom_tags_and_word_column=None, callback=None):
+    def __init__(self, lang, n_segments, remove_stopwords, text_tuples, custom_tags_and_word_column=None, callback=None):
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
+        self.remove_stopwords = remove_stopwords
         self.custom_tags = None
         self.word_column = None
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
@@ -489,15 +490,18 @@ class Tagger:
         Args:
             lang (string): the ISO code for the language of the input stories (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
+        self.stopwords = []
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            if self.remove_stopwords == constants.YES:
+                self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
             self.pronouns = constants.NL_PRONOUNS_FILE.read_text(encoding="utf-8").split("\n")
             self.model = constants.NL_SPACY_MODEL
             self.past_tense_verbs = constants.NL_PAST_TENSE_FILE.read_text(encoding="utf-8").split("\n")
             self.present_tense_verbs = constants.NL_PRESENT_TENSE_FILE.read_text(encoding="utf-8").split("\n")
             self.false_positive_verbs = constants.NL_FALSE_POSITIVE_VERB_FILE.read_text(encoding="utf-8").split("\n")
         else:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            if self.remove_stopwords == constants.YES:
+                self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
             self.pronouns = constants.EN_PRONOUNS_FILE.read_text(encoding="utf-8").split("\n")
             self.model = constants.EN_SPACY_MODEL
             self.past_tense_verbs = constants.EN_PAST_TENSE_FILE.read_text(encoding="utf-8").split("\n")

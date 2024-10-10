@@ -25,6 +25,11 @@ NL = 'nl'
 EN = 'en'
 SUPPORTED_LANGUAGES = [EN, NL]
 
+# Yes / no
+YES = "yes"
+NO = "no"
+YES_NO_WORDS = [YES, NO]
+
 # Number of story segments
 N_STORY_SEGMENTS = list(range(1,11))
 

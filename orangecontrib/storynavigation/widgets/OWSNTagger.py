@@ -36,6 +36,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     language = 'nl'
     word_column = 'word'
     n_segments = 1
+    remove_stopwords = constants.YES
 
     def __init__(self):
         super().__init__()
@@ -57,6 +58,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
         self.controlArea.layout().addWidget(self.select_language_combo)
+
         self.select_word_column_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
@@ -66,7 +68,6 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             sendSelectedValue=True,
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
-
         self.controlArea.layout().addWidget(self.select_word_column_combo)
 
         self.select_n_segments_combo = gui.comboBox(
@@ -78,12 +79,24 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             sendSelectedValue=True,
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
-
         self.controlArea.layout().addWidget(self.select_n_segments_combo)
+
+        self.remove_stopwords_combo = gui.comboBox(
+            widget=self.controlArea,
+            master=self,
+            label="Remove stopwords",
+            value="remove_stopwords",
+            items=constants.YES_NO_WORDS,
+            sendSelectedValue=True,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum),
+        )
+        self.controlArea.layout().addWidget(self.remove_stopwords_combo)
+
         self.select_language_combo.setEnabled(True)
         self.select_word_column_combo.setEnabled(True)
         self.select_n_segments_combo.setEnabled(True)
-        
+        self.remove_stopwords_combo.setEnabled(True)
+
         self.compute_data_button = gui.button(
             self.controlArea,
             self,
@@ -150,14 +163,14 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))                
 
-    def run(self, lang, n_segments, text_tuples, tuple, state: TaskState):
+    def run(self, lang, n_segments, remove_stopwords, text_tuples, tuple, state: TaskState):
         def advance(progress):
             if state.is_interruption_requested():
                 raise InterruptedError
             state.set_progress_value(progress)
 
         self.tagger = Tagger(
-            lang=lang, n_segments=n_segments, text_tuples=text_tuples, 
+            lang=lang, n_segments=n_segments, remove_stopwords=remove_stopwords, text_tuples=text_tuples, 
             custom_tags_and_word_column=tuple, callback=advance)
         
         return self.tagger.complete_data
@@ -168,17 +181,19 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             if len(self.stories) > 0:
                 if self.custom_tag_dict is not None:
                     self.start(
-                        self.run, 
-                        self.language, 
-                        n_segments, 
+                        self.run,
+                        self.language,
+                        n_segments,
+                        self.remove_stopwords,
                         self.stories,
                         (self.custom_tag_dict, self.word_column)
                     )
                 else:
                     self.start(
-                        self.run, 
-                        self.language, 
-                        n_segments, 
+                        self.run,
+                        self.language,
+                        n_segments,
+                        self.remove_stopwords,
                         self.stories,
                         None
                     )
@@ -188,7 +203,7 @@ if __name__ == "__main__":
 
     from orangecontrib.text.preprocess import BASE_TOKENIZER
 
-    corpus_ = Corpus.from_file("orangecontrib/storynavigation/tests/storynavigator-testdata.tab")
+    corpus_ = Corpus.from_file("tests/storynavigator-testdata.tab")
     corpus_ = corpus_[:3]
     corpus_ = BASE_TOKENIZER(corpus_)
     previewer = WidgetPreview(OWSNTagger)
