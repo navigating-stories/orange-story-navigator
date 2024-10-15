@@ -84,11 +84,7 @@ class Tagger:
             collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
             
             if self.use_infinitives:
-                collection_df['custom_' + self.word_column] = collection_df['spacy_lemma'].str.lower()               
-                
-            else:
-                # If not using infinitives, simply copy the custom word column
-                collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column]
+                collection_df['custom_' + self.word_column] = collection_df['spacy_lemma'].str.lower()
                 
             # Merge the custom tags
             collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
