@@ -292,7 +292,7 @@ def find_verb_ancestor(token):
     """
     if isinstance(token, spacy.tokens.token.Token):
         # Check if the token is a verb
-        if token.pos_ == "VERB":
+        if token.pos_ in ["VERB","AUX"]:
             return token
 
         # Traverse the token's ancestors recursively
