@@ -79,8 +79,10 @@ class Tagger:
         if self.custom_tags is not None and self.word_column is not None:
             collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
             collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
-            collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
-            collection_df = collection_df.drop(columns=[self.word_column])
+            
+            if self.use_infinitives:
+                collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
+                collection_df = collection_df.drop(columns=[self.word_column])
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
