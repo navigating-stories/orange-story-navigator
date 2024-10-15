@@ -37,6 +37,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     word_column = 'word'
     n_segments = 1
     remove_stopwords = constants.YES
+    use_infinitives = Setting(False)
 
     def __init__(self):
         super().__init__()
@@ -44,6 +45,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         self.stories = None # initialise list of documents (corpus)
         self.custom_tag_dict = None
         self.custom_tag_dict_columns = ['']
+        self.use_infinitives = False
         
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
@@ -112,6 +114,17 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
                 }
             """
         )
+                
+        self.infinitives_checkbox = gui.checkBox(
+            widget=self.controlArea,
+            master=self,
+            value='use_infinitives',
+            label='Use infinitives to merge custom words',
+            callback=self.on_infinitives_changed,
+            sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        )
+
+        self.controlArea.layout().addWidget(self.infinitives_checkbox)
 
     @Inputs.stories
     def set_stories(self, stories=None):
@@ -163,6 +176,10 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data))                
 
+    def on_infinitives_changed(self):
+        #add any additional logic here if needed
+        pass
+    
     def run(self, lang, n_segments, remove_stopwords, text_tuples, tuple, state: TaskState):
         def advance(progress):
             if state.is_interruption_requested():
@@ -171,7 +188,8 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
 
         self.tagger = Tagger(
             lang=lang, n_segments=n_segments, remove_stopwords=remove_stopwords, text_tuples=text_tuples, 
-            custom_tags_and_word_column=tuple, callback=advance)
+            custom_tags_and_word_column=tuple, callback=advance,
+            use_infinitives=self.use_infinitives)
         
         return self.tagger.complete_data
 
