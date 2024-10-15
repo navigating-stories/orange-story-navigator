@@ -211,7 +211,7 @@ class Tagger:
         return row
     
     def __process_english_potential_action(self, tag):
-        if (tag[-1].pos_ ["VERB","AUX"]):
+        if (tag[-1].pos_ in ["VERB","AUX"]):
             # VB  --  verb, base form
             # VBD  --  verb, past tense
             # VBG  --  verb, gerund or present participle
