@@ -41,13 +41,8 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
     ENTITIES_FILE_YES = "yes: use this file"
     ENTITIES_FILE_NO = "no: skip this file"
     entity_colors = { "PREP": "lightblue",
-                      "DATE": "lightblue",
                       "MEANS": "salmon",
-                      "EVENT": "salmon",
-                      "FAC": "silver",
-                      "GPE": "lemonchiffon",
-                      "LOC": "lightgreen",
-                      "TIME": "thistle", }
+                      "VERB": "silver" }
     dlgFormats = (
         "All readable files ({});;".format(
             '*' + ' *'.join(FileFormat.readers.keys())) +

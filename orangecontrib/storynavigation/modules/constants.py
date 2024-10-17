@@ -45,8 +45,8 @@ NL_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_dutch.txt"
 NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
 # filename from which to retrieve a list of dutch time words
 NL_TIME_WORDS_FILENAME = "dutch_time_words.csv"
-# filename from which to retrieve a list of dutch prepositions
-NL_PREPOSITIONS_FILENAME = "dutch_prepositions.csv"
+# filename from which to retrieve a list of dutch verb frames
+NL_VERB_FRAMES_FILENAME = "dutch_verb_frames.csv"
 
 # filename from which to retrieve a list of english stopwords
 EN_STOPWORDS_FILENAME = "englishstopwords.txt"
@@ -60,8 +60,8 @@ EN_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_english.txt"
 EN_PRONOUNS_FILENAME = "englishpronouns.txt"
 # filename from which to retrieve a list of english time words
 EN_TIME_WORDS_FILENAME = "english_time_words.csv"
-# filename from which to retrieve a list of english prepositions
-EN_PREPOSITIONS_FILENAME = "english_prepositions.csv"
+# filename from which to retrieve a list of english verb frames
+EN_VERB_FRAMES_FILENAME = "english_verb_frames.csv"
 
 
 # package paths
@@ -87,8 +87,8 @@ NL_FALSE_POSITIVE_VERB_FILE = (
     PKG / RESOURCES_SUBPACKAGE / NL_FALSE_POSITIVE_VERB_FILENAME
 )
 
-NL_PREPOSITIONS_FILE = (
-    PKG / RESOURCES_SUBPACKAGE / NL_PREPOSITIONS_FILENAME
+NL_VERB_FRAMES_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / NL_VERB_FRAMES_FILENAME
 )
 
 
@@ -120,8 +120,8 @@ EN_TIME_WORDS_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_TIME_WORDS_FILENAME
 )
 
-EN_PREPOSITIONS_FILE = (
-    PKG / RESOURCES_SUBPACKAGE / EN_PREPOSITIONS_FILENAME
+EN_VERB_FRAMES_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / EN_VERB_FRAMES_FILENAME
 )
 
 # currently selected agent prominence metric
