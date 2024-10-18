@@ -200,3 +200,7 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'num_words_in_sentence'
                                  ]
 
+# means widget strategies
+MEANS_STRATEGY_VERB_FRAMES = "use verb frames"
+MEANS_STRATEGY_VERB_FRAME_PREPS = "use prepositions from verb frames   "
+MEANS_STRATEGY_SPACY_PREPS = "use prepositions from Spacy"

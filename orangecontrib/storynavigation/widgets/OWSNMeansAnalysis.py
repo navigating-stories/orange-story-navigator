@@ -1,6 +1,7 @@
 import os
 import pathlib
 import re
+import sys
 
 from Orange.data import Table
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
@@ -33,15 +34,13 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     n_segments = 1
-    user_defined_entities_file_name = os.path.join(
+    verb_frames_file_name = os.path.join(
         str(constants.PKG),
         str(constants.RESOURCES_SUBPACKAGE),
-        ("dutch" if language == "nl" else "english") + "_entities.csv")
-    recent_files = [user_defined_entities_file_name]
-    ENTITIES_FILE_YES = "yes: use this file"
-    ENTITIES_FILE_NO = "no: skip this file"
-    entity_colors = { "PREP": "lightblue",
-                      "MEANS": "salmon",
+        ("dutch" if language == "nl" else "english") + "_verb_frames.csv")
+    recent_files = [verb_frames_file_name]
+    entity_colors = { "MEANS": "salmon",
+                      "PREP": "lightblue",
                       "VERB": "silver" }
     dlgFormats = (
         "All readable files ({});;".format(
@@ -65,12 +64,13 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.story_elements = []
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
-        self.user_defined_entities = {}
-        self.use_user_defined_entities_file = self.ENTITIES_FILE_YES
-        self.read_entities_file(self.user_defined_entities_file_name)
+        self.verb_frames = {}
+        self.means_strategy = constants.MEANS_STRATEGY_VERB_FRAMES
+        self.read_verb_frames_file(self.verb_frames_file_name)
 
         self.__make_language_selection_menu()
-        self.__make_entities_file_dialog()
+        self.__make_verb_frames_file_selection_menu()
+        self.__make_verb_frames_file_dialog()
         self.__make_regexp_filter_dialog()
         self.__make_document_viewer()
 
@@ -90,34 +90,35 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.select_language_combo.setEnabled(True)
 
 
-    def __make_entities_file_selection_menu(self):
+    def __make_verb_frames_file_selection_menu(self):
         self.select_language_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
-            label="",
-            value="use_user_defined_entities_file",
-            items=[self.ENTITIES_FILE_YES, self.ENTITIES_FILE_NO],
+            label="Strategy",
+            value="means_strategy",
+            items=[constants.MEANS_STRATEGY_VERB_FRAMES,
+                   constants.MEANS_STRATEGY_VERB_FRAME_PREPS,
+                   constants.MEANS_STRATEGY_SPACY_PREPS],
             sendSelectedValue=True,
             currentIndex=0,
-            callback=self.__process_use_user_defined_entities_file_change,
+            callback=self.__process_means_strategy_change,
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
         self.controlArea.layout().addWidget(self.select_language_combo)
         self.select_language_combo.setEnabled(True)
 
 
-    def __make_entities_file_dialog(self):
+    def __make_verb_frames_file_dialog(self):
         # code copied from Corpus widget
-        fbox = gui.widgetBox(self.controlArea, "Entities file", orientation=0)
+        fbox = gui.widgetBox(self.controlArea, "Verb frames file", orientation=0)
         self.file_widget = widgets.FileWidget(
             recent_files=self.recent_files, icon_size=(16, 16),
-            on_open=self.read_entities_file, dialog_format=self.dlgFormats,
-            dialog_title='Open entities file',
+            on_open=self.read_verb_frames_file, dialog_format=self.dlgFormats,
+            dialog_title='Choose verb frames file',
             reload_label='Reload', browse_label='Browse',
             allow_empty=False, minimal_width=150,
         )
         fbox.layout().addWidget(self.file_widget)
-        self.__make_entities_file_selection_menu()
 
 
     def __make_regexp_filter_dialog(self):
@@ -170,23 +171,21 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.__visualize_text_data()
 
 
-    def read_entities_file(self, user_defined_entities_file_name):
-        self.user_defined_entities_file_name = user_defined_entities_file_name
-        self.user_defined_entities = {}
-        if self.use_user_defined_entities_file == self.ENTITIES_FILE_YES:
-            user_defined_entities_lines = pathlib.Path(user_defined_entities_file_name).read_text(encoding="utf-8").strip().split("\n")
-            for line in user_defined_entities_lines:
-                try:
-                    entity_class, entity_token = line.strip().split(",")
-                    self.user_defined_entities[entity_token] = entity_class
-                except:
-                    pass
+    def read_verb_frames_file(self, verb_frames_file_name):
+        self.verb_frames_file_name = verb_frames_file_name
+        self.verb_frames = []
+        try:
+            verb_frames_lines = pathlib.Path(verb_frames_file_name).read_text(encoding="utf-8").strip().split("\n")
+            for line in verb_frames_lines:
+                self.verb_frames.append(line.strip().split(","))
+        except Exception as e:
+            print("OWSNMeansAnalysis:", str(e))
         if self.story_elements:
             self.reset_story_elements(self.story_elements)
 
 
-    def __process_use_user_defined_entities_file_change(self):
-        self.read_entities_file(self.user_defined_entities_file_name)
+    def __process_means_strategy_change(self):
+        self.read_verb_frames_file(self.verb_frames_file_name)
 
 
     def get_selected_indexes(self) -> Set[int]:
@@ -267,7 +266,8 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
              n_segments=int(self.n_segments),
              text_tuples=self.text_tuples,
              story_elements=self.story_elements,
-             user_defined_entities=self.user_defined_entities,
+             verb_frames=self.verb_frames,
+             means_strategy=self.means_strategy,
              callback=move_progress_bar
         )
 
@@ -294,14 +294,18 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __add_entity_colors_to_story_text(self, story_text, story_id):
+        entity_data = []
+        first_id = sys.maxsize
         for index, row in self.analyzer.means_analysis.loc[
                              self.analyzer.means_analysis["storyid"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-           start = int(row["character id"])
-           end = start + len(row["text"])
-           story_text = self.__insert_entity_color_in_story_text(story_text,
-                                                                 start,
-                                                                 end,
-                                                                 row["label"])
+            start = int(row["character id"])
+            end = start + len(row["text"])
+            if end >= first_id:
+                print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
+            else:
+                story_text = self.__insert_entity_color_in_story_text(
+                    story_text, start, end, row["label"])
+                first_id = start
         return story_text
 
 

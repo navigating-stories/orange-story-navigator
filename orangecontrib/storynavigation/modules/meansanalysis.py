@@ -33,24 +33,25 @@ class MeansAnalyzer:
     LOCATION_LABELS = ["LOC", "FAC", "GPE"]
     ENTITY_GROUPS = [DATE_LABELS, EVENT_LABELS, LOCATION_LABELS]
     ENTITY_LABELS = ['MEANS', 'PREP', 'VERB'] + DATE_LABELS + EVENT_LABELS + LOCATION_LABELS
-    ENTITY_CACHE_FILE_NAME = "orange_story_navigator_wikidata_entity_cache.json"
 
 
-    def __init__(self, language, n_segments, text_tuples, story_elements, user_defined_entities, callback=None):
+    def __init__(self, language, n_segments, text_tuples, story_elements, verb_frames, means_strategy, callback=None):
+        self.language = language
         self.text_tuples = text_tuples
         self.n_segments = n_segments
-        self.user_defined_entities = user_defined_entities
+        self.verb_frames = verb_frames
+        self.means_strategy = means_strategy
         self.callback = callback
 
         self.__setup_required_nlp_resources(language)
         self.nlp = util.load_spacy_pipeline(self.model)
 
-        entities = self.extract_entities_from_table(story_elements)
-        self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, entities, self.callback)
+        entities = self.__process_texts(story_elements)
+        self.text_analysis = self.__process_texts_with_entities(self.nlp, self.text_tuples, entities, self.callback)
         self.means_analysis = self.__select_best_entities(self.text_analysis)
 
 
-    def extract_entities_from_table(self, story_elements):
+    def __process_texts(self, story_elements):
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         last_story_id = -1
         last_sentence = ""
@@ -86,73 +87,103 @@ class MeansAnalyzer:
         return entities
 
 
+    def matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id):
+
+        if sentence_df[head_of_head_start_id]["spacy_tag"] not in ["VERB", "AUX"]:
+            return False
+        verb_frame_prepositions = [x[1] for x in self.verb_frames] 
+        return ((self.means_strategy == constants.MEANS_STRATEGY_VERB_FRAMES and
+                 [sentence_df[head_of_head_start_id]["spacy_lemma"],
+                  sentence_df[entity_start_id]["token_text"]] in self.verb_frames) or
+                (self.means_strategy == constants.MEANS_STRATEGY_VERB_FRAME_PREPS and
+                 sentence_df[entity_start_id]["token_text"] in verb_frame_prepositions) or
+                (self.means_strategy == constants.MEANS_STRATEGY_SPACY_PREPS and
+                 sentence_df[entity_start_id]["spacy_tag"] == "ADP"))
+
+
+    def expand_means_phrase(self, sentence_df, sentence_entities, char_offset, entity_start_id, head_start_id):
+        child_entity_ids = self.get_head_dependencies(sentence_df, char_offset, entity_start_id, head_start_id)
+        processed_ids = []
+        for child_entity_id in sorted(child_entity_ids, reverse=True):
+            child_entity_text = sentence_df[child_entity_id]["token_text"]
+            entity_gap_size = head_start_id - len(child_entity_text) - child_entity_id
+            if child_entity_id not in processed_ids and entity_gap_size in [1, 2]:
+                in_between_text = " " if entity_gap_size == 1 else ", "
+                sentence_entities[child_entity_id + char_offset] = {
+                   "text": sentence_df[child_entity_id]["token_text"] + in_between_text + sentence_entities[head_start_id + char_offset]["text"],
+                   "label_": "MEANS" }
+                del(sentence_entities[head_start_id + char_offset])
+                head_start_id = child_entity_id
+                processed_ids.append(child_entity_id)
+        for child_entity_id in sorted(child_entity_ids):
+            child_entity_text = sentence_df[child_entity_id]["token_text"]
+            entity_gap_size = child_entity_id - head_start_id - len(sentence_entities[head_start_id + char_offset]["text"])
+            if child_entity_id not in processed_ids and entity_gap_size in [1, 2]:
+                in_between_text = " " if entity_gap_size == 1 else ", "
+                sentence_entities[head_start_id + char_offset]["text"] += in_between_text + sentence_df[child_entity_id]["token_text"]
+                processed_ids.append(child_entity_id)
+            if child_entity_id not in processed_ids:
+                print(sentence_df[entity_start_id]["token_text"], sentence_df[head_start_id]["token_text"], "skipping means word", sentence_df[child_entity_id]["token_text"])
+
+
+    # nl head relations: PREP -> MEANS -> VERB
+    # en head relations: MEANS -> PREP -> VERB
     def process_sentence(self, sentence_df, char_offset):
         sentence_entities = {}
         for entity_start_id in sorted(sentence_df.keys()):
             try:
                 head_start_id = int(sentence_df[entity_start_id]["spacy_head_idx"])
-                head_head_start_id = int(sentence_df[head_start_id]["spacy_head_idx"])
-                head_head_lemma = sentence_df[head_head_start_id]["spacy_lemma"]
-                token_head_pair = [head_head_lemma,
-                                   sentence_df[entity_start_id]["token_text"]]
-                #if re.search("grenzen", sentence_df[entity_start_id]["sentence"]):
-                #    print("A", token_head_pair, self.verb_frames)
-                if token_head_pair in self.verb_frames:
-                    #print("B", token_head_pair)
+                head_of_head_start_id = int(sentence_df[head_start_id]["spacy_head_idx"])
+                if self.language == constants.EN:
+                    entity_start_id, head_start_id = head_start_id, entity_start_id
+                if self.matching_dependencies(sentence_df, entity_start_id, head_start_id, head_of_head_start_id):
                     try:
-                        entity_token_text = sentence_df[entity_start_id]["token_text"]
-                        head_token_text = sentence_df[head_start_id]["token_text"]
-                        sentence_entities[entity_start_id + char_offset] = { "text": entity_token_text, 
-                                                                             "label_": "PREP" }
-                        sentence_entities[head_start_id + char_offset] = { "text": head_token_text, 
-                                                                           "label_": "MEANS" }
-                        sentence_entities[head_head_start_id + char_offset] = { "text": head_head_lemma, 
-                                                                           "label_": "VERB" }
-                        child_entity_ids = self.get_head_dependencies(sentence_df, char_offset, head_start_id)
-                        processed_ids = [entity_start_id]
-                        for child_entity_id in sorted(child_entity_ids, reverse=True):
-                            child_entity_text = sentence_df[child_entity_id]["token_text"]
-                            if child_entity_id not in processed_ids and child_entity_text not in self.verb_frames:
-                                if child_entity_id < head_start_id and len(child_entity_text) + 1 + child_entity_id == head_start_id:
-                                    sentence_entities[child_entity_id + char_offset] = { 
-                                        "text": sentence_df[child_entity_id]["token_text"] + " " + sentence_entities[head_start_id + char_offset]["text"],
-                                        "label_": "MEANS" }
-                                    del(sentence_entities[head_start_id + char_offset])
-                                    head_start_id = child_entity_id
-                                    processed_ids.append(child_entity_id)
-                                elif child_entity_id < head_start_id and len(child_entity_text) + 2 + child_entity_id == head_start_id:
-                                    sentence_entities[child_entity_id + char_offset] = { 
-                                        "text": sentence_df[child_entity_id]["token_text"] + ", " + sentence_entities[head_start_id + char_offset]["text"],
-                                        "label_": "MEANS" }
-                                    del(sentence_entities[head_start_id + char_offset])
-                                    head_start_id = child_entity_id
-                                    processed_ids.append(child_entity_id)
-                        for child_entity_id in sorted(child_entity_ids):
-                            child_entity_text = sentence_df[child_entity_id]["token_text"]
-                            if child_entity_id not in processed_ids and child_entity_text not in self.verb_frames:
-                                if child_entity_id > head_start_id and head_start_id + 1 + len(sentence_entities[head_start_id + char_offset]["text"]) == child_entity_id:
-                                    sentence_entities[head_start_id + char_offset]["text"] += " " + sentence_df[child_entity_id]["token_text"]
-                                    processed_ids.append(child_entity_id)
-                                elif child_entity_id > head_start_id and head_start_id + 2 + len(sentence_entities[head_start_id + char_offset]["text"]) == child_entity_id:
-                                    sentence_entities[head_start_id + char_offset]["text"] += ", " + sentence_df[child_entity_id]["token_text"]
-                                    processed_ids.append(child_entity_id)
-                                else:
-                                    print(entity_token_text, head_token_text, "skipping word", sentence_df[child_entity_id]["token_text"])
+                        sentence_entities[entity_start_id + char_offset] = { 
+                            "label_": "PREP", "text": sentence_df[entity_start_id]["token_text"] }
+                        sentence_entities[head_start_id + char_offset] = { 
+                            "label_": "MEANS", "text": sentence_df[head_start_id]["token_text"] }
+                        sentence_entities[head_of_head_start_id + char_offset] = { 
+                            "label_": "VERB", "text": sentence_df[head_of_head_start_id]["token_text"] }
+                        self.expand_means_phrase(sentence_df, sentence_entities, char_offset, entity_start_id, head_start_id)
                     except Exception as e:
-                        pass
-                        #print("keyerror", str(e), sentence_df[entity_start_id]["sentence"])
+                        #pass
+                        print("keyerror1", str(e), sentence_df[entity_start_id]["sentence"])
             except Exception as e:
-                pass
-                #print("keyerror", str(e), sentence_df[entity_start_id]["sentence"])
+                #pass
+                print("keyerror2", str(e), sentence_df[entity_start_id]["sentence"])
         return sentence_entities
 
 
-    def get_head_dependencies(self, sentence_df, char_offset, head_start_id):
-        entity_ids = []
+    def process_sentence_en(self, sentence_df, char_offset):
+        sentence_entities = {}
         for entity_start_id in sorted(sentence_df.keys()):
-            if int(sentence_df[entity_start_id]["spacy_head_idx"]) == head_start_id:
-                child_entity_ids = self.get_head_dependencies(sentence_df, char_offset, entity_start_id)
-                entity_ids.append(entity_start_id)
+            try:
+                head_start_id = int(sentence_df[entity_start_id]["spacy_head_idx"])
+                head_of_head_start_id = int(sentence_df[head_start_id]["spacy_head_idx"])
+                if self.matching_dependencies(sentence_df, head_start_id, entity_start_id, head_of_head_start_id):
+                    try:
+                        sentence_entities[entity_start_id + char_offset] = {
+                            "label_": "MEANS", "text": sentence_df[entity_start_id]["token_text"] }
+                        sentence_entities[head_start_id + char_offset] = {
+                            "label_": "PREP", "text": sentence_df[head_start_id]["token_text"] }
+                        sentence_entities[head_of_head_start_id + char_offset] = {
+                            "label_": "VERB", "text": sentence_df[head_of_head_start_id]["token_text"] }
+                        self.expand_means_phrase(sentence_df, sentence_entities, char_offset, head_start_id, entity_start_id)
+                    except Exception as e:
+                        #pass
+                        print("keyerror1", str(e), sentence_df[entity_start_id]["sentence"])
+            except Exception as e:
+                #pass
+                print("keyerror2", str(e), sentence_df[entity_start_id]["sentence"])
+        return sentence_entities
+
+
+    def get_head_dependencies(self, sentence_df, char_offset, entity_start_id, head_start_id):
+        entity_ids = []
+        for start_id in sorted(sentence_df.keys()):
+            if int(sentence_df[start_id]["spacy_head_idx"]) == head_start_id and start_id != entity_start_id and start_id != head_start_id:
+                child_entity_ids = self.get_head_dependencies(sentence_df, char_offset, entity_start_id, start_id)
+                entity_ids.append(start_id)
                 entity_ids.extend(child_entity_ids)
         return entity_ids
 
@@ -165,14 +196,10 @@ class MeansAnalyzer:
         """
         if language == constants.NL:
             self.model = constants.NL_SPACY_MODEL
-            self.verb_frames = constants.NL_VERB_FRAMES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         elif language == constants.EN:
             self.model = constants.EN_SPACY_MODEL
-            self.verb_frames = constants.EN_VERB_FRAMES_FILE.read_text(encoding="utf-8").strip().split(os.linesep)
         else:
             raise ValueError(f"meansanalysis.py: unknown language {language}")
-
-        self.verb_frames = [line.split(",") for line in self.verb_frames]
 
 
     def __sort_and_filter_results(self, results):
@@ -182,7 +209,7 @@ class MeansAnalyzer:
         return results_df[["text", "label", "storyid", "character id", "location type"]].reset_index(drop=True)
 
 
-    def __process_texts(self, nlp, text_tuples, entities, callback=None):
+    def __process_texts_with_entities(self, nlp, text_tuples, entities, callback=None):
         results = []
         index = 0
         for entities_per_text in entities:
@@ -191,29 +218,6 @@ class MeansAnalyzer:
                 callback((100*(index+1)/len(entities)))
             index += 1
         return self.__sort_and_filter_results(results)
-
-
-    def __analyze_text_with_list(self, text, nlp, user_defined_entities):
-        matcher = Matcher(nlp.vocab)
-        for entity_group in self.ENTITY_GROUPS:
-            patterns = [[{"lower": entity_token} for entity_token in entity_text.lower().split()]
-                for entity_text, entity_label in list(user_defined_entities.items())
-                    if entity_label in entity_group]
-            matcher.add(entity_group[0], patterns)
-        tokens = nlp(text)
-        return {tokens[m[1]].idx: {
-                    "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
-                    "label_": nlp.vocab.strings[m[0]]
-                } for m in matcher(tokens)}
-
-
-    def __combine_analyses(self, spacy_analysis, list_analysis):
-        combined_analysis = { entity_start_id:spacy_analysis[entity_start_id] 
-                              for entity_start_id in spacy_analysis.keys()
-                              if spacy_analysis[entity_start_id]["label_"] in self.ENTITY_LABELS }
-        for start in list_analysis:
-            combined_analysis[start] = list_analysis[start]
-        return combined_analysis
 
 
     def __expand_locations(self, combined_analysis):
@@ -243,7 +247,6 @@ class MeansAnalyzer:
 
 
     def __process_text(self, text_id, text, nlp, spacy_analysis):
-        list_analysis = self.__analyze_text_with_list(text, nlp, self.user_defined_entities)
         combined_analysis = spacy_analysis
         combined_analysis = self.__expand_locations(combined_analysis)
         combined_analysis = self.__filter_dates(combined_analysis)
