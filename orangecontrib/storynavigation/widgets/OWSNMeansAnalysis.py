@@ -79,7 +79,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.select_language_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
-            label="Language",
+            label="Language:",
             value="language",
             items=constants.SUPPORTED_LANGUAGES,
             sendSelectedValue=True,
@@ -94,7 +94,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.select_language_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
-            label="Strategy",
+            label="Strategy:",
             value="means_strategy",
             items=[constants.MEANS_STRATEGY_VERB_FRAMES,
                    constants.MEANS_STRATEGY_VERB_FRAME_PREPS,
@@ -110,7 +110,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def __make_verb_frames_file_dialog(self):
         # code copied from Corpus widget
-        fbox = gui.widgetBox(self.controlArea, "Verb frames file", orientation=0)
+        fbox = gui.widgetBox(self.controlArea, "Verb frames file:", orientation=0)
         self.file_widget = widgets.FileWidget(
             recent_files=self.recent_files, icon_size=(16, 16),
             on_open=self.read_verb_frames_file, dialog_format=self.dlgFormats,
@@ -263,8 +263,6 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         self.analyzer = MeansAnalyzer(
              language=self.language,
-             n_segments=int(self.n_segments),
-             text_tuples=self.text_tuples,
              story_elements=self.story_elements,
              verb_frames=self.verb_frames,
              means_strategy=self.means_strategy,
