@@ -272,7 +272,10 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def on_done(self, result) -> None:
         self.refresh_search()
-        self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.means_analysis))
+        try:
+            self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.means_analysis))
+        except Exception as e:
+            print(e)
 
 
     def __make_entity_bar_for_html(self):
@@ -294,16 +297,19 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __add_entity_colors_to_story_text(self, story_text, story_id):
         entity_data = []
         first_id = sys.maxsize
-        for index, row in self.analyzer.means_analysis.loc[
+        try:
+            for index, row in self.analyzer.means_analysis.loc[
                              self.analyzer.means_analysis["storyid"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-            start = int(row["character id"])
-            end = start + len(row["text"])
-            if end >= first_id:
-                print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
-            else:
-                story_text = self.__insert_entity_color_in_story_text(
-                    story_text, start, end, row["label"])
-                first_id = start
+                start = int(row["character id"])
+                end = start + len(row["text"])
+                if end >= first_id:
+                    print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
+                else:
+                    story_text = self.__insert_entity_color_in_story_text(
+                        story_text, start, end, row["label"])
+                    first_id = start
+        except Exception as e:
+            print(e)
         return story_text
 
 

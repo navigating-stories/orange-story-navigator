@@ -24,9 +24,35 @@ class MeansAnalyzer:
         self.language = language
         self.verb_frames = verb_frames
         self.means_strategy = means_strategy
+        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+        nbr_of_stories = int(story_elements_df.iloc[-1]["storyid"]) + 1
 
-        entities = self.__process_texts(story_elements, callback=callback)
-        self.means_analysis = self.__sort_and_filter_results(entities)
+        entities = self.__process_texts(story_elements_df, callback=callback)
+        sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
+        entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
+        self.means_analysis = self.__sort_and_filter_results(entities_from_onsets, nbr_of_stories)
+
+
+    def __compute_sentence_offsets(self, story_elements_df):
+        sentences_df = story_elements_df.groupby(["storyid", "sentence_id"]).first().reset_index()[["storyid", "sentence_id", "sentence"]]
+        char_offsets = []
+        for index,row in sentences_df.iterrows():
+            if int(row["sentence_id"]) == 0:
+                char_offset = 0
+            else:
+                char_offset += len(row["sentence"]) + 1
+            char_offsets.append(char_offset)
+        sentences_df["char_offset"] = char_offsets
+        return sentences_df[["storyid", "sentence_id", "char_offset"]].set_index(["storyid", "sentence_id"])
+
+
+    def __convert_entities(self, entities, sentences_offsets):
+        entities_from_onsets = {}
+        for storyid, sentence_id, sentence_data in entities:
+            entities_from_onsets[int(storyid)] = {}
+            for token_start_id in sentence_data:
+                entities_from_onsets[int(storyid)][token_start_id + sentences_offsets.loc[(str(storyid), str(sentence_id))]["char_offset"]] = sentence_data[token_start_id]
+        return entities_from_onsets
 
 
     def __convert_to_sentences(self, story_elements_df):
@@ -39,17 +65,16 @@ class MeansAnalyzer:
 
     def __convert_df_to_dict(self, row_sentence_df):
         row_sentence_dict = row_sentence_df.to_dict()
-        row_sentence_dict["storyid"] = len(row_sentence_dict["sentence"]) * row_sentence_dict["storyid"]
-        row_sentence_dict["sentence_id"] = len(row_sentence_dict["sentence"]) * row_sentence_dict["sentence_id"]
+        row_sentence_dict["storyid"] = len(row_sentence_dict["sentence"]) * [row_sentence_dict["storyid"]]
+        row_sentence_dict["sentence_id"] = len(row_sentence_dict["sentence"]) * [row_sentence_dict["sentence_id"]]
         return row_sentence_dict
 
 
-    def __process_texts(self, story_elements, callback=None):
-        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+    def __process_texts(self, story_elements_df, callback=None):
         self.sentences_df = self.__convert_to_sentences(story_elements_df)
         entities = []
         for index, row_sentence_df in self.sentences_df.iterrows():
-            row_sentence_dict = self.__convert_df_to_dict(row_sentence_df) 
+            row_sentence_dict = self.__convert_df_to_dict(row_sentence_df)
             row_sentence_list = self.__transpose_dict(row_sentence_dict)
             row_sentence_transposed = { int(token["token_start_idx"]): token 
                                         for token in row_sentence_list }
@@ -58,43 +83,9 @@ class MeansAnalyzer:
                 entities.append([row_sentence_list[0]["storyid"], 
                                  row_sentence_list[0]["sentence_id"],
                                  sentence_entities])
-        print(len(entities))
+            if index > 10:
+                break
         return entities
-
-#        last_story_id = -1
-#        last_sentence = ""
-#        char_offset = 0
-#        entities = []
-#        sentence_df = {}
-#        for index, row in story_elements_df.iterrows():
-#            story_id = row["storyid"]
-#            if story_id != last_story_id:
-#                if len(sentence_df) > 0:
-#                   sentence_entities = self.__process_sentence(sentence_df, char_offset)
-#                   for key in sentence_entities.keys():
-#                       entities[-1][key] = sentence_entities[key]
-#                sentence_df = {}
-#                entities.append({})
-#                last_entity_class = "O"
-#                last_entity_start_id = -1
-#                last_sentence = ""
-#                char_offset = 0
-#            sentence = row["sentence"]
-#            if sentence != last_sentence:
-#                if len(sentence_df) > 0:
-#                   sentence_entities = self.__process_sentence(sentence_df, char_offset)
-#                   for key in sentence_entities.keys():
-#                       entities[-1][key] = sentence_entities[key]
-#                sentence_df = {}
-#                if len(last_sentence) > 0:
-#                    char_offset += 1 + len(last_sentence)
-#                last_sentence = sentence
-#            entity_start_id = int(row["token_start_idx"])
-#            sentence_df[entity_start_id] = row
-#            last_story_id = story_id
-#            if callback:
-#                callback(100*(index+1)/len(story_elements_df))
-#        return entities
 
 
     def __matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id):
@@ -174,15 +165,16 @@ class MeansAnalyzer:
         return entity_ids
 
 
-    def __sort_and_filter_results(self, entities):
+    def __sort_and_filter_results(self, entities, nbr_of_stories):
         results = []
         index = 0
-        for entities_per_text in entities:
-            results.extend([(entities_per_text[start]["text"],
-                             entities_per_text[start]["label_"],
-                             index,
-                             start) for start in entities_per_text])
+        for index in range(0, nbr_of_stories):
+            if index in entities:
+                results.extend([(entities[index][start]["text"],
+                                 entities[index][start]["label_"],
+                                 index,
+                                 int(start)) for start in entities[index]])
             index += 1
         results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id"]).sort_values(by=["text id", "character id"])
-        results_df.insert(3, "storyid", ["ST" + str(text_id) for text_id in results_df["text id"]])
+        results_df.insert(3, "storyid", ["ST" + str(int(text_id)) for text_id in results_df["text id"]])
         return results_df[["text", "label", "storyid", "character id"]].reset_index(drop=True)
