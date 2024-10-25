@@ -26,12 +26,11 @@ class MeansAnalyzer:
         self.means_strategy = means_strategy
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         self.__convert_str_columns_to_ints(story_elements_df)
-        nbr_of_stories = story_elements_df.iloc[-1]["storyid"] + 1
 
         entities = self.__process_texts(story_elements_df, callback=callback)
         sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
         entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
-        self.means_analysis = self.__sort_and_filter_results(entities_from_onsets, nbr_of_stories)
+        self.means_analysis = self.__sort_and_filter_results(entities_from_onsets)
 
 
     def __convert_str_columns_to_ints(self, story_elements_df):
@@ -157,10 +156,10 @@ class MeansAnalyzer:
                         self.__expand_means_phrase(sentence_dict, sentence_entities, char_offset, entity_start_id, head_start_id)
                     except Exception as e:
                         #pass
-                        print("keyerror1", str(e), sentence_dict[entity_start_id]["sentence"])
+                        print(f"keyerror1: missing {str(e)} in", sentence_dict[entity_start_id]["storyid"], entity_start_id, sentence_dict[entity_start_id]["sentence"])
             except Exception as e:
                 #pass
-                print("keyerror2", str(e), sentence_dict[entity_start_id]["sentence"])
+                print(f"keyerror2: missing {str(e)} in", sentence_dict[entity_start_id]["storyid"], entity_start_id, sentence_dict[entity_start_id]["sentence"])
         return sentence_entities
 
 
@@ -174,16 +173,13 @@ class MeansAnalyzer:
         return entity_ids
 
 
-    def __sort_and_filter_results(self, entities, nbr_of_stories):
-        results = []
-        index = 0
-        for index in range(0, nbr_of_stories):
-            if index in entities:
-                results.extend([(entities[index][start]["text"],
-                                 entities[index][start]["label_"],
-                                 index,
-                                 start) for start in entities[index]])
-            index += 1
-        results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id"]).sort_values(by=["text id", "character id"])
-        results_df.insert(3, "storyid", ["ST" + str(text_id) for text_id in results_df["text id"]])
-        return results_df[["text", "label", "storyid", "character id"]].reset_index(drop=True)
+    def __sort_and_filter_results(self, entities):
+        results = [(entities[storyid][character_id]["text"],
+                    entities[storyid][character_id]["label_"],
+                    storyid,
+                    character_id) 
+                   for storyid in entities.keys() 
+                   for character_id in entities[storyid]]
+        results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "character_id"]).sort_values(by=["storyid", "character_id"])
+        results_df.insert(3, "text_id", results_df["storyid"].apply(lambda x: "ST" + str(x)))
+        return results_df[["text", "label", "text_id", "character_id"]].reset_index(drop=True)

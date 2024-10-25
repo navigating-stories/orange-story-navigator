@@ -9,7 +9,10 @@ import pandas as pd
 import storynavigation.modules.constants as constants
 from orangecontrib.text.corpus import Corpus
 import nltk
-nltk.download('punkt_tab')
+try:
+    nltk.tokenize.sent_tokenize("test")
+except:
+    nltk.download('punkt_tab')
 
 
 def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
