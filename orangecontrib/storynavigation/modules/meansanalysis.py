@@ -7,7 +7,7 @@ import storynavigation.modules.util as util
 
 
 class MeansAnalyzer:
-    """Class to analyze the means in textual texts
+    """Class for extracting means from texts
     For the storynavigator Orange3 add-on:
     https://pypi.org/project/storynavigator/0.0.11/
 
@@ -25,7 +25,8 @@ class MeansAnalyzer:
         self.verb_frames = verb_frames
         self.means_strategy = means_strategy
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
-        nbr_of_stories = int(story_elements_df.iloc[-1]["storyid"]) + 1
+        self.__convert_str_columns_to_ints(story_elements_df)
+        nbr_of_stories = story_elements_df.iloc[-1]["storyid"] + 1
 
         entities = self.__process_texts(story_elements_df, callback=callback)
         sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
@@ -33,15 +34,24 @@ class MeansAnalyzer:
         self.means_analysis = self.__sort_and_filter_results(entities_from_onsets, nbr_of_stories)
 
 
+    def __convert_str_columns_to_ints(self, story_elements_df):
+        story_elements_df["storyid"] = story_elements_df["storyid"].apply(lambda x: int(x))
+        story_elements_df["sentence_id"] = story_elements_df["sentence_id"].apply(lambda x: int(x))
+        story_elements_df["token_start_idx"] = story_elements_df["token_start_idx"].apply(lambda x: int(x))
+        story_elements_df["spacy_head_idx"] = story_elements_df["spacy_head_idx"].apply(lambda x: int(x))
+
+
     def __compute_sentence_offsets(self, story_elements_df):
         sentences_df = story_elements_df.groupby(["storyid", "sentence_id"]).first().reset_index()[["storyid", "sentence_id", "sentence"]]
         char_offsets = []
+        last_sentence = ""
         for index,row in sentences_df.iterrows():
-            if int(row["sentence_id"]) == 0:
+            if row["sentence_id"] == 0:
                 char_offset = 0
             else:
-                char_offset += len(row["sentence"]) + 1
+                char_offset += len(last_sentence) + 1
             char_offsets.append(char_offset)
+            last_sentence = row["sentence"]
         sentences_df["char_offset"] = char_offsets
         return sentences_df[["storyid", "sentence_id", "char_offset"]].set_index(["storyid", "sentence_id"])
 
@@ -49,13 +59,15 @@ class MeansAnalyzer:
     def __convert_entities(self, entities, sentences_offsets):
         entities_from_onsets = {}
         for storyid, sentence_id, sentence_data in entities:
-            entities_from_onsets[int(storyid)] = {}
+            if storyid not in entities_from_onsets:
+                entities_from_onsets[storyid] = {}
             for token_start_id in sentence_data:
-                entities_from_onsets[int(storyid)][token_start_id + sentences_offsets.loc[(str(storyid), str(sentence_id))]["char_offset"]] = sentence_data[token_start_id]
+                char_offset_sentence = sentences_offsets.loc[(storyid, sentence_id)]["char_offset"]
+                entities_from_onsets[storyid][token_start_id + char_offset_sentence] = sentence_data[token_start_id]
         return entities_from_onsets
 
 
-    def __convert_to_sentences(self, story_elements_df):
+    def __convert_stories_to_sentences(self, story_elements_df):
         return story_elements_df.groupby(["storyid", "sentence_id"]).agg(lambda x: list(x)).reset_index()
 
 
@@ -71,25 +83,22 @@ class MeansAnalyzer:
 
 
     def __process_texts(self, story_elements_df, callback=None):
-        self.sentences_df = self.__convert_to_sentences(story_elements_df)
+        self.sentences_df = self.__convert_stories_to_sentences(story_elements_df)
         entities = []
         for index, row_sentence_df in self.sentences_df.iterrows():
             row_sentence_dict = self.__convert_df_to_dict(row_sentence_df)
-            row_sentence_list = self.__transpose_dict(row_sentence_dict)
-            row_sentence_transposed = { int(token["token_start_idx"]): token 
-                                        for token in row_sentence_list }
-            sentence_entities = self.__process_sentence(row_sentence_transposed)
+            row_sentence_transposed_list = self.__transpose_dict(row_sentence_dict)
+            row_sentence_transposed_dict = { token["token_start_idx"]: token 
+                                             for token in row_sentence_transposed_list }
+            sentence_entities = self.__process_sentence(row_sentence_transposed_dict)
             if sentence_entities:
-                entities.append([row_sentence_list[0]["storyid"], 
-                                 row_sentence_list[0]["sentence_id"],
+                entities.append([row_sentence_transposed_list[0]["storyid"], 
+                                 row_sentence_transposed_list[0]["sentence_id"],
                                  sentence_entities])
-            if index > 10:
-                break
         return entities
 
 
     def __matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id):
-
         if sentence_df[head_of_head_start_id]["spacy_tag"] not in ["VERB", "AUX"]:
             return False
         verb_frame_prepositions = [x[1] for x in self.verb_frames] 
@@ -133,8 +142,8 @@ class MeansAnalyzer:
         sentence_entities = {}
         for entity_start_id in sorted(sentence_dict.keys()):
             try:
-                head_start_id = int(sentence_dict[entity_start_id]["spacy_head_idx"])
-                head_of_head_start_id = int(sentence_dict[head_start_id]["spacy_head_idx"])
+                head_start_id = sentence_dict[entity_start_id]["spacy_head_idx"]
+                head_of_head_start_id = sentence_dict[head_start_id]["spacy_head_idx"]
                 if self.language == constants.EN:
                     entity_start_id, head_start_id = head_start_id, entity_start_id
                 if self.__matching_dependencies(sentence_dict, entity_start_id, head_start_id, head_of_head_start_id):
@@ -158,7 +167,7 @@ class MeansAnalyzer:
     def __get_head_dependencies(self, sentence_df, char_offset, entity_start_id, head_start_id):
         entity_ids = []
         for start_id in sorted(sentence_df.keys()):
-            if int(sentence_df[start_id]["spacy_head_idx"]) == head_start_id and start_id != entity_start_id and start_id != head_start_id:
+            if sentence_df[start_id]["spacy_head_idx"] == head_start_id and start_id != entity_start_id and start_id != head_start_id:
                 child_entity_ids = self.__get_head_dependencies(sentence_df, char_offset, entity_start_id, start_id)
                 entity_ids.append(start_id)
                 entity_ids.extend(child_entity_ids)
@@ -173,8 +182,8 @@ class MeansAnalyzer:
                 results.extend([(entities[index][start]["text"],
                                  entities[index][start]["label_"],
                                  index,
-                                 int(start)) for start in entities[index]])
+                                 start) for start in entities[index]])
             index += 1
         results_df = pd.DataFrame(results, columns=["text", "label", "text id", "character id"]).sort_values(by=["text id", "character id"])
-        results_df.insert(3, "storyid", ["ST" + str(int(text_id)) for text_id in results_df["text id"]])
+        results_df.insert(3, "storyid", ["ST" + str(text_id) for text_id in results_df["text id"]])
         return results_df[["text", "label", "storyid", "character id"]].reset_index(drop=True)
