@@ -177,7 +177,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         try:
             verb_frames_lines = pathlib.Path(verb_frames_file_name).read_text(encoding="utf-8").strip().split("\n")
             for line in verb_frames_lines:
-                self.verb_frames.append(line.strip().split(","))
+                self.verb_frames.append([token.strip() for token in line.strip().split(",")])
         except Exception as e:
             print("read_verb_frames_file", str(e))
         if self.story_elements:
