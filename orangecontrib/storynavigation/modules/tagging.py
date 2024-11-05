@@ -288,19 +288,27 @@ class Tagger:
                 
                                
              # Convert the collected rows into a DataFrame
-        return pd.DataFrame(rows)    
+        return pd.DataFrame(rows)
         
         
      
     def __process_potential_action(self, tag):
         if self.lang == constants.NL:
-            return self.__process_dutch_potential_action(tag)
-            return self.__process_dutch_future_verbs(tag)
+            return self.__process_dutch_potential_action(tag)            
         elif self.lang == constants.EN:
             return self.__process_english_potential_action(tag)
         else: 
             return "-"
+    
+    def __process_future_verb(self, sentence):
+        if self.lang == constants.NL:            
+            return self.__process_dutch_future_verbs(sentence)
+        # elif self.lang == constants.EN:
+        #     return self.__process_english_future_verbs(sentence)
+        else: 
+            return "-"
         
+    
     def __process_non_noun_tag(self, storyid, sentence, tag):
         """Given a tagged token in a sentence within a specific story known to not be a noun (potentially a verb), this function processes and appends data about this action to the master output dataframe
 
