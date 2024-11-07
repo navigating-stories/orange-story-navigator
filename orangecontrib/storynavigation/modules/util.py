@@ -225,6 +225,10 @@ def convert_orangetable_to_dataframe(table):
     Returns:
         df (pandas.DataFrame): a pandas dataframe with the same content (info) and structure contained in the Orange Data Table
     """
+
+    if table is None:
+        return pd.DataFrame([], columns=['storyid', 'sentence_id', 'token_start_idx', 'spacy_head_idx', 'sentence'])
+
     # Extract attribute names, class variable name, and meta attribute names
     column_names = [var.name for var in table.domain.variables]
     meta_names = [meta.name for meta in table.domain.metas]

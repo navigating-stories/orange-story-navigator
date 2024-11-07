@@ -152,8 +152,10 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.setModel(proxy_model)
         self.doc_list.selectionModel().selectionChanged.connect(self.selection_changed)
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
-        self.doc_webview.setHtml("")
+        self.doc_webview.setHtml("<div style=\"max-width:600px\" />")
         self.mainArea.layout().addWidget(self.splitter)
+        total_size = self.splitter.size().width()
+        self.splitter.setSizes([int(0.2 * total_size), int(0.8 * total_size)])
 
 
     def __update_stories_selected(self):
