@@ -96,7 +96,7 @@ class ActionTagger:
         return ents, multi_custom_tags
     
     def __postag_sents(
-            self, sentences, past_vbz, present_vbz, custom, story_elements_df
+            self, sentences, past_vbz, present_vbz, future_vbz, custom, story_elements_df
     ):
         html = ""
         
@@ -110,6 +110,8 @@ class ActionTagger:
             pos_tags.append("PAST_VB")
         if present_vbz:
             pos_tags.append("PRES_VB")
+        if future_vbz:
+            pos_tags.append("FUTURE_VB")
         if custom:
             custom_tag_columns, custom_tags = util.get_custom_tags_list_and_columns(story_elements_df)
 
@@ -124,7 +126,7 @@ class ActionTagger:
                 nents = []
                 cents = []
                 new_color_map = constants.COLOR_MAP
-                if past_vbz or present_vbz:
+                if past_vbz or present_vbz or future_vbz:
                     matched_df = self.__filter_rows(story_elements_df, pos_tags)
                     matched_sent_df_sorted = self.__filter_and_sort_matched_dataframe_by_sentence(matched_df, sentence, sentences)
                     matched_sent_df_sorted['displacy_tag_strings'] = matched_sent_df_sorted['token_start_idx'] + ' | ' + matched_sent_df_sorted['token_end_idx'] + ' | ' + matched_sent_df_sorted['merged_tags']
@@ -166,7 +168,7 @@ class ActionTagger:
             return self.html_result
 
     def postag_text(
-            self, text, past_vbz, present_vbz, custom, story_elements_df
+            self, text, past_vbz, present_vbz, future_vbz, custom, story_elements_df
     ):
         """POS-tags story text and returns HTML string which encodes the the tagged text, ready for rendering in the UI
 
@@ -191,15 +193,15 @@ class ActionTagger:
         sentences = sentences_df['sentence'].tolist()
 
         selected_storyid = story_elements_df['storyid'].unique().tolist()[0]
-        specific_tag_choice_html = (str(int(past_vbz)) + str(int(present_vbz)) + str(int(custom)))
+        specific_tag_choice_html = (str(int(past_vbz)) + str(int(present_vbz)) + str(int(future_vbz)) + str(int(custom)))
         if selected_storyid in self.tagging_cache:
             if specific_tag_choice_html in self.tagging_cache[str(selected_storyid)]: # tagging info already generated, just lookup cached results
                 return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
             else:
-                self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, custom, story_elements_df)
+                self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, future_vbz, custom, story_elements_df)
         else:
             self.tagging_cache[str(selected_storyid)] = {}
-            self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, custom, story_elements_df)
+            self.tagging_cache[str(selected_storyid)][specific_tag_choice_html] = self.__postag_sents(sentences, past_vbz, present_vbz, future_vbz, custom, story_elements_df)
 
         return self.tagging_cache[str(selected_storyid)][specific_tag_choice_html]
     
@@ -383,8 +385,8 @@ class ActionTagger:
             lang (string): the ISO code for the language of the input stories (e.g. 'nl' or 'en'). Currently only 'nl' and 'en' are supported
         """
         if lang == constants.NL:
-            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            self.stopwords = constants.NL_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
         else:
-            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split("\n")
+            self.stopwords = constants.EN_STOPWORDS_FILE.read_text(encoding="utf-8").split(os.linesep)
 
         self.stopwords = [item for item in self.stopwords if len(item) > 0]
