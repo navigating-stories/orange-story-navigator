@@ -233,9 +233,10 @@ class Tagger:
 
     def __process_dutch_potential_action(self, tag, sentence):
     # Reprocess the sentence into a spaCy Doc object
+    #TODO: This is a temporary fix. The sentence is already processed in the main function.
         sentence_doc = nlp(sentence)
         
-        # Extract the token object corresponding to the word in 'tag' (assuming 'tag[0]' is the word)
+        # Extract the token object corresponding to the word in 'tag'
         token = None
         for tok in sentence_doc:
             if tok.text == tag[0]:  # Find the token with the same text as 'tag[0]'
@@ -245,16 +246,15 @@ class Tagger:
         # Now that we have the correct token, check its part-of-speech and other attributes
         if token and token.pos_ in ["VERB", "AUX"] and token.tag_.split('|')[0] == "WW":
             
-            # Check for future tense
-            future_tense = self.__process_dutch_future_verbs(sentence_doc)
-            if future_tense == "FUTURE_VB":
+            # Check for future tense with respect to this specific token
+            if self.__process_dutch_future_verbs(sentence_doc, token) == "FUTURE_VB":
                 return "FUTURE_VB"
             
             # Classify the verb as either past or present tense
-            if token.tag_.startswith('WW|pv|tgw|') or token.tag_.startswith('WW|pv|conj|') or token.tag_.startswith('WW|inf|'):  # PRESENT TENSE
-                return "PRES_VB"
-            elif token.tag_.startswith('WW|pv|verl|') or token.tag_.startswith('WW|vd|'):  # PAST TENSE
-                return "PAST_VB"
+            elif token.tag_.startswith('WW|pv|tgw|') or token.tag_.startswith('WW|pv|conj|') or token.tag_.startswith('WW|inf|'):
+                return "PRES_VB" # PRESENT TENSE
+            elif token.tag_.startswith('WW|pv|verl|') or token.tag_.startswith('WW|vd|'):
+                return "PAST_VB" # PAST TENSE
             else:
                 # Handle edge cases or unknown tenses (like WW|od)
                 return "-"
@@ -262,35 +262,46 @@ class Tagger:
             # Not a verb or no matching token found
             return "-"
 
-    def __process_dutch_future_verbs(self, sentence):
-        """Process a sentence to analyze verbs and their tenses.
-        
+    def __process_dutch_future_verbs(self, sentence, token):
+        """Determine if a specific token is in the future tense.
+    
         Args:
-            sentence (spacy.tokens.doc.Doc): A spacy Doc object representing a sentence.
+            sentence (spacy.tokens.doc.Doc): A spaCy Doc object representing a sentence.
+            token (spacy.tokens.token.Token): The token being classified.
 
         Returns:
-            str: "FUTURE_VB" if a future tense verb is detected, otherwise "-".
+            str: "FUTURE_VB" if the token is part of a future tense construction, otherwise "-".
         """
+        
+        # Check if the token itself is a conjugation of "zullen" (indicating future tense)
+        if token.lemma_ == "zullen":
+            return "FUTURE_VB"
+    
         # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
         future_verb_triggered = False
 
         # Loop through each token in the sentence
         for tok in sentence:
-            # 1. If the token is an auxiliary verb 'zullen' or its conjugation
-            if tok.lemma_ in ["zullen"]:
-                future_verb_triggered = True  # Set the flag when we encounter 'zullen'
-                return "FUTURE_VB"  # Label 'zullen' itself as FUTURE_VB
+            # 1. Check if the token is an auxiliary 'zullen' or a conjugation of it
+            if tok.lemma_ == "zullen" and tok.pos_ == "AUX":
+                future_verb_triggered = True                 
 
-            # 2. If we've seen 'zullen' before and encounter an infinitive verb, mark it as FUTURE_VB
-            # This only applies to infinitive verbs (WW|inf|), not other verb forms
-            elif future_verb_triggered and tok.tag_.startswith('WW|inf|'):
-                return "FUTURE_VB"  # Mark any infinitive verb after 'zullen' as FUTURE_VB
+            # 2. Check if the specific token is an infinitive verb that follows 'zullen            
+            if future_verb_triggered and tok.tag_.startswith("WW|inf|"):
+            # Classify the infinitive as FUTURE_VB if it's the target token
+                if tok == token:
+                    return "FUTURE_VB"
             
             # Stop checking further tokens if we encounter a verb that is not part of a "zullen" construction
             # This prevents misclassification of non-auxiliary verbs after 'zullen' has triggered.
-            elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and not tok.tag_.startswith('WW|inf|'):
+            #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and not tok.tag_.startswith('WW|inf|'):
                 # Non-auxiliary verbs or non-infinitives should break the flagging logic
-                future_verb_triggered = False  # Reset flag if we encounter a non-auxiliary verb
+            #    future_verb_triggered = False  # Reset flag if we encounter a non-auxiliary verb
+            # Reset the future_trigger_found if another main verb is encountered before token
+            #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and tok != token:
+            #    future_verb_triggered = False            
+            if tok.is_punct or (tok.dep_ in ["cc", "punct"] and tok.text in [",", ";"]):
+                future_verb_triggered = False
 
         return "-"  # Return "-" if no future tense verb is detected
      
@@ -300,16 +311,7 @@ class Tagger:
         elif self.lang == constants.EN:
             return self.__process_english_potential_action(tag)
         else: 
-            return "-"
-    
-    def __process_future_verb(self, sentence):
-        if self.lang == constants.NL:            
-            return self.__process_dutch_future_verbs(sentence)
-        # elif self.lang == constants.EN:
-        #     return self.__process_english_future_verbs(sentence)
-        else: 
-            return "-"
-        
+            return "-"        
     
     def __process_non_noun_tag(self, storyid, sentence, tag):
         """Given a tagged token in a sentence within a specific story known to not be a noun (potentially a verb), this function processes and appends data about this action to the master output dataframe
