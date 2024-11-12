@@ -30,7 +30,7 @@ class Tagger:
         self.custom_tags = None
         self.word_column = None
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action']
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','future_verb']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -168,8 +168,15 @@ class Tagger:
             for tag, span in zip(tags, spans):
                 story_df_row = self.__process_tag(storyid, sentence, tag, span)
                 if story_df_row is not None:
-                    story_df_rows.append(story_df_row)
-
+                    story_df_rows.append(story_df_row)                  
+                        
+            
+            for index in range(len(story_df_rows)):             
+                story_df_rows[index].append(self.__process_dutch_future_verbs(story_df_rows, story_df_rows[index]))
+                print(";;;;;;")
+                print(self.__process_dutch_future_verbs(story_df_rows, story_df_rows[index]))               
+                
+            
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
         return story_df
         
@@ -234,35 +241,35 @@ class Tagger:
     def __process_dutch_potential_action(self, tag, sentence):
     # Reprocess the sentence into a spaCy Doc object
     #TODO: This is a temporary fix. The sentence is already processed in the main function.
-        sentence_doc = nlp(sentence)
+        # sentence_doc = nlp(sentence)
         
-        # Extract the token object corresponding to the word in 'tag'
-        token = None
-        for tok in sentence_doc:
-            if tok.text == tag[0]:  # Find the token with the same text as 'tag[0]'
-                token = tok
-                break
+        # # Extract the token object corresponding to the word in 'tag'
+        # token = None
+        # for tok in sentence_doc:
+        #     if tok.text == tag[0]:  # Find the token with the same text as 'tag[0]'
+        #         token = tok
+        #         break
         
         # Now that we have the correct token, check its part-of-speech and other attributes
+        token = tag[-1]
+        
         if token and token.pos_ in ["VERB", "AUX"] and token.tag_.split('|')[0] == "WW":
             
-            # Check for future tense with respect to this specific token
-            if self.__process_dutch_future_verbs(sentence_doc, token) == "FUTURE_VB":
-                return "FUTURE_VB"
+            # Check for future tense with respect to specific token
+            # if self.__process_dutch_future_verbs(sentence_doc, token) == "FUTURE_VB":
+            #     return "FUTURE_VB"
             
             # Classify the verb as either past or present tense
-            elif token.tag_.startswith('WW|pv|tgw|') or token.tag_.startswith('WW|pv|conj|') or token.tag_.startswith('WW|inf|'):
-                return "PRES_VB" # PRESENT TENSE
+            if token.tag_.startswith('WW|pv|tgw|') or token.tag_.startswith('WW|pv|conj|') or token.tag_.startswith('WW|inf|'):
+                return "PRES_VB"
             elif token.tag_.startswith('WW|pv|verl|') or token.tag_.startswith('WW|vd|'):
-                return "PAST_VB" # PAST TENSE
-            else:
-                # Handle edge cases or unknown tenses (like WW|od)
+                return "PAST_VB"
+            else:                
                 return "-"
-        else:
-            # Not a verb or no matching token found
+        else: # Not a verb            
             return "-"
 
-    def __process_dutch_future_verbs(self, sentence, token):
+    def __process_dutch_future_verbs(self, tags, tag):
         """Determine if a specific token is in the future tense.
     
         Args:
@@ -273,37 +280,43 @@ class Tagger:
             str: "FUTURE_VB" if the token is part of a future tense construction, otherwise "-".
         """
         
-        # Check if the token itself is a conjugation of "zullen" (indicating future tense)
-        if token.lemma_ == "zullen":
+        # Check if the token itself is a conjugation of "zullen" or "gaan" (indicating future tense)
+        lemma_value = tag[10]
+        pos_value = tag[6]
+        tag_value = tag[7]
+        
+        if lemma_value in ["zullen", "gaan"] and pos_value == "AUX":
             return "FUTURE_VB"
     
         # Variable to track if we've encountered a conjugation of 'zullen' in the sentence
         future_verb_triggered = False
 
         # Loop through each token in the sentence
-        for tok in sentence:
-            # 1. Check if the token is an auxiliary 'zullen' or a conjugation of it
-            if tok.lemma_ == "zullen" and tok.pos_ == "AUX":
-                future_verb_triggered = True                 
+        for tok in tags:
+            lemma_value = tok[10]
+            pos_value = tok[6]
+            tag_value = tok[7]            
+            # Check if the token is an auxiliary 'zullen' or 'gaan' or a conjugation of it
+            if lemma_value in ["zullen", "gaan"] and pos_value == "AUX":
+                future_verb_triggered = True
 
-            # 2. Check if the specific token is an infinitive verb that follows 'zullen            
-            if future_verb_triggered and tok.tag_.startswith("WW|inf|"):
+            # Check if the specific token is an infinitive verb that follows 'zullen' or 'gaan'
+            if future_verb_triggered and tag_value.startswith("WW|inf|"):
             # Classify the infinitive as FUTURE_VB if it's the target token
-                if tok == token:
+                if tok == tag:
                     return "FUTURE_VB"
             
-            # Stop checking further tokens if we encounter a verb that is not part of a "zullen" construction
-            # This prevents misclassification of non-auxiliary verbs after 'zullen' has triggered.
+            # Stop checking further tokens if we encounter a verb that is not part of a "zullen" construction            
             #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and not tok.tag_.startswith('WW|inf|'):
-                # Non-auxiliary verbs or non-infinitives should break the flagging logic
-            #    future_verb_triggered = False  # Reset flag if we encounter a non-auxiliary verb
+                        
             # Reset the future_trigger_found if another main verb is encountered before token
             #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and tok != token:
-            #    future_verb_triggered = False            
-            if tok.is_punct or (tok.dep_ in ["cc", "punct"] and tok.text in [",", ";"]):
-                future_verb_triggered = False
+                     
+            # reset the future_verb_triggered flag whenever a clause boundary is detected
+            # if tok.is_punct or (tok.dep_ in ["cc", "punct"] and tok.text in [",", ";"]):
+            #     future_verb_triggered = False
 
-        return "-"  # Return "-" if no future tense verb is detected
+        return "-"  # if no future tense verb is detected
      
     def __process_potential_action(self, tag, sentence):
         if self.lang == constants.NL:
