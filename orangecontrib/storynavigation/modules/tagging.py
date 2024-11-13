@@ -12,7 +12,7 @@ from nltk.tokenize import RegexpTokenizer
 from Orange.data.pandas_compat import table_to_frames
 import spacy
 
-nlp = spacy.load("nl_core_news_sm") 
+#nlp = spacy.load("nl_core_news_sm") 
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -168,15 +168,15 @@ class Tagger:
             for tag, span in zip(tags, spans):
                 story_df_row = self.__process_tag(storyid, sentence, tag, span)
                 if story_df_row is not None:
-                    story_df_rows.append(story_df_row)                  
-                        
+                    story_df_rows.append(story_df_row)                        
             
-            for index in range(len(story_df_rows)):             
-                story_df_rows[index].append(self.__process_dutch_future_verbs(story_df_rows, story_df_rows[index]))
-                print(";;;;;;")
-                print(self.__process_dutch_future_verbs(story_df_rows, story_df_rows[index]))               
-                
+        for index, row in enumerate(story_df_rows):           
+            future_verb = self.__process_dutch_future_verbs(story_df_rows, row)
+            row.append(future_verb)           
             
+            if future_verb == "FUTURE_VB":
+                row[5] = "FUTURE_VB"
+                            
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
         return story_df
         
@@ -238,27 +238,12 @@ class Tagger:
         else:   # Not Verb
             return "-"
 
-    def __process_dutch_potential_action(self, tag, sentence):
-    # Reprocess the sentence into a spaCy Doc object
-    #TODO: This is a temporary fix. The sentence is already processed in the main function.
-        # sentence_doc = nlp(sentence)
-        
-        # # Extract the token object corresponding to the word in 'tag'
-        # token = None
-        # for tok in sentence_doc:
-        #     if tok.text == tag[0]:  # Find the token with the same text as 'tag[0]'
-        #         token = tok
-        #         break
-        
-        # Now that we have the correct token, check its part-of-speech and other attributes
+    def __process_dutch_potential_action(self, tag):
+    
         token = tag[-1]
         
         if token and token.pos_ in ["VERB", "AUX"] and token.tag_.split('|')[0] == "WW":
-            
-            # Check for future tense with respect to specific token
-            # if self.__process_dutch_future_verbs(sentence_doc, token) == "FUTURE_VB":
-            #     return "FUTURE_VB"
-            
+                        
             # Classify the verb as either past or present tense
             if token.tag_.startswith('WW|pv|tgw|') or token.tag_.startswith('WW|pv|conj|') or token.tag_.startswith('WW|inf|'):
                 return "PRES_VB"
@@ -285,6 +270,8 @@ class Tagger:
         pos_value = tag[6]
         tag_value = tag[7]
         
+        # Auxiliary verbs in Dutch indicating future tense
+        #future_auxiliary_verbs = ["zal", "zult", "zullen","ga", "gaat", "gaan"]
         if lemma_value in ["zullen", "gaan"] and pos_value == "AUX":
             return "FUTURE_VB"
     
@@ -294,33 +281,40 @@ class Tagger:
         # Loop through each token in the sentence
         for tok in tags:
             lemma_value = tok[10]
+            text_value = tok[5]
             pos_value = tok[6]
-            tag_value = tok[7]            
+            tag_value = tok[7]
+            dep_value = tok[8]
+            
             # Check if the token is an auxiliary 'zullen' or 'gaan' or a conjugation of it
             if lemma_value in ["zullen", "gaan"] and pos_value == "AUX":
                 future_verb_triggered = True
+                continue  # Move to the next token to check for infinitives
 
             # Check if the specific token is an infinitive verb that follows 'zullen' or 'gaan'
             if future_verb_triggered and tag_value.startswith("WW|inf|"):
             # Classify the infinitive as FUTURE_VB if it's the target token
                 if tok == tag:
                     return "FUTURE_VB"
-            
-            # Stop checking further tokens if we encounter a verb that is not part of a "zullen" construction            
-            #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and not tok.tag_.startswith('WW|inf|'):
-                        
-            # Reset the future_trigger_found if another main verb is encountered before token
-            #elif tok.pos_ == "VERB" and tok.tag_.split('|')[0] != "AUX" and tok != token:
-                     
+                continue  # Keep marking subsequent infinitives as FUTURE_VB            
+                                 
             # reset the future_verb_triggered flag whenever a clause boundary is detected
-            # if tok.is_punct or (tok.dep_ in ["cc", "punct"] and tok.text in [",", ";"]):
-            #     future_verb_triggered = False
+            if dep_value == "punct" and text_value in [";", ",", ".", ":", "?", "!"]:
+                future_verb_triggered = False
+            
+            # if a finite verb (that isn't part of a future tense construction) appears in the
+            # sentence after a conjugation of "zullen" or "gaan", it signals the end of the
+            # future verb construction. In this case, you don't want to continue marking 
+            # subsequent verbs or infinitives as part of a future tense construction, 
+            # so the flag is reset to False.
+            elif pos_value == "VERB" and not tag_value.startswith("WW|inf|"):
+                future_verb_triggered = False
 
         return "-"  # if no future tense verb is detected
      
-    def __process_potential_action(self, tag, sentence):
+    def __process_potential_action(self, tag):
         if self.lang == constants.NL:
-            return self.__process_dutch_potential_action(tag, sentence)
+            return self.__process_dutch_potential_action(tag)
         elif self.lang == constants.EN:
             return self.__process_english_potential_action(tag)
         else: 
@@ -347,7 +341,7 @@ class Tagger:
         """
         row = None
         if self.__is_valid_token(tag):
-            tense_value = self.__process_potential_action(tag, sentence)            
+            tense_value = self.__process_potential_action(tag)            
             row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, 
                    tag[1], tag[2], tag[3], tag[4], tag[-1].lemma_, tag[-1].head.text, tag[-1].head.idx,
                    False, False, False, '-']            
