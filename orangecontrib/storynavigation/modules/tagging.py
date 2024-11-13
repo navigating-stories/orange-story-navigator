@@ -174,6 +174,7 @@ class Tagger:
             future_verb = self.__process_dutch_future_verbs(story_df_rows, row)
             row.append(future_verb)           
             
+            # overwrite the verb value if it's a future verb
             if future_verb == "FUTURE_VB":
                 row[5] = "FUTURE_VB"
                             
@@ -289,14 +290,14 @@ class Tagger:
             # Check if the token is an auxiliary 'zullen' or 'gaan' or a conjugation of it
             if lemma_value in ["zullen", "gaan"] and pos_value == "AUX":
                 future_verb_triggered = True
-                continue  # Move to the next token to check for infinitives
+                continue
 
             # Check if the specific token is an infinitive verb that follows 'zullen' or 'gaan'
             if future_verb_triggered and tag_value.startswith("WW|inf|"):
             # Classify the infinitive as FUTURE_VB if it's the target token
                 if tok == tag:
                     return "FUTURE_VB"
-                continue  # Keep marking subsequent infinitives as FUTURE_VB            
+                continue  # Keep marking subsequent infinitives as FUTURE_VB
                                  
             # reset the future_verb_triggered flag whenever a clause boundary is detected
             if dep_value == "punct" and text_value in [";", ",", ".", ":", "?", "!"]:
