@@ -12,7 +12,6 @@ from nltk.tokenize import RegexpTokenizer
 from Orange.data.pandas_compat import table_to_frames
 import spacy
 
-#nlp = spacy.load("nl_core_news_sm") 
 
 class Tagger:
     """Class to perform NLP tagging of relevant actors and actions in textual stories
@@ -282,7 +281,7 @@ class Tagger:
         # Loop through each token in the sentence
         for tok in tags:
             lemma_value = tok[10]
-            text_value = tok[5]
+            text_value = tok[2]
             pos_value = tok[6]
             tag_value = tok[7]
             dep_value = tok[8]
