@@ -29,7 +29,7 @@ class Tagger:
         self.custom_tags = None
         self.word_column = None
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','future_verb', 'voice']
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','voice','future_verb']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -157,30 +157,30 @@ class Tagger:
         
         for sentence, tagged_sentence in zip(sentences, tagged_sentences):
             first_word_in_sent = sentence.split()[0].lower().strip()
-            tags = []
-            
+            tags = []            
+                       
             # store all spacy nlp tags and dependency info for each token in the sentence in a tuple
             for token in tagged_sentence:
                 token_ne = "O" if token.ent_iob_ == "O" else token.ent_iob_ + "-" + token.ent_type_
-                # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, named entity tag,
-                # the spacy token object itself)                
+                # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, named entity tag, the spacy token object itself)                
                 tags.append((token.text, token.pos_, token.tag_, token.dep_, token_ne, token)) 
 
             tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+") # word tokenizer
             spans = list(tokenizer.span_tokenize(sentence)) # generate token spans in sentence (start and end indices)
 
+            # Determine the voice (passive or active) for the current sentence
+            voice = self.__process_dutch_voice(tags)
+            
             # Process each token
             for tag, span in zip(tags, spans):
                 story_df_row = self.__process_tag(storyid, sentence, tag, span)
                 if story_df_row is not None:
-                    story_df_rows.append(story_df_row)  
+                    story_df_row.append(voice)
+                    story_df_rows.append(story_df_row)            
             
-            # Determine the voice (passive or active) for the current sentence
-            voice = self.__process_dutch_voice(tags)
-
             # Append the voice to each row corresponding to this sentence
-            for row in story_df_rows:
-                row.append(voice)  # Add the voice classification to the row of the df                      
+            #for row in tags:
+            #    row.append(voice)  # Add the voice classification to the row of the df                      
             
         for index, row in enumerate(story_df_rows):           
             future_verb = self.__process_dutch_future_verbs(story_df_rows, row)
@@ -344,7 +344,7 @@ class Tagger:
 
         # Loop through tokens in the sentence
         for tok in tags:
-            lemma_value = tok[5].lemma_ 
+            lemma_value = tok[5].lemma_
     
             # Access the POS tag (index 1)
             pos_value = tok[1] # token.pos_
@@ -358,7 +358,7 @@ class Tagger:
                 continue
 
             # Check for a past participle if "worden" was triggered
-            if passive_triggered and "WW|vd|verl" in tag_value:
+            if passive_triggered and tag_value.startswith('WW|vd'):
                 return "PASSIVE"
 
         # If no passive construction is found, return ACTIVE
