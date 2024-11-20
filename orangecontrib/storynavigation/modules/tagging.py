@@ -326,9 +326,10 @@ class Tagger:
 
         return "-"  # if no future tense verb is detected
     
+    
     def __process_dutch_voice(self, tags):
         """
-        Determine if a Dutch sentence or clause is in the passive or active voice.
+        Determine if a Dutch sentence is in the passive or active voice.
 
         Args:
             tags (list): A list of tags representing tokens in the sentence or clause.
@@ -336,33 +337,107 @@ class Tagger:
         Returns:
             str: "PASSIVE" if the sentence/clause is in the passive voice, otherwise "ACTIVE".
         """
-        # Auxiliary verb indicating passive voice
-        passive_auxiliary_lemma = "worden"
-        
-        # Track whether "worden" and a past participle are found
-        passive_triggered = False
+        # Lemmas of auxiliary verbs indicating passive voice
+        #passive_auxiliaries = {"worden", "zijn"}
+        passive_auxiliaries = {"worden"}
+        past_participle_tag_prefix = "WW|vd"  # past participles
+        auxiliary_pos_tag = "AUX"
 
-        # Loop through tokens in the sentence
+        # Flags to track detection of relevant elements
+        auxiliary_found = False
+        passive_auxiliary_found = False
+        past_participle_found = False
+        prepositional_agent_found = False  # Tracks presence of a "door" or similar preposition
+
+        # Keep track of auxiliary heads for context
+        auxiliary_heads = set()
+
+        # Iterate through the tags
         for tok in tags:
             lemma_value = tok[5].lemma_
-    
-            # Access the POS tag (index 1)
-            pos_value = tok[1] # token.pos_
-            
-            # Access the fine-grained tag (index 2)
-            tag_value = tok[2]  # token.tag_
+            pos_value = tok[1]  
+            tag_value = tok[2]  
+            dep_value = tok[3]  # Dependency relation
+            head_value = tok[5].head.text  # Syntactic head (index of the parent token)
 
-            # Check if the token is an auxiliary "worden"
-            if lemma_value == passive_auxiliary_lemma and pos_value == "AUX":
-                passive_triggered = True
-                continue
+            # Check for auxiliary verbs (e.g., "moeten", "kunnen") that might chain with "worden" or "zijn"
+            if pos_value == auxiliary_pos_tag and lemma_value not in passive_auxiliaries:
+                auxiliary_found = True
+                auxiliary_heads.add(head_value)
 
-            # Check for a past participle if "worden" was triggered
-            if passive_triggered and tag_value.startswith('WW|vd'):
+            # Check for the passive auxiliary "worden" or "zijn"
+            if lemma_value in passive_auxiliaries and pos_value == auxiliary_pos_tag:
+                passive_auxiliary_found = True
+                auxiliary_heads.add(head_value)
+
+            # Check for a past participle
+            if tag_value.startswith(past_participle_tag_prefix):
+                past_participle_found = True
+
+            # Check for a prepositional agent introduced by "door" or similar
+            if lemma_value == "door" and dep_value == "case" and head_value in auxiliary_heads:
+                # Look for a connection between "door" and auxiliary heads via the head token              
+                prepositional_agent_found = True
+
+            # If a passive auxiliary is found with a past participle, it's passive
+            # e.g., "De deur werd gesloten"
+            if passive_auxiliary_found and past_participle_found:
                 return "PASSIVE"
 
-        # If no passive construction is found, return ACTIVE
+        # If "zijn" + past participle is found but no prepositional agent, classify as a state (active)
+        # e.g., "Het boek is gelezen": IS THIS THEOREICALLY ACTIVE OR PASSIVE?
+        if passive_auxiliary_found and lemma_value == "zijn" and past_participle_found and not prepositional_agent_found:
+            return "ACTIVE"
+
+        # If auxiliary verbs chain with "worden" or "zijn" and a past participle is found, it's also passive
+        # e.g., "De deur moest worden gesloten"
+        if auxiliary_found and passive_auxiliary_found and past_participle_found:
+            return "PASSIVE"
+
+        # Default to active if no passive construction is detected
         return "ACTIVE"
+
+
+
+
+
+    # def __process_dutch_voice(self, tags):
+    #     """
+    #     Determine if a Dutch sentence or clause is in the passive or active voice.
+
+    #     Args:
+    #         tags (list): A list of tags representing tokens in the sentence or clause.
+
+    #     Returns:
+    #         str: "PASSIVE" if the sentence/clause is in the passive voice, otherwise "ACTIVE".
+    #     """
+    #     # Auxiliary verb indicating passive voice
+    #     passive_auxiliary_lemma = "worden"
+        
+    #     # Track whether "worden" and a past participle are found
+    #     passive_triggered = False
+
+    #     # Loop through tokens in the sentence
+    #     for tok in tags:
+    #         lemma_value = tok[5].lemma_
+    
+    #         # Access the POS tag (index 1)
+    #         pos_value = tok[1] # token.pos_
+            
+    #         # Access the fine-grained tag (index 2)
+    #         tag_value = tok[2]  # token.tag_
+
+    #         # Check if the token is an auxiliary "worden"
+    #         if lemma_value == passive_auxiliary_lemma and pos_value == "AUX":
+    #             passive_triggered = True
+    #             continue
+
+    #         # Check for a past participle if "worden" was triggered
+    #         if passive_triggered and tag_value.startswith('WW|vd'):
+    #             return "PASSIVE"
+
+    #     # If no passive construction is found, return ACTIVE
+    #     return "ACTIVE"
 
      
     def __process_potential_action(self, tag):
