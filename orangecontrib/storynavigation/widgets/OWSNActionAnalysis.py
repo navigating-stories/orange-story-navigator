@@ -355,8 +355,13 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     all_pos = Setting(True)
     zero_pos = Setting(False)
     custom = Setting(True)
+    
+    passive_vbz = Setting(True)
+    active_vbz = Setting(True)
+    all_voices = Setting(True)
 
     # Panels for POS and NER tag types or lists
+    voice_box = None
     postags_box = None
 
     # original text (not tagged)
@@ -403,6 +408,28 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         dl.setModel(VisibleDomainModel(separators=False))
         dl.selectionModel().selectionChanged.connect(self.display_features_changed)
 
+        # acitve passive list
+        self.voice_box = gui.vBox(
+            self.controlArea,
+            "Active or passive sentences to highlight:",
+            sizePolicy=QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed),
+        )
+
+        self.passivevc = gui.checkBox(
+            self.voice_box,
+            self,
+            "passive_vbz",
+            "Voice - passive voice",
+            callback=self.voice_selection_changed,
+        )
+        self.activevc = gui.checkBox(
+            self.voice_box,
+            self,
+            "active_vbz",
+            "Voice - active voice",
+            callback=self.voice_selection_changed,
+        )
+        
         # POS tag list
         self.postags_box = gui.vBox(
             self.controlArea,
@@ -444,11 +471,17 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.custom_tags.setEnabled(False)
 
         self.allc = gui.checkBox(self.postags_box, self, "all_pos", "All")
-        self.allc.setChecked(False)
+        self.allc.setChecked(False)        
         self.allc.stateChanged.connect(self.on_state_changed_pos)
         self.pos_checkboxes = [self.pastvc, self.presentvc, self.futurevc, self.custom_tags]
-
         self.controlArea.layout().addWidget(self.postags_box)
+        
+        self.allv = gui.checkBox(self.voice_box, self, "all_voices", "All")
+        self.allv.setChecked(False)        
+        self.allv.stateChanged.connect(self.on_state_changed_voice)
+        self.voice_checkboxes = [self.passivevc, self.activevc]
+        self.controlArea.layout().addWidget(self.voice_box)
+        
         # Auto-commit box
         gui.auto_commit(
             self.controlArea,
@@ -494,6 +527,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_state_changed_pos(self, state):
         for checkBox in self.pos_checkboxes:
             checkBox.setCheckState(state)
+    
+    def on_state_changed_voice(self, state):
+        for checkBox in self.voice_checkboxes:
+            checkBox.setCheckState(state)
 
     def copy_to_clipboard(self):
         text = self.doc_webview.selectedText()
@@ -501,7 +538,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def pos_selection_changed(self):
         self.show_docs()
-
+    
+    def voice_selection_changed(self):
+        self.show_docs()
+    
     def rehighlight_entities(self):
         self.show_docs()
 
@@ -554,6 +594,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         else:
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
+            self.voice_box.setEnabled(False)
             self.postags_box.setEnabled(False)
             self.Error.clear()
 
@@ -845,6 +886,27 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         joined = SEPARATOR.join(parts)
         html = f"<table>{joined}</table>"
         base = QUrl.fromLocalFile(__file__)
+        
+        # Filter sentences based on active and passive selection
+        sentences_to_highlight = []
+        
+        if self.activevc.isChecked():
+            active_sentences = self.selected_action_results_df[
+                self.selected_action_results_df['voice'] == 'ACTIVE'
+            ]
+            sentences_to_highlight.extend(active_sentences['sentence'].unique())
+
+        if self.passivevc.isChecked():
+            passive_sentences = self.selected_action_results_df[
+                self.selected_action_results_df['voice'] == 'PASSIVE'
+            ]
+            sentences_to_highlight.extend(passive_sentences['sentence'].unique())
+
+        # Mark sentences to be highlighted in the HTML
+        for sentence in sentences_to_highlight:
+            highlighted_sentence = f'<mark class="entity" style="background: #98FB98; padding: 0.45em 0.6em; margin: 0 0.25em; line-height: 1; border-radius: 0.35em;">{sentence}</mark>'
+            html = html.replace(sentence, highlighted_sentence)
+        
         if ((self.story_elements is not None) and len(self.story_elements.columns) <= 13):
             self.doc_webview.setHtml(HTML.format('',html), base)
         else:
