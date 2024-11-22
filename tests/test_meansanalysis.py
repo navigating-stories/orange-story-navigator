@@ -1,6 +1,7 @@
 import pandas as pd
 from storynavigation.modules.meansanalysis import MeansAnalyzer
 
+
 def test_sort_and_filter_results():
     sample_input = {1: {1: {"text": "", "label_": "", "sentence_id": 1},
                         0: {"text": "", "label_": "", "sentence_id": 0}},

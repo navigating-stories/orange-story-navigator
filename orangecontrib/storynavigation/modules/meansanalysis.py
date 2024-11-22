@@ -79,17 +79,18 @@ class MeansAnalyzer:
         return entities
 
 
-    def __matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id) -> bool:
+    def __find_matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id) -> bool:
         if sentence_df[head_of_head_start_id]["spacy_tag"] not in {"VERB", "AUX"}:
             return False
         verb_frame_prepositions = [x[1] for x in self.verb_frames]
+        entity = sentence_df[entity_start_id]
+        head_of_head = sentence_df[head_of_head_start_id]
         return ((self.means_strategy == constants.MEANS_STRATEGY_VERB_FRAMES and
-                 [sentence_df[head_of_head_start_id]["spacy_lemma"],
-                  sentence_df[entity_start_id]["spacy_lemma"]] in self.verb_frames) or
+                 [head_of_head["spacy_lemma"], entity["spacy_lemma"]] in self.verb_frames) or
                 (self.means_strategy == constants.MEANS_STRATEGY_VERB_FRAME_PREPS and
-                 sentence_df[entity_start_id]["spacy_lemma"] in verb_frame_prepositions) or
+                 entity["spacy_lemma"] in verb_frame_prepositions) or
                 (self.means_strategy == constants.MEANS_STRATEGY_SPACY_PREPS and
-                 sentence_df[entity_start_id]["spacy_tag"] == "ADP"))
+                 entity["spacy_tag"] == "ADP"))
 
 
     def __expand_means_phrase(self, sentence_df, sentence_entities, entity_start_id, head_start_id) -> None:
@@ -141,7 +142,7 @@ class MeansAnalyzer:
                 # en head relations: MEANS -> PREP -> VERB
                 if self.language == constants.EN:
                     entity_start_id, head_start_id = head_start_id, entity_start_id
-                if self.__matching_dependencies(sentence_dict, entity_start_id, head_start_id, head_of_head_start_id):
+                if self.__find_matching_dependencies(sentence_dict, entity_start_id, head_start_id, head_of_head_start_id):
                     self.__add_sentence_entity(sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id)
             except AttributeError as e:
                 self.__log_key_error(e, token_data)
