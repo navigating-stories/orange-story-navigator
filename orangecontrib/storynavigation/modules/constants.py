@@ -188,3 +188,4 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'num_words_in_sentence'
                                  ]
 
+PURPOSE_STRATEGY_DEFAULT = "use omdat and doordat"
