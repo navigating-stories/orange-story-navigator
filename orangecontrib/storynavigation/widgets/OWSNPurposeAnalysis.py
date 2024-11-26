@@ -96,7 +96,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_DEFAULT],
+            items=[constants.PURPOSE_STRATEGY_DEFAULT, constants.PURPOSE_STRATEGY_VERBS],
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,

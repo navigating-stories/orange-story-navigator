@@ -83,10 +83,13 @@ class PurposeAnalyzer:
         if sentence_df[head_of_head_start_id]["spacy_tag"] not in {"VERB", "AUX"}:
             return False
         verb_frame_prepositions = [x[1] for x in self.verb_frames]
+        verb_frame_verbs = [x[0] for x in self.verb_frames]
         entity = sentence_df[entity_start_id]
         head_of_head = sentence_df[head_of_head_start_id]
         return ((self.purpose_strategy == constants.PURPOSE_STRATEGY_DEFAULT and
-                 entity["spacy_lemma"] in verb_frame_prepositions))
+                 entity["spacy_lemma"] in verb_frame_prepositions) or
+                (self.purpose_strategy == constants.PURPOSE_STRATEGY_VERBS and
+                 entity["spacy_lemma"] in verb_frame_verbs))
 
 
     def __expand_purpose_phrase(self, sentence_df, sentence_entities, entity_start_id, head_start_id, entity_type="CAUSE") -> None:
@@ -166,9 +169,7 @@ class PurposeAnalyzer:
             "text": sentence_dict[head_of_head_start_id]["token_text"]}
         self.__expand_purpose_phrase(sentence_dict, sentence_entities, entity_start_id, head_start_id)
         if head_of_head_start_id != head_start_id:
-            print("???", sentence_entities[head_of_head_start_id])
             self.__expand_purpose_phrase(sentence_dict, sentence_entities, head_start_id, head_of_head_start_id, entity_type="EFFECT")
-            print("!!!", sentence_entities)
 
 
     def __get_head_dependencies(self, sentence_df, entity_start_id, head_start_id) -> list:
