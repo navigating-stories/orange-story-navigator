@@ -20,14 +20,16 @@ class Tagger:
 
     Args:
         n_segments (int): Number of segments to split each story into.
+        use_infinitives (bool): Whether to use infinitives for verbs.
     """
-    def __init__(self, lang, n_segments, remove_stopwords, text_tuples, custom_tags_and_word_column=None, callback=None):
+    def __init__(self, lang, n_segments, remove_stopwords, text_tuples, custom_tags_and_word_column=None, callback=None,use_infinitives=False):
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
         self.remove_stopwords = remove_stopwords
         self.custom_tags = None
         self.word_column = None
+        self.use_infinitives = use_infinitives
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
         self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','future_verb']
 
@@ -77,16 +79,26 @@ class Tagger:
             if callback:
                 callback((c / len(text_tuples) * 100))
 
+        # Process custom tags and word column if provided
         if self.custom_tags is not None and self.word_column is not None:
-            collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
-            collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
+            if self.use_infinitives:
+                collection_df['custom_' + self.word_column] = collection_df['spacy_lemma'].str.lower()
+            else:
+                collection_df['custom_' + self.word_column] = collection_df['token_text'].str.lower()
+                collection_df['custom_' + self.word_column] = collection_df['custom_' + self.word_column].str.lstrip('0123456789@#$!“"-')
+                            
+            # Merge the custom tags
             collection_df = pd.merge(collection_df, self.custom_tags, left_on='custom_' + self.word_column, right_on=self.word_column, how='left')
             collection_df = collection_df.drop(columns=[self.word_column])
+        
         else:
             collection_df['token_text_lowercase'] = collection_df['token_text'].str.lower()
 
+        # Clean up associated action columns
         collection_df['associated_action'] = collection_df['associated_action'].str.lstrip('0123456789@#$!“"-')
         collection_df['associated_action_lowercase'] = collection_df['associated_action'].str.lower()
+        
+        # Add language column and word count
         lang_col_values = [self.lang] * len(collection_df)
         collection_df['lang'] = lang_col_values
         story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
