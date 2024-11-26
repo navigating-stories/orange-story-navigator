@@ -31,7 +31,7 @@ class Tagger:
         self.word_column = None
         self.use_infinitives = use_infinitives
         # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','future_verb']
+        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','voice','future_verb']
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
@@ -153,7 +153,8 @@ class Tagger:
         return story_df
         
     def __parse_tagged_story(self, storyid, sentences, tagged_sentences):
-        """Given a list of sentences in a given story and a list of nlp tagging information for each sentence, this function processes and appends nlp tagging data about these sentences to the master output dataframe
+        """Given a list of sentences in a given story and a list of nlp tagging information for each sentence,
+        this function processes and appends nlp tagging data about these sentences to the master output dataframe
 
         Args:
             storyid (int): a number uniquely identifying a specific story
@@ -165,21 +166,33 @@ class Tagger:
         """
         story_df = pd.DataFrame()
         story_df_rows = []
+        
         for sentence, tagged_sentence in zip(sentences, tagged_sentences):
             first_word_in_sent = sentence.split()[0].lower().strip()
-            tags = []
+            tags = []            
+                       
             # store all spacy nlp tags and dependency info for each token in the sentence in a tuple
             for token in tagged_sentence:
                 token_ne = "O" if token.ent_iob_ == "O" else token.ent_iob_ + "-" + token.ent_type_
-                tags.append((token.text, token.pos_, token.tag_, token.dep_, token_ne, token)) # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, named entity tag, the spacy token object itself)
+                # (text, part of speech (POS) tag, fine-grained POS tag, linguistic dependency, named entity tag, the spacy token object itself)                
+                tags.append((token.text, token.pos_, token.tag_, token.dep_, token_ne, token)) 
 
             tokenizer = RegexpTokenizer(r"\w+|\$[\d\.]+|\S+") # word tokenizer
             spans = list(tokenizer.span_tokenize(sentence)) # generate token spans in sentence (start and end indices)
 
+            # Determine the voice (passive or active) for the current sentence
+            voice = self.__process_dutch_voice(tags)
+            
+            # Process each token
             for tag, span in zip(tags, spans):
                 story_df_row = self.__process_tag(storyid, sentence, tag, span)
                 if story_df_row is not None:
-                    story_df_rows.append(story_df_row)                        
+                    story_df_row.append(voice)
+                    story_df_rows.append(story_df_row)            
+            
+            # Append the voice to each row corresponding to this sentence
+            #for row in tags:
+            #    row.append(voice)  # Add the voice classification to the row of the df                      
             
         for index, row in enumerate(story_df_rows):           
             future_verb = self.__process_dutch_future_verbs(story_df_rows, row)
@@ -190,6 +203,7 @@ class Tagger:
                 row[5] = "FUTURE_VB"
                             
         story_df = pd.DataFrame(story_df_rows, columns=self.complete_data_columns)
+        
         return story_df
         
     def __process_tag(self, storyid, sentence, tag, span):
@@ -323,6 +337,120 @@ class Tagger:
                 future_verb_triggered = False
 
         return "-"  # if no future tense verb is detected
+    
+    
+    def __process_dutch_voice(self, tags):
+        """
+        Determine if a Dutch sentence is in the passive or active voice.
+
+        Args:
+            tags (list): A list of tags representing tokens in the sentence or clause.
+
+        Returns:
+            str: "PASSIVE" if the sentence/clause is in the passive voice, otherwise "ACTIVE".
+        """
+        # Lemmas of auxiliary verbs indicating passive voice
+        #passive_auxiliaries = {"worden", "zijn"}
+        passive_auxiliaries = {"worden"}
+        past_participle_tag_prefix = "WW|vd"  # past participles
+        auxiliary_pos_tag = "AUX"
+
+        # Flags to track detection of relevant elements
+        auxiliary_found = False
+        passive_auxiliary_found = False
+        past_participle_found = False
+        prepositional_agent_found = False  # Tracks presence of a "door" or similar preposition
+
+        # Keep track of auxiliary heads for context
+        auxiliary_heads = set()
+
+        # Iterate through the tags
+        for tok in tags:
+            lemma_value = tok[5].lemma_
+            pos_value = tok[1]  
+            tag_value = tok[2]  
+            dep_value = tok[3]  # Dependency relation
+            head_value = tok[5].head.lemma_  # Syntactic head (index of the parent token)
+
+            # Check for auxiliary verbs (e.g., "moeten", "kunnen") that might chain with "worden" or "zijn"
+            if pos_value == auxiliary_pos_tag and lemma_value not in passive_auxiliaries:
+                auxiliary_found = True
+                auxiliary_heads.add(head_value)
+
+            # Check for the passive auxiliary "worden" or "zijn"
+            if lemma_value in passive_auxiliaries and pos_value == auxiliary_pos_tag:
+                passive_auxiliary_found = True
+                auxiliary_heads.add(head_value)
+
+            # Check for a past participle
+            if tag_value.startswith(past_participle_tag_prefix):
+                past_participle_found = True
+
+            # Check for a prepositional agent introduced by "door" or similar
+            if lemma_value == "door" and dep_value == "case" and head_value in auxiliary_heads:
+                # Look for a connection between "door" and auxiliary heads via the head token              
+                prepositional_agent_found = True
+
+            # If a passive auxiliary is found with a past participle, it's passive
+            # e.g., "De deur werd gesloten"
+            if passive_auxiliary_found and past_participle_found:
+                return "PASSIVE"
+
+        # If "zijn" + past participle is found but no prepositional agent, classify as a state (active)
+        # e.g., "Het boek is gelezen": IS THIS THEOREICALLY ACTIVE OR PASSIVE?
+        if passive_auxiliary_found and lemma_value == "zijn" and past_participle_found and not prepositional_agent_found:
+            return "ACTIVE"
+
+        # If auxiliary verbs chain with "worden" or "zijn" and a past participle is found, it's also passive
+        # e.g., "De deur moest worden gesloten"
+        if auxiliary_found and passive_auxiliary_found and past_participle_found:
+            return "PASSIVE"
+
+        # Default to active if no passive construction is detected
+        return "ACTIVE"
+
+
+
+
+
+    # def __process_dutch_voice(self, tags):
+    #     """
+    #     Determine if a Dutch sentence or clause is in the passive or active voice.
+
+    #     Args:
+    #         tags (list): A list of tags representing tokens in the sentence or clause.
+
+    #     Returns:
+    #         str: "PASSIVE" if the sentence/clause is in the passive voice, otherwise "ACTIVE".
+    #     """
+    #     # Auxiliary verb indicating passive voice
+    #     passive_auxiliary_lemma = "worden"
+        
+    #     # Track whether "worden" and a past participle are found
+    #     passive_triggered = False
+
+    #     # Loop through tokens in the sentence
+    #     for tok in tags:
+    #         lemma_value = tok[5].lemma_
+    
+    #         # Access the POS tag (index 1)
+    #         pos_value = tok[1] # token.pos_
+            
+    #         # Access the fine-grained tag (index 2)
+    #         tag_value = tok[2]  # token.tag_
+
+    #         # Check if the token is an auxiliary "worden"
+    #         if lemma_value == passive_auxiliary_lemma and pos_value == "AUX":
+    #             passive_triggered = True
+    #             continue
+
+    #         # Check for a past participle if "worden" was triggered
+    #         if passive_triggered and tag_value.startswith('WW|vd'):
+    #             return "PASSIVE"
+
+    #     # If no passive construction is found, return ACTIVE
+    #     return "ACTIVE"
+
      
     def __process_potential_action(self, tag):
         if self.lang == constants.NL:
