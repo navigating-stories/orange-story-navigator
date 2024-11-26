@@ -358,7 +358,7 @@ class Tagger:
             pos_value = tok[1]  
             tag_value = tok[2]  
             dep_value = tok[3]  # Dependency relation
-            head_value = tok[5].head.text  # Syntactic head (index of the parent token)
+            head_value = tok[5].head.lemma_  # Syntactic head (index of the parent token)
 
             # Check for auxiliary verbs (e.g., "moeten", "kunnen") that might chain with "worden" or "zijn"
             if pos_value == auxiliary_pos_tag and lemma_value not in passive_auxiliaries:
