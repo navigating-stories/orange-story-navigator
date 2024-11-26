@@ -37,11 +37,12 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     verb_frames_file_name = os.path.join(
         str(constants.PKG),
         str(constants.RESOURCES_SUBPACKAGE),
-        ("dutch" if language == "nl" else "english") + "_purpose_triggers.csv")
+        ("dutch" if language == "nl" else "english") + "_purpose_verbs.csv")
     recent_files = [verb_frames_file_name]
-    entity_colors = { "CAUSE": "salmon",
-                      "SCONJ": "lightblue",
-                      "EFFECT": "silver" }
+    entity_colors = {"CAUSE": "salmon",
+                     "SCONJ": "lightblue",
+                     "EFFECT": "silver",
+                     "VERB": "salmon"}
     dlgFormats = (
         "All readable files ({});;".format(
             '*' + ' *'.join(FileFormat.readers.keys())) +
@@ -65,7 +66,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
         self.verb_frames = {}
-        self.purpose_strategy = constants.PURPOSE_STRATEGY_DEFAULT
+        self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
         self.read_verb_frames_file(self.verb_frames_file_name)
 
         self.__make_language_selection_menu()
@@ -96,7 +97,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_DEFAULT, constants.PURPOSE_STRATEGY_VERBS],
+            items=[constants.PURPOSE_STRATEGY_SCONJ, constants.PURPOSE_STRATEGY_VERBS],
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,

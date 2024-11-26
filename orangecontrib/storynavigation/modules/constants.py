@@ -188,5 +188,5 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'num_words_in_sentence'
                                  ]
 
-PURPOSE_STRATEGY_DEFAULT = "use subordinating conjunctions"
+PURPOSE_STRATEGY_SCONJ = "use subordinating conjunctions"
 PURPOSE_STRATEGY_VERBS = "use verbs"
