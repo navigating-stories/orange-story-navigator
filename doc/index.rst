@@ -34,6 +34,7 @@ Widgets
    widgets/actions
    widgets/actors
    widgets/elements
+   widgets/means
    widgets/narrativenetwork
    widgets/setting
 
@@ -43,6 +44,7 @@ Widgets
 
    widgets/buildingfromsource
    widgets/contribute
+   widgets/CODE_OF_CONDUCT
    widgets/changelog    
 
 .. toctree::
