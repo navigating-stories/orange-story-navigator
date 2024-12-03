@@ -24,25 +24,13 @@ To start, load the corpus of Dutch fairytales called fairytales.tab using the **
 - Task: Load your dataset (in this case, 35 Dutch fairytales) for visual inspection.
 - Outcome: You will be able to visually inspect the text and make sure that your dataset is loaded correctly with the **Corpus viewer**.
   
-### Step 2: Preprocess the text
-Preprocessing prepares the corpus for further analysis. Here, you will remove stopwords and split the text into smaller units to focus on the important words.
-
-- Task: Use the **Preprocess Text* widget with default parameters to remove stopwords from the corpus. This step ensures that common but uninformative words (such as "de," "het" etc.) are excluded from the analysis.
-- Outcome: A cleaner version of the text that is ready for analysis.
-
-### Step 3: Wordcloud for initial inspection
-Now, you can visually inspect the most common words using a word cloud.
-
-- Task: Generate a Word Cloud from the preprocessed text. This widget provides a visual representation of word frequency.
-- Outcome: Words that appear frequently in the text will be displayed in larger fonts, helping you understand prominent themes in the dataset.
-
-### Step 4: Extract story elements
-Next, connect **Preprocess Text** to both the **elements** and **actors** widget. Remember, the elements widget is the 'motor' of the StoryNavigator which provides information on the texts on a token level, while the actors widget is used to extract the agents from the text.
+### Step 2: Extract story elements
+Next, connect **Corpus** to both the **elements** and **actors** widget. Remember, the elements widget is the 'motor' of the StoryNavigator which provides information on the texts on a token level, while the actors widget is used to extract the agents from the text.
 
 - Task: Extract story elements like characters and actions for further analysis.
 - Outcome: You now have access to story elements that are relevant to understanding agency.
 
-### Step 5: Identify actors and agency scores
+### Step 3: Identify actors and agency scores
 In this step, the Actors widget will allow you to focus on nouns and pronouns (actors) in the corpus and their roles in the narrative. By analyzing the subject and non-subject nouns and pronouns, you can infer agency.
 
 - Task: Use the Actors widget to directly observe which characters or entities (subject nouns, non-subject nouns, and pronouns) appear in the text.
@@ -50,10 +38,10 @@ In this step, the Actors widget will allow you to focus on nouns and pronouns (a
 
 It is good practice to use a **DataTable** widget to inspect the data at each step of the workflow. This will help you to understand the data and the results of each widget. To zoom in on agency, use the **Select Rows** widget to get a refined selection of data. This allows you to explore agency at the story level by filtering the actors with the highest occurrence. Here, we make a selection of rows where there is a minimum amount of agency and a minimum amount of frequency occurences in the text.
 
-### Step 6: Grouping by the entire corpus or story 
+### Step 4: Grouping by the entire corpus or story 
 Next, we use the **GroupBy** widget to either group the data based on *storyid* and *token* if we want to know the most frequent agents in a specific story, or based on *token* if we want to know the most frequent agents across the entire corpus. Finally, we use the **DataTable** widget to inspect the results.
 
-### Step 7: Visualizing agency
+### Step 5: Visualizing agency
 To visualize the results, we can use the **Bar Chart** widget. Connect the **GroupBy** widget to the **Bar Chart** widget and select the *frequency* column or for example the *agency* column as the variable to be plotted. The Bar Chart will show the most frequent agents in the corpus or in a specific story. We can control the amount of output in the barchart by using the **Select Rows** widget to select only the rows in which we are interested in, or else select a specific story we are interested in the dataTable directly befroe the barchart widget. The barchart updates automatically when a selection of data is made. 
 
 ## Interpreting the results and changing the set of agency words
