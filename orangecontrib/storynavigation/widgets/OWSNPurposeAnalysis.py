@@ -39,10 +39,9 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         str(constants.RESOURCES_SUBPACKAGE),
         ("dutch" if language == "nl" else "english") + "_purpose_verbs.csv")
     recent_files = [verb_frames_file_name]
-    entity_colors = {"CAUSE": "salmon",
-                     "SCONJ": "lightblue",
-                     "EFFECT": "silver",
-                     "VERB": "salmon"}
+    entity_colors = {"PURPOSE": "salmon",
+                     "EFFECT": "lightgreen",
+                     "SCONJ": "lightblue"}
     dlgFormats = (
         "All readable files ({});;".format(
             '*' + ' *'.join(FileFormat.readers.keys())) +
@@ -97,7 +96,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_SCONJ, constants.PURPOSE_STRATEGY_VERBS],
+            items=[constants.PURPOSE_STRATEGY_VERBS, constants.PURPOSE_STRATEGY_SCONJ],
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,
