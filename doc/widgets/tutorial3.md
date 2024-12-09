@@ -9,7 +9,7 @@ This tutorial is part of a series demonstrating the use of StoryNavigator widget
 ### Step 0: Research question
 In this tutorial, you will learn how to create a radar plot based on custom word categories in a corpus of Dutch fairytales. We will use a predefined Orange workflow to answer the following research question derived from Andrade & Andersen (2020):
 
-- How do different categories of custom words distribute across a selected story of the story?
+- How do different categories of custom words distribute across a selected story?
 
 We use the following workflow:
 
@@ -18,7 +18,7 @@ We use the following workflow:
 This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
 
 ### Step 1: Load the corpus
-To begin, load the corpus of Dutch fairytales in tab format using the **Corpus** widget. This widget allows you to import and inspect your dataset.
+To begin, load the corpus of Dutch fairytales in tab format using the **Corpus** widget. This widget allows you to import your dataset. Use the **Corpus Viewer** to inspect the dataset.
 
 - **Task**: Load your dataset (Dutch fairytales) for visual inspection.
 - **Outcome**: You will be able to visually inspect the text and ensure that your dataset is loaded correctly with the **Corpus Viewer**.
@@ -38,31 +38,31 @@ Connect the **Corpus** and the **File** widgets to the **Elements** widget to ex
 - **Task**: Extract story elements and their categories for further analysis.
 - **Outcome**: Access to categorized story elements.
 
-### Step 5: Analyze actors
+### Step 4: Analyze actors
 Use the **Actors** widget to directly observe custom tokens (e.g., verbs) highlighted in the texts.
 
 - **Task**: Identify and observe custom tokens in the text.
 - **Outcome**: Insight into categorized words in the text, focusing on verbs.
 
-### Step 6: Group data
+### Step 5: Group data
 Use the **Group By** widget to group the data by story ID and Halliday category, then count the occurrences with *sum* (i.e., the freq variable).
 
 - **Task**: Group data by story ID and category.
 - **Outcome**: Frequency counts of categories for each story or segment.
 
-### Step 7: Select Rows for Plotting
+### Step 6: Select Rows for Plotting
 Select specific categories/ dimensions for plotting using the **Select Rows** widget.
 
 - **Task**: Choose categories to focus on for the radar plot.
 - **Outcome**: Refined data selection for plotting purposes.
 
-### Step 9: Edit Domain
+### Step 7: Edit Domain
 Change the variable type of the selected category for better plotting outcomes using the **Edit Domain** widget.
 
 - **Task**: Adjust variable types for plotting.
 - **Outcome**: Optimized variable types for radar plot creation.
 
-### Step 10: Create a Radar Plot
+### Step 8: Create a Radar Plot
 Connect the data to a **Python Script** widget to generate a radar plot comparing the distribution of categories from the custom word list for a selected story. Note that this radarplot is not avaialbe as a standard orange widget. However, the **Python Script** widget allows you to add custom-made figures or analyses into your workflow. Copy-paste the following script for the radarplot in the editor of the **Python Script** widget:
 
 ```python
