@@ -373,7 +373,7 @@ class ActionTagger:
         if word_col is None:
             word_col = 'token_text_lowercase'
             
-        past_or_present_tense_verbs_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(['PRES_VB', 'PAST_VB'])]
+        past_or_present_tense_verbs_df = story_elements_df[story_elements_df['story_navigator_tag'].isin(['PRES_VB', 'PAST_VB','FUTURE_VB'])]
         result_df = past_or_present_tense_verbs_df.groupby(['storyid', 'segment_id', 'story_navigator_tag'])[word_col].agg(word_col='nunique').reset_index().rename(columns={word_col: "tense_freq"})
 
         return result_df
