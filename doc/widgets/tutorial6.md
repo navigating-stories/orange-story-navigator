@@ -29,7 +29,7 @@ Start by loading the text corpus using the Import Documents widget.
 - Outcome: The documents will be loaded into the workspace for further analysis.
 
 ### Step 2: Extract Subject-Verb-Object (SVO) Tuples
-Next, connect the documents to the **Narrative Network widget**. This widget will analyze the text and identify *subject-verb-object (SVO) tuples* that will help you study the relationships between characters (subjects) and actions (verbs).
+Next, connect the documents to the **Narrative Network widget**. This widget will analyze the text and identify *subject-verb-object (SVO) tuples* that will help you study the relationships between characters (subjects) and actions (verbs). Note that here the verb is called "action" in the Narrative Network output.
 
 - Task: Extract SVO tuples using the Narrative Network widget.
 - Outcome: A table of SVO tuples representing the relationships between characters and actions.
@@ -41,7 +41,7 @@ We will clean up the output by using a Python Script widget to increase the read
 - Outcome: A cleaner version of the SVO tuples that is easier to read.
 
 ### Step 4: Load Story Elements and Select Verb Tense
-Next, connect the documents to the **Elements widget**. This widget extracts key elements including verbs and categorizes them by tense (past, present, future). We use the **Select Columns widget** to focus on verbs only.
+Next, connect the documents to the **Elements widget**. Ensure that the stop word removal is turned off. This widget extracts key elements including verbs and categorizes them by tense (past, present, future). We use the **Select Columns widget** to focus on the variables of interest: token_text_lowercase, storyid, and story_navigator_tag. We use the **select rows widget** to filter the data based on the tense of the verbs: "story_navigator_tag is one of PAST_VB, PRES_VB, FUTURE_VB".  Finally, we extract the unique verbs with the **unique widget** so that for each unique verb occuring in the texts we have its associated verb tense.
 
 - Task: Select the columns containing verbs from the extracted elements and filter them based on tense.
 - Outcome: A table of verbs from the text, categorized by their tense (past, present, or future). Note that, by using the **unique** widget, we ensure that each verb is represented only once. This is important for the later merging step, avoiding the situation of *many-to-many* merging.
