@@ -23,10 +23,7 @@ To begin, load the corpus of stories using the Corpus widget. This widget allows
 - Outcome: You will be able to visually inspect the text and ensure that your dataset is loaded correctly with the Corpus Viewer.
 
 ### Step 2: Extract Story Elements
-Next, use the Elements widget to extract the components of the story.
-
-### Step 4: Extract story elements
-The elements widget is the 'motor' of the StoryNavigator which provides information on the texts on a token level, while the actors widget is used to extract the agents from the text.
+Next, use the Elements widget to extract the components of the story. The elements widget is the 'motor' of the StoryNavigator which provides information on the texts on a token level, while the actors widget is used to extract the agents from the text.
 
 - Task: Extract story elements like characters and actions for further analysis.
 - Outcome: You now have access to story elements that are relevant to understanding agency.
@@ -50,7 +47,7 @@ Next, connect the Data Table widget to the Select Rows widget. This allows you t
 - Outcome: Filtered rows containing only the relevant setting data.
 
 ### Step 6: Group by Story ID
-Use the Group By widget to group the data by story ID. This step ensures that each setting is tied to the specific story it belongs to.
+Use the **Group By widget** to group the data by story ID. This step ensures that each setting is tied to the specific story it belongs to. The chosen aggregated values for label and text need to be 'concatenate'.
 
 - Task: Group the extracted settings by story ID.
 - Outcome: A consolidated view of the setting per story.
@@ -66,4 +63,4 @@ By following these steps, you can extract and analyze story settings such as tim
 
 You can further analyze these settings to identify patterns, trends, or correlations within the corpus, providing valuable insights into the narrative structure of the stories.
 
-In the next tutorial, we show how to complement this setting analysis with a deeper exploration of the setting using the **ChatGPT widgets**. Stay tuned for more insights into the narrative structure of your story corpus! 
+In another tutorial (number 7), we show how to complement this setting analysis with a deeper exploration of the setting using the **ChatGPT widgets**. Stay tuned for more insights into the narrative structure of your story corpus! 
