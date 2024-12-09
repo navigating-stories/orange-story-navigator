@@ -11,7 +11,7 @@ This tutorial will guide you through the process of using Orange and StoryNaviga
 
 we focus on the question:
 
-- How do different categories of verbs, as categorized by Halliday's functional dimensions, distribute for a particular narrator in Dutch fairytales?
+- How do different categories of verbs, as categorized by Halliday's functional dimensions, distribute for a particular narrator or person in a story?
 
 We use the following workflow:
 
@@ -67,10 +67,9 @@ The subject-verb-object combinations for each *story_id* look like:
 ![Radar Plot](../../doc/widgets/images/rows_character.png)
 
 ### Step 5: Merge the Custom Word List with Story Elements
-- Task: Merge the Halliday categorization with the subject-verb list extracted from the fairytales using the Merge Data widget.
+- Task: Merge the Halliday categorization with the subject-verb list extracted from the fairytales using the **Merge Data widget**.
 - Outcome: You will have a merged dataset containing the subject, verb, and their corresponding Halliday categories.
-- Take care to ensure the merge is done correctly. In this case, the verbs related to the selected narrator will determine the merge, that is: the data from the Halliday categories are *added* to the subject-verb connections. The merged dataset is the nequal in size to the subject-verb connections dataset. 
-- Widget: Merge Data → Data Table (5)
+- Take care to ensure the merge is done correctly. In this case, the verbs related to the selected narrator will determine the merge, that is: the data from the Halliday categories are *added* to the subject-verb connections. The merged dataset is equal in size to the subject-verb connections dataset.
 
 ### Step 6: Remove Irrelevant Columns and Inspect Data
 - Task: Use the **Select Columns widget** to remove any unnecessary columns for clarity and further analysis.
