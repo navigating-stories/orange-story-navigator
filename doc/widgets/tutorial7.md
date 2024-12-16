@@ -21,6 +21,7 @@ We use the following workflow:
 
 This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
 
+Note that you need a ChatGTP key to run this tutorial. To do so, you need to sign up for a ChatGPT account and obtain a key. You can find more information on how to obtain a key [here](https://platform.openai.com/account/api-keys).
 
 ### Step 1: Load the Corpus
 
@@ -77,13 +78,22 @@ Now, calculate the distances between embeddings using the **Distances** widget. 
 
 ![Workflow](../../doc/widgets/images/cluster_results.png)
 
+
+Note that the **Hierarchical Clustering** widget allows you to choose the number of clusters and the linkage method. For this tutorial, we used the Ward linkage method to group similar stories into clusters. You can adjust the number of clusters by changing the **Top N** parameter, or else in the dendrogram shift with your mouse on the axis. One way of determining the proper amount of clusters is by looking at the length of the dendrogram branches. The longer the branch, the more dissimilar the stories are.
+
 **Widget details:**
 - **Distances:** Computes distance matrix based on selected distance measures.
 - **Hierarchical Clustering:** Groups similar stories into clusters using methods like Ward linkage.
 
 ### Step 5: Summarize clusters with ChatGPT
 
-Deploy the **ChatGPT Summarize** widget to generate summaries for each cluster, providing insights into shared themes or settings.
+Deploy the **ChatGPT Summarize** widget to generate summaries for each cluster, providing insights into shared themes or settings. In the prompt, ask ChatGPT to summarize the common characteristics of each cluster. Here, we used the following prompt in the **start** field:
+
+*what is specific to the story setting of the following list of fairytales? Provide your answer in terms of the setting, if possible*
+
+In the **end** field, we used the following prompt: *Answer with up to ten words*. 
+
+Based on your selected cluster in the dendrogram in the previous widget, the name of the cluster is provided in the **answer** field of the chatGPT summarize widget.
 
 ![Workflow](../../doc/widgets/images/chatgpt_summarize.png)
 
