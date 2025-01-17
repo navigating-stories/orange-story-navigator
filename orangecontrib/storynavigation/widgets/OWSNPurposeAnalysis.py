@@ -34,13 +34,8 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     n_segments = 1
-    verb_frames_file_name = os.path.join(
-        str(constants.PKG),
-        str(constants.RESOURCES_SUBPACKAGE),
-        ("dutch" if language == "nl" else "english") + "_purpose_verbs.csv")
-    recent_files = [verb_frames_file_name]
-    entity_colors = {"PURPOSE": "salmon",
-                     "EFFECT": "lightgreen",
+    entity_colors = {"CONTEXT": "salmon",
+                     "PURPOSE": "lightgreen",
                      "SCONJ": "lightblue"}
     dlgFormats = (
         "All readable files ({});;".format(
@@ -65,14 +60,30 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.controlArea.setSizePolicy(size_policy)
         self.verb_frames = {}
-        self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
-        self.read_verb_frames_file(self.verb_frames_file_name)
+
+        self.__initialize_strategy()
+        self.read_strategy_file(self.strategy_file_name)
 
         self.__make_language_selection_menu()
-        self.__make_verb_frames_file_selection_menu()
-        self.__make_verb_frames_file_dialog()
+        self.__make_strategy_selection_menu()
+        self.__make_strategy_file_dialog()
         self.__make_regexp_filter_dialog()
         self.__make_document_viewer()
+
+
+    def __initialize_strategy(self):
+        self.sconj_strategy_file_name = os.path.join(
+            str(constants.PKG),
+            str(constants.RESOURCES_SUBPACKAGE),
+            ("dutch" if self.language == "nl" else "english") + "_purpose_triggers.csv")
+        self.verbs_strategy_file_name = os.path.join(
+            str(constants.PKG),
+            str(constants.RESOURCES_SUBPACKAGE),
+            ("dutch" if self.language == "nl" else "english") + "_purpose_verbs.csv")
+        self.recent_strategy_files = [self.verbs_strategy_file_name,
+                                      self.sconj_strategy_file_name]
+        self.strategy_file_name = self.recent_strategy_files[0]
+        self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
 
 
     def __make_language_selection_menu(self):
@@ -90,7 +101,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.select_language_combo.setEnabled(True)
 
 
-    def __make_verb_frames_file_selection_menu(self):
+    def __make_strategy_selection_menu(self):
         self.select_language_combo = gui.comboBox(
             widget=self.controlArea,
             master=self,
@@ -106,13 +117,13 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.select_language_combo.setEnabled(True)
 
 
-    def __make_verb_frames_file_dialog(self):
+    def __make_strategy_file_dialog(self):
         # code copied from Corpus widget
         fbox = gui.widgetBox(self.controlArea, "Verb frames file:", orientation=0)
         self.file_widget = widgets.FileWidget(
-            recent_files=self.recent_files, icon_size=(16, 16),
-            on_open=self.read_verb_frames_file, dialog_format=self.dlgFormats,
-            dialog_title='Choose verb frames file',
+            recent_files=self.recent_strategy_files, icon_size=(16, 16),
+            on_open=self.read_strategy_file, dialog_format=self.dlgFormats,
+            dialog_title='Choose strategy file',
             reload_label='Reload', browse_label='Browse',
             allow_empty=False, minimal_width=150,
         )
@@ -171,21 +182,29 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.__visualize_text_data()
 
 
-    def read_verb_frames_file(self, verb_frames_file_name):
-        self.verb_frames_file_name = verb_frames_file_name
+    def read_strategy_file(self, strategy_file_name):
+        self.strategy_file_name = strategy_file_name
         self.verb_frames = []
         try:
-            verb_frames_lines = pathlib.Path(verb_frames_file_name).read_text(encoding="utf-8").strip().split("\n")
+            verb_frames_lines = pathlib.Path(strategy_file_name).read_text(encoding="utf-8").strip().split("\n")
             for line in verb_frames_lines:
                 self.verb_frames.append([token.strip() for token in line.strip().split(",")])
+            if re.search("verb", strategy_file_name):
+                self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
+            else:
+                self.purpose_strategy = constants.PURPOSE_STRATEGY_SCONJ
         except Exception as e:
-            print("read_verb_frames_file", str(e))
+            print("read_strategy_file", str(e))
         if self.story_elements:
             self.reset_story_elements(self.story_elements)
 
 
     def __process_purpose_strategy_change(self):
-        self.read_verb_frames_file(self.verb_frames_file_name)
+        if re.search("verb", self.purpose_strategy):
+            self.strategy_file_name = self.verbs_strategy_file_name
+        else:
+            self.strategy_file_name = self.sconj_strategy_file_name
+        self.read_strategy_file(self.strategy_file_name)
 
 
     def get_selected_indexes(self) -> Set[int]:
