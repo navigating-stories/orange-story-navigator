@@ -359,7 +359,7 @@ class Tagger:
         """
         word = util.get_normalized_token(token)
 
-        return (word not in self.stopwords) and len(word) > 1 and util.is_only_punctuation(word) != '-'
+        return (word not in self.stopwords) and len(word) > 0 and util.is_only_punctuation(word) != '-'
 
     def __is_subject(self, tag):
         """Checks whether a given pos-tagged token is a subject of its sentence or not
