@@ -3,7 +3,7 @@
 ![](../../doc/widgets/images/storynavigator_logo_small.png)
 
 ---
-This tuturial is part of a series in which several workflows are presented that demonstrate the usage of the StoyNavigator widgets. These tutorials demonstrate how to use the storyNavigator widgets in combination with other, pre-existing widgets available within the Orange platform and how to create output via tables or figures. Each tutorial answers a research question related to the narrative structure and contents of the corpus of stories. 
+This tutorial is part of a series in which several workflows are presented that demonstrate the usage of the StoryNavigator widgets. These tutorials demonstrate how to use the StoryNavigator widgets in combination with other, pre-existing widgets available within the Orange platform and how to create output via tables or figures. Each tutorial answers a research question related to the narrative structure and contents of the corpus of stories. 
 ---
 
 ### Step 0: Research question
