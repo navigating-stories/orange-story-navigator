@@ -2,12 +2,6 @@ import pandas as pd
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 
-# to do (+=done)
-# 1+ check if previous sentence can be returned as relation argument, sentence: daardoor ging het platteland
-# 2+ check if different orders need to be applied for different trigger words: omdat vs zodat
-# 3  check key errors in output
-# 4+ no output to connected data table
-
 
 class PurposeAnalyzer:
     """Class for extracting purpose from texts
@@ -21,13 +15,17 @@ class PurposeAnalyzer:
     """
 
 
-    PURPOSE_LABELS = ['PURPOSE', 'SCONJ', 'CONTEXT']
+    PURPOSE_LABELS = ['PURPOSE', 'ADVERB', 'CONTEXT']
 
 
     def __init__(self, language, story_elements, verb_frames, purpose_strategy, callback=None) -> None:
         self.language = language
         self.verb_frames = verb_frames
         self.purpose_strategy = purpose_strategy
+        if self.language == constants.NL:
+            self.first_person_words = constants.NL_FIRST_PERSON_WORDS
+        else:
+            self.first_person_words = constants.EN_FIRST_PERSON_WORDS
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         self.__convert_str_columns_to_ints(story_elements_df)
         entities = self.__process_texts(story_elements_df, callback=callback)
@@ -127,33 +125,37 @@ class PurposeAnalyzer:
         return entities
 
 
-    def __find_matching_dependencies(self, sentence_df, entity_start_id, head_start_id, head_of_head_start_id) -> bool:
-        if sentence_df[head_of_head_start_id]["spacy_tag"] not in {"VERB", "AUX"}:
+    def __find_matching_dependencies(self, sentence_dict, entity_start_id, head_start_id, head_of_head_start_id) -> bool:
+        try:
+            if sentence_dict[head_of_head_start_id]["spacy_tag"] not in {"VERB", "AUX"}:
+                return False
+        except:
             return False
-        verb_frame_prepositions = [x[1] for x in self.verb_frames]
+        verb_frame_adverbs = [x[1] for x in self.verb_frames]
         verb_frame_verbs = [x[0] for x in self.verb_frames]
-        entity = sentence_df[entity_start_id]
-        head_of_head = sentence_df[head_of_head_start_id]
-        return ((self.purpose_strategy == constants.PURPOSE_STRATEGY_SCONJ and
-                 entity["spacy_lemma"] in verb_frame_prepositions) or
+        entity = sentence_dict[entity_start_id]
+        head = sentence_dict[head_start_id]
+        return ((self.purpose_strategy == constants.PURPOSE_STRATEGY_ADVERBS and
+                 entity['spacy_lemma'].lower() in verb_frame_adverbs) or
                 (self.purpose_strategy == constants.PURPOSE_STRATEGY_VERBS and
-                 entity["spacy_lemma"] in verb_frame_verbs))
+                 entity['spacy_lemma'].lower() in self.first_person_words and
+                 head['spacy_lemma'].lower() in verb_frame_verbs))
 
 
-    def __expand_phrase(self, sentence_df, sentence_entities, entity_start_id, head_start_id, entity_type, processed_ids) -> None:
-        child_entity_ids = self.__get_head_dependencies(sentence_df, entity_start_id, head_start_id)
-        head_start_id = self.__prepend_tokens_to_purpose_phrase(sentence_df, sentence_entities, head_start_id, child_entity_ids, processed_ids, entity_type)
-        self.__append_tokens_to_purpose_phrase(sentence_df, sentence_entities, head_start_id, child_entity_ids, processed_ids)
+    def __expand_phrase(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, processed_ids) -> None:
+        child_entity_ids = self.__get_head_dependencies(sentence_dict, entity_start_id, head_start_id)
+        head_start_id = self.__prepend_tokens_to_purpose_phrase(sentence_dict, sentence_entities, head_start_id, child_entity_ids, processed_ids)
+        self.__append_tokens_to_purpose_phrase(sentence_dict, sentence_entities, head_start_id, child_entity_ids, processed_ids)
         for child_entity_id in sorted(set(child_entity_ids).difference(processed_ids)):
-            print(sentence_df[entity_start_id]["token_text"], sentence_df[head_start_id]["token_text"],
-                  "skipping purpose word", sentence_df[child_entity_id]["spacy_lemma"], sentence_df[child_entity_id]["sentence"])
+            print(sentence_dict[entity_start_id]["token_text"], sentence_dict[head_start_id]["token_text"],
+                  "skipping purpose word", sentence_dict[child_entity_id]["spacy_lemma"], sentence_dict[child_entity_id]["sentence"])
 
 
-    def __prepend_tokens_to_purpose_phrase(self, sentence_df, sentence_entities, head_start_id, child_entity_ids, processed_ids, entity_type="CONTEXT") -> None:
+    def __prepend_tokens_to_purpose_phrase(self, sentence_dict, sentence_entities, head_start_id, child_entity_ids, processed_ids) -> None:
         for child_entity_id in sorted(child_entity_ids, reverse=True):
             if child_entity_id in processed_ids:
                 continue
-            child_entity_text = sentence_df[child_entity_id]["token_text"]
+            child_entity_text = sentence_dict[child_entity_id]["token_text"]
             entity_gap_size = head_start_id - len(child_entity_text) - child_entity_id
             if entity_gap_size in [1, 2, 3]:
                 if entity_gap_size == 1:
@@ -164,15 +166,15 @@ class PurposeAnalyzer:
                    in_between_text = " , "
                 sentence_entities[child_entity_id] = {
                     "text": child_entity_text + in_between_text + sentence_entities[head_start_id]["text"],
-                    "sentence_id": sentence_df[child_entity_id]["sentence_id"],
-                    "label_": entity_type }
+                    "sentence_id": sentence_dict[child_entity_id]["sentence_id"],
+                    "label_": sentence_entities[head_start_id]['label_'] }
                 del sentence_entities[head_start_id]
                 head_start_id = child_entity_id
                 processed_ids.add(child_entity_id)
         return head_start_id
 
 
-    def __append_tokens_to_purpose_phrase(self, sentence_df, sentence_entities, head_start_id, child_entity_ids, processed_ids) -> None:
+    def __append_tokens_to_purpose_phrase(self, sentence_dict, sentence_entities, head_start_id, child_entity_ids, processed_ids) -> None:
         for child_entity_id in sorted(child_entity_ids):
             if child_entity_id in processed_ids:
                 continue
@@ -184,7 +186,7 @@ class PurposeAnalyzer:
                    in_between_text = ", "
                 elif entity_gap_size == 3:
                    in_between_text = " , "
-                sentence_entities[head_start_id]["text"] += in_between_text + sentence_df[child_entity_id]["token_text"]
+                sentence_entities[head_start_id]["text"] += in_between_text + sentence_dict[child_entity_id]["token_text"]
                 processed_ids.add(child_entity_id)
 
 
@@ -197,12 +199,12 @@ class PurposeAnalyzer:
                 if self.language == constants.EN:
                     entity_start_id, head_start_id = head_start_id, entity_start_id
                 if self.__find_matching_dependencies(sentence_dict, entity_start_id, head_start_id, head_of_head_start_id):
-                    if sentence_dict[entity_start_id]["spacy_tag"] == "VERB" and self.purpose_strategy == constants.PURPOSE_STRATEGY_VERBS:
-                        self.__add_sentence_entity_verb(sentence_dict, sentence_entities, entity_start_id)
-                    elif self.purpose_strategy == constants.PURPOSE_STRATEGY_SCONJ:
+                    if self.purpose_strategy == constants.PURPOSE_STRATEGY_VERBS:
+                        self.__add_sentence_entity_verb(sentence_dict, sentence_entities, head_start_id)
+                    elif self.purpose_strategy == constants.PURPOSE_STRATEGY_ADVERBS:
                         if head_start_id == head_of_head_start_id:
                             print("overlapping relation parts!", sentence_dict[head_start_id]["token_text"])
-                        self.__add_sentence_entity_sconj(sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id)
+                        self.__add_sentence_entity_adverb(sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id)
             except AttributeError as e:
                 self.__log_error("attribute error", e, token_data)
             except KeyError as e:
@@ -214,13 +216,13 @@ class PurposeAnalyzer:
         print(f"{error_phrase}: missing {e} in {token_data['storyid']} {token_data['token_text']} {token_data['sentence']}")
 
 
-    def __add_sentence_entity_sconj(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id) -> None:
+    def __add_sentence_entity_adverb(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id) -> None:
         entity = sentence_dict[entity_start_id]
         sentence_id = entity["sentence_id"]
         reversed_order = ([x[2] for x in self.verb_frames if x[1] == entity["token_text"].lower()] == ['yes'])
         head_label, head_of_head_label = ['PURPOSE', 'CONTEXT'] if reversed_order else ['CONTEXT', 'PURPOSE']
         sentence_entities[entity_start_id] = {
-            "label_": "SCONJ", 
+            "label_": "ADVERB", 
             "sentence_id": sentence_id,
             "text": entity["token_text"]}
         sentence_entities[head_start_id] = {
@@ -232,7 +234,6 @@ class PurposeAnalyzer:
                                      sentence_entities, 
                                      entity_start_id, 
                                      head_start_id, 
-                                     entity_type=head_label, 
                                      processed_ids=processed_ids)
         if head_of_head_start_id != head_start_id:
             sentence_entities[head_of_head_start_id] = {
@@ -243,7 +244,6 @@ class PurposeAnalyzer:
                                          sentence_entities, 
                                          entity_start_id, 
                                          head_of_head_start_id, 
-                                         entity_type=head_of_head_label, 
                                          processed_ids=processed_ids)
 
 
@@ -251,18 +251,18 @@ class PurposeAnalyzer:
         entity = sentence_dict[entity_start_id]
         sentence_id = entity["sentence_id"]
         sentence_entities[entity_start_id] = {
-            "label_": "CONTEXT", 
+            "label_": "PURPOSE", 
             "sentence_id": sentence_id,
             "text": entity["token_text"]}
-        self.__expand_phrase(sentence_dict, sentence_entities, entity_start_id, entity_start_id, entity_type="CONTEXT", processed_ids=set())
+        self.__expand_phrase(sentence_dict, sentence_entities, entity_start_id, entity_start_id, processed_ids=set())
 
 
-    def __get_head_dependencies(self, sentence_df, entity_start_id, head_start_id) -> list:
+    def __get_head_dependencies(self, sentence_dict, entity_start_id, head_start_id) -> list:
         entity_ids = []
-        for start_id, token in sorted(sentence_df.items()):
+        for start_id, token in sorted(sentence_dict.items()):
             if token["spacy_head_idx"] == head_start_id and start_id not in {entity_start_id, head_start_id}:
                 entity_ids.append(start_id)
-                entity_ids.extend(self.__get_head_dependencies(sentence_df, entity_start_id, start_id))
+                entity_ids.extend(self.__get_head_dependencies(sentence_dict, entity_start_id, start_id))
         return entity_ids
 
 

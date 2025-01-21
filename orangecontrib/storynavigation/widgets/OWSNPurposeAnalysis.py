@@ -36,7 +36,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     n_segments = 1
     entity_colors = {"CONTEXT": "salmon",
                      "PURPOSE": "lightgreen",
-                     "SCONJ": "lightblue"}
+                     "ADVERB": "lightblue"}
     dlgFormats = (
         "All readable files ({});;".format(
             '*' + ' *'.join(FileFormat.readers.keys())) +
@@ -72,16 +72,16 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __initialize_strategy(self):
-        self.sconj_strategy_file_name = os.path.join(
+        self.adverbs_strategy_file_name = os.path.join(
             str(constants.PKG),
             str(constants.RESOURCES_SUBPACKAGE),
-            ("dutch" if self.language == "nl" else "english") + "_purpose_triggers.csv")
+            ("dutch" if self.language == "nl" else "english") + "_purpose_adverbs.csv")
         self.verbs_strategy_file_name = os.path.join(
             str(constants.PKG),
             str(constants.RESOURCES_SUBPACKAGE),
             ("dutch" if self.language == "nl" else "english") + "_purpose_verbs.csv")
         self.recent_strategy_files = [self.verbs_strategy_file_name,
-                                      self.sconj_strategy_file_name]
+                                      self.adverbs_strategy_file_name]
         self.strategy_file_name = self.recent_strategy_files[0]
         self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
 
@@ -107,7 +107,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_VERBS, constants.PURPOSE_STRATEGY_SCONJ],
+            items=[constants.PURPOSE_STRATEGY_VERBS, constants.PURPOSE_STRATEGY_ADVERBS],
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,
@@ -189,10 +189,10 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             verb_frames_lines = pathlib.Path(strategy_file_name).read_text(encoding="utf-8").strip().split("\n")
             for line in verb_frames_lines:
                 self.verb_frames.append([token.strip() for token in line.strip().split(",")])
-            if re.search("verb", strategy_file_name):
-                self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
+            if re.search("adverb", strategy_file_name):
+                self.purpose_strategy = constants.PURPOSE_STRATEGY_ADVERBS
             else:
-                self.purpose_strategy = constants.PURPOSE_STRATEGY_SCONJ
+                self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
         except Exception as e:
             print("read_strategy_file", str(e))
         if self.story_elements:
@@ -200,10 +200,10 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __process_purpose_strategy_change(self):
-        if re.search("verb", self.purpose_strategy):
-            self.strategy_file_name = self.verbs_strategy_file_name
+        if re.search("adverb", self.purpose_strategy):
+            self.strategy_file_name = self.adverbs_strategy_file_name
         else:
-            self.strategy_file_name = self.sconj_strategy_file_name
+            self.strategy_file_name = self.verbs_strategy_file_name
         self.read_strategy_file(self.strategy_file_name)
 
 

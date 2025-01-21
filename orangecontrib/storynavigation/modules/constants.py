@@ -188,5 +188,8 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'num_words_in_sentence'
                                  ]
 
-PURPOSE_STRATEGY_SCONJ = "use subordinating conjunctions"
+PURPOSE_STRATEGY_ADVERBS = "use adverbs"
 PURPOSE_STRATEGY_VERBS = "use verbs"
+
+NL_FIRST_PERSON_WORDS = ['ik', 'we', 'wij']
+EN_FIRST_PERSON_WORDS = ['i', 'we']
