@@ -44,6 +44,9 @@ Widgets
    widgets/tutorial2
    widgets/tutorial3
    widgets/tutorial4
+   widgets/tutorial5
+   widgets/tutorial6
+   widgets/tutorial7
 
 .. toctree::
    :maxdepth: 2
