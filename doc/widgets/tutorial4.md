@@ -108,6 +108,12 @@ if in_data is not None:
         categories = in_data.get_column(in_data.domain["process"])
         freq_sum = in_data.get_column(in_data.domain["process - Count"])
             
+        # Combine categories with same label
+        df = pd.DataFrame({'categories': categories, 'freq_sum': freq_sum})
+        df_grouped = df.groupby(['categories']).sum()
+        categories = list(df_grouped.index)
+        freq_sum = df_grouped['freq_sum']
+        
         # Convert categories to string
         categories = [str(cat) for cat in categories]
             
