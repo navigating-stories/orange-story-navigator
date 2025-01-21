@@ -59,6 +59,8 @@ And the output will look like this:
 
 ![Workflow](../../doc/widgets/images/settingdescription.png)
 
+We use a **Select Columns widget** between the ChatGPT Constructor and Document Embedding to make sure that the text output column of ChatGPT will be used  for modelling and not the content column (original text).
+
 ### Step 3: Convert setting-descriptions to embeddings
 
 Use the **Document Embedding** widget to transform textual descriptions into numerical embeddings using a model like BERT.
