@@ -26,7 +26,7 @@ This workflow can be downloaded [here](../../doc/widgets/workflows/), and it use
 - Hint: Ensure the stories are properly loaded, with each document represented in the corpus.
 
 ### Step 2: Load the Custom Word List
-- Task: Load the predefined custom word list inspired by Halliday's functional categories using the File widget.
+- Task: Load the predefined custom word list inspired by Halliday's functional categories using the File widget. The file `dutch_halliday_action_list.csv` can be found  [here](../../orangecontrib/storynavigation/resources).
 - Outcome: The word list will be loaded and prepared for merging with the fairytales dataset.
 - Widget: File → Data Table (1)
 
