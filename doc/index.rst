@@ -35,6 +35,7 @@ Widgets
    widgets/elements
    widgets/means
    widgets/narrativenetwork
+   widgets/purpose
    widgets/setting
 
 .. toctree::
