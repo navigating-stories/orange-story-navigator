@@ -24,7 +24,7 @@ To begin, load the corpus of Dutch fairytales in tab format using the **Corpus**
 - **Outcome**: You will be able to visually inspect the text and ensure that your dataset is loaded correctly with the **Corpus Viewer**.
 
 ### Step 2: Load the custom word list
-Next, load the custom word list with Dutch verbs inspired by Halliday (2004) using the **File** widget which connects to the **Data Table** widget. The table contains verbs and their predefined categories.
+Next, load the custom word list with Dutch verbs inspired by Halliday (2004) using the **File** widget which connects to the **Data Table** widget. The file `dutch_halliday_action_list.csv` can be found  [here](../../orangecontrib/storynavigation/resources). The table contains verbs and their predefined categories.
 
 ![Workflow](../../doc/widgets/images/halliday_table.png)
 

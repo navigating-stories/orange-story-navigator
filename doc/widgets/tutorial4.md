@@ -26,7 +26,7 @@ This workflow can be downloaded [here](../../doc/widgets/workflows/), and it use
 - Hint: Ensure the stories are properly loaded, with each document represented in the corpus.
 
 ### Step 2: Load the Custom Word List
-- Task: Load the predefined custom word list inspired by Halliday's functional categories using the File widget.
+- Task: Load the predefined custom word list inspired by Halliday's functional categories using the File widget. The file `dutch_halliday_action_list.csv` can be found  [here](../../orangecontrib/storynavigation/resources).
 - Outcome: The word list will be loaded and prepared for merging with the fairytales dataset.
 - Widget: File → Data Table (1)
 
@@ -95,18 +95,25 @@ The subject-verb-object combinations for each *story_id* look like:
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 out_data = in_data
 out_learner = None
 out_classifier = None
 out_object = None
 
-if in_data is not None and len(in_data) == 3:  # Ensure we have exactly 3 rows
+if in_data is not None:
     try:
         # Extract 'category' and 'freq-sum' columns from the input data
         categories = in_data.get_column(in_data.domain["process"])
         freq_sum = in_data.get_column(in_data.domain["process - Count"])
             
+        # Combine categories with same label
+        df = pd.DataFrame({'categories': categories, 'freq_sum': freq_sum})
+        df_grouped = df.groupby(['categories']).sum()
+        categories = list(df_grouped.index)
+        freq_sum = df_grouped['freq_sum']
+        
         # Convert categories to string
         categories = [str(cat) for cat in categories]
             
