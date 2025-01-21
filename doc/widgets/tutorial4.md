@@ -95,6 +95,7 @@ The subject-verb-object combinations for each *story_id* look like:
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 out_data = in_data
 out_learner = None
