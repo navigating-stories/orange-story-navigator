@@ -9,7 +9,10 @@ import pandas as pd
 import storynavigation.modules.constants as constants
 from orangecontrib.text.corpus import Corpus
 import nltk
-nltk.download('punkt_tab')
+try:
+    nltk.tokenize.sent_tokenize("test")
+except:
+    nltk.download('punkt_tab')
 
 
 def is_valid_token(token, stopwords): # TODO: how to test this?; reuse in tagging.py
@@ -222,6 +225,10 @@ def convert_orangetable_to_dataframe(table):
     Returns:
         df (pandas.DataFrame): a pandas dataframe with the same content (info) and structure contained in the Orange Data Table
     """
+
+    if table is None:
+        return pd.DataFrame([], columns=['storyid', 'sentence_id', 'token_start_idx', 'spacy_head_idx', 'sentence'])
+
     # Extract attribute names, class variable name, and meta attribute names
     column_names = [var.name for var in table.domain.variables]
     meta_names = [meta.name for meta in table.domain.metas]

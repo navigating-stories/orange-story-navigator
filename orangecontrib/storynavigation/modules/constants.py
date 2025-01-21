@@ -13,7 +13,7 @@ SFREQ_METRIC = 'Subject frequency'
 SFREQ_NORM_METRIC = 'Subject frequency (normalized)'
 
 # list of punctuation characters
-PUNC = '''!()-[]{};:'"\,<>./?@#$%^&*_~0123456789'''
+PUNC = '''!()-[]{};:'"\\,<>./?@#$%^&*_~0123456789'''
 
 # name of storynavigator package directory
 MAIN_PACKAGE = "storynavigation"
@@ -45,6 +45,8 @@ NL_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_dutch.txt"
 NL_PRONOUNS_FILENAME = "dutchpronouns.txt"
 # filename from which to retrieve a list of dutch time words
 NL_TIME_WORDS_FILENAME = "dutch_time_words.csv"
+# filename from which to retrieve a list of dutch verb frames
+NL_VERB_FRAMES_FILENAME = "dutch_verb_frames.csv"
 
 # filename from which to retrieve a list of english stopwords
 EN_STOPWORDS_FILENAME = "englishstopwords.txt"
@@ -58,6 +60,8 @@ EN_FALSE_POSITIVE_VERB_FILENAME = "false_positive_verbs_english.txt"
 EN_PRONOUNS_FILENAME = "englishpronouns.txt"
 # filename from which to retrieve a list of english time words
 EN_TIME_WORDS_FILENAME = "english_time_words.csv"
+# filename from which to retrieve a list of english verb frames
+EN_VERB_FRAMES_FILENAME = "english_verb_frames.csv"
 
 
 # package paths
@@ -83,6 +87,15 @@ NL_FALSE_POSITIVE_VERB_FILE = (
     PKG / RESOURCES_SUBPACKAGE / NL_FALSE_POSITIVE_VERB_FILENAME
 )
 
+NL_VERB_FRAMES_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / NL_VERB_FRAMES_FILENAME
+)
+
+
+NL_TIME_WORDS_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / NL_TIME_WORDS_FILENAME
+)
+
 EN_STOPWORDS_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_STOPWORDS_FILENAME
 )
@@ -90,7 +103,6 @@ EN_STOPWORDS_FILE = (
 EN_PRONOUNS_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_PRONOUNS_FILENAME
 )
-
 
 EN_PAST_TENSE_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_PAST_TENSE_FILENAME
@@ -104,12 +116,12 @@ EN_FALSE_POSITIVE_VERB_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_FALSE_POSITIVE_VERB_FILENAME
 )
 
-NL_TIME_WORDS_FILE = (
-    PKG / RESOURCES_SUBPACKAGE / NL_TIME_WORDS_FILENAME
-)
-
 EN_TIME_WORDS_FILE = (
     PKG / RESOURCES_SUBPACKAGE / EN_TIME_WORDS_FILENAME
+)
+
+EN_VERB_FRAMES_FILE = (
+    PKG / RESOURCES_SUBPACKAGE / EN_VERB_FRAMES_FILENAME
 )
 
 # currently selected agent prominence metric
@@ -188,8 +200,15 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
                                  'num_words_in_sentence'
                                  ]
 
+# means widget strategies
+MEANS_STRATEGY_VERB_FRAMES = "use verb frames"
+MEANS_STRATEGY_VERB_FRAME_PREPS = "use prepositions from verb frames   "
+MEANS_STRATEGY_SPACY_PREPS = "use prepositions from Spacy"
+
+# purpose widget strategies
 PURPOSE_STRATEGY_ADVERBS = "use adverbs"
 PURPOSE_STRATEGY_VERBS = "use verbs"
 
+# first person words for purpose widget
 NL_FIRST_PERSON_WORDS = ['ik', 'we', 'wij']
 EN_FIRST_PERSON_WORDS = ['i', 'we']
