@@ -204,3 +204,11 @@ TAGGING_DATAFRAME_COLUMNNAMES = ['storyid',
 MEANS_STRATEGY_VERB_FRAMES = "use verb frames"
 MEANS_STRATEGY_VERB_FRAME_PREPS = "use prepositions from verb frames   "
 MEANS_STRATEGY_SPACY_PREPS = "use prepositions from Spacy"
+
+# purpose widget strategies
+PURPOSE_STRATEGY_ADVERBS = "use adverbs"
+PURPOSE_STRATEGY_VERBS = "use verbs"
+
+# first person words for purpose widget
+NL_FIRST_PERSON_WORDS = ['ik', 'we', 'wij']
+EN_FIRST_PERSON_WORDS = ['i', 'we']

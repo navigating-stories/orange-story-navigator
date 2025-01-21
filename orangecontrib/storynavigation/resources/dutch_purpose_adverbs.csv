@@ -1,0 +1,11 @@
+verb,adverb,reversed
+ignore,omdat,no
+ignore,doordat,no
+ignore,zodat,yes
+ignore,opdat,no
+ignore,daardoor,yes
+ignore,want,no
+ignore,waardoor,yes
+ignore,dus,yes
+ignore,daarom,yes
+ignore,hierdoor,yes
