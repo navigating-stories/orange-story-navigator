@@ -64,7 +64,7 @@ Once the data has been merged, use the **Group By widget** to organize the data 
 ![Workflow](../../doc/widgets/images/group_by.png)
 
 ### Step 7: Visualizing Tense Distribution
-You can now visualize the distribution of actions in each tense using a **Bar Chart widget**. Select the appropriate column to show the number of actions performed in each tense (past, present, future).
+You can now visualize the distribution of actions in each tense using a **Bar Plot widget** after the last data table to visualize the results. Select the appropriate column to show the number of actions performed in each tense (past, present, future).
 
 - Task: Use the Bar Chart widget to visualize the frequency of actions in each tense.
 - Outcome: A bar chart that displays the distribution of tense usage across the corpus or within specific stories.
