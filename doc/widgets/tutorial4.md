@@ -102,7 +102,7 @@ out_learner = None
 out_classifier = None
 out_object = None
 
-if in_data is not None and len(in_data) == 3:  # Ensure we have exactly 3 rows
+if in_data is not None:
     try:
         # Extract 'category' and 'freq-sum' columns from the input data
         categories = in_data.get_column(in_data.domain["process"])
