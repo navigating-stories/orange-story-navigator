@@ -177,28 +177,26 @@ COLOR_MAP[PAST_VB] = ACTION_PAST_HIGHLIGHT_COLOR
 COLOR_MAP[PRES_VB] = ACTION_PRESENT_HIGHLIGHT_COLOR
 
 # column names in tagging information dataframe
-TAGGING_DATAFRAME_COLUMNNAMES = ['storyid', 
-                                 'sentence', 
-                                 'sentence_id',
-                                 'segment_id', 
-                                 'token_text', 
-                                 'token_start_idx', 
-                                 'token_end_idx', 
-                                 'story_navigator_tag', 
-                                 'spacy_tag', 
-                                 'spacy_finegrained_tag', 
-                                 'spacy_dependency', 
-                                 'spacy_ne',
-                                 'spacy_lemma',
-                                 'spacy_head_text',
-                                 'spacy_head_idx',
-                                 'is_pronoun_boolean', 
-                                 'is_sentence_subject_boolean', 
-                                 'active_voice_subject_boolean', 
-                                 'associated_action', 
-                                 'lang', 
-                                 'num_words_in_sentence'
-                                 ]
+TAGGING_DATAFRAME_COLUMNNAMES_BASE = ['storyid',
+                                      'sentence',
+                                      'token_text',
+                                      'token_start_idx',
+                                      'token_end_idx',
+                                      'story_navigator_tag',
+                                      'spacy_tag',
+                                      'spacy_finegrained_tag',
+                                      'spacy_dependency',
+                                      'spacy_ne',
+                                      'spacy_lemma',
+                                      'spacy_head_text',
+                                      'spacy_head_idx',
+                                      'is_pronoun_boolean',
+                                      'is_sentence_subject_boolean',
+                                      'active_voice_subject_boolean',
+                                      'associated_action',
+                                      'voice',
+                                      'future_verb']
+TAGGING_DATAFRAME_COLUMNNAMES = TAGGING_DATAFRAME_COLUMNNAMES_BASE + ['sentence_id', 'segment_id', 'lang', 'num_words_in_sentence']
 
 # means widget strategies
 MEANS_STRATEGY_VERB_FRAMES = "use verb frames"

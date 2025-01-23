@@ -30,8 +30,7 @@ class Tagger:
         self.custom_tags = None
         self.word_column = None
         self.use_infinitives = use_infinitives
-        # any new column name added below should also be added to variable TAGGING_DATAFRAME_COLUMNNAMES in constants.py
-        self.complete_data_columns = ['storyid', 'sentence', 'token_text', 'token_start_idx', 'token_end_idx', 'story_navigator_tag', 'spacy_tag', 'spacy_finegrained_tag', 'spacy_dependency', 'spacy_ne', 'spacy_lemma', 'spacy_head_text', 'spacy_head_idx', 'is_pronoun_boolean', 'is_sentence_subject_boolean', 'active_voice_subject_boolean', 'associated_action','voice','future_verb']
+        self.complete_data_columns = constants.TAGGING_DATAFRAME_COLUMNNAMES_BASE
 
         if custom_tags_and_word_column is not None:
             self.word_column = custom_tags_and_word_column[1]
