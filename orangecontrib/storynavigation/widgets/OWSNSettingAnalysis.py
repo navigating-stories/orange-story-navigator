@@ -298,8 +298,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def __add_entity_colors_to_story_text(self, story_text, story_id):
         for index, row in self.analyzer.settings_analysis.loc[
-                             self.analyzer.settings_analysis["storyid"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-           start = int(row["character id"])
+                             self.analyzer.settings_analysis["text_id"] == int(story_id)].iloc[::-1].iterrows():
+           start = int(row["character_id"])
            end = start + len(row["text"])
            story_text = self.__insert_entity_color_in_story_text(story_text,
                                                                  start,

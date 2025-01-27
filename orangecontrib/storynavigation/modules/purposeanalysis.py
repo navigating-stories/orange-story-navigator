@@ -272,5 +272,5 @@ class PurposeAnalyzer:
                    for char_id, entity in story_entities.items()]
         results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "sentence_id", "character_id"])
         results_df.sort_values(by=["storyid", "character_id"], inplace=True)
-        results_df["text_id"] = "ST" + results_df["storyid"].astype(str)
+        results_df["text_id"] = results_df["storyid"].astype(int)
         return results_df[["text", "label", "text_id", "sentence_id", "character_id"]].reset_index(drop=True)
