@@ -23,7 +23,7 @@ class SettingAnalyzer:
     Args:
         language (str): ISO string of the language of the input text
         n_segments (int): Number of segments to split each text into
-        text_tuples (list): binary tuple: text (str) and storyid
+        text_tuples (list): ternary tuple: text (str), storyid, sentences (list)
         story_elements (list of lists): tokens with their Spacy analysis
         callback: function in widget to show the progress of this process
     """
@@ -54,6 +54,7 @@ class SettingAnalyzer:
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         last_story_id = -1
         last_sentence = ""
+        last_sentence_id = -1
         char_offset = 0
         entities = []
         for index, row in story_elements_df.iterrows():
@@ -65,10 +66,12 @@ class SettingAnalyzer:
                 last_sentence = ""
                 char_offset = 0
             sentence = row["sentence"]
-            if sentence != last_sentence:
+            sentence_id = row["sentence_id"]
+            if sentence_id != last_sentence_id or story_id != last_story_id:
                 if len(last_sentence) > 0:
                     char_offset += 1 + len(last_sentence)
                 last_sentence = sentence
+                last_sentence_id = sentence_id
             if row["spacy_ne"] == "O":
                 last_entity_class = "O"
                 last_entity_start_id = -1
@@ -77,7 +80,7 @@ class SettingAnalyzer:
                 entity_iob = re.sub("-.*$", "", row["spacy_ne"])
                 entity_start_id = int(row["token_start_idx"]) + char_offset
                 if entity_class != last_entity_class or entity_iob == "B" or story_id != last_story_id:
-                    entities[-1][entity_start_id] = { "text": row["token_text"], "label_": entity_class, "sentence_id": row["sentence_id"] }
+                    entities[-1][entity_start_id] = {"text": row["token_text"], "label_": entity_class, "sentence_id": row["sentence_id"], "segment_id": row["segment_id"]}
                     last_entity_start_id = entity_start_id
                     last_entity_class = entity_class
                 else:
@@ -104,35 +107,53 @@ class SettingAnalyzer:
         # self.entity_list = [line.split(",") for line in self.entity_list]
 
     def __sort_and_filter_results(self, results):
-        results = [(x[0], x[1], int(x[2]), x[3], x[4], int(x[5])) for x in results]
-        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "character_id", "location_type", "sentence_id"]).sort_values(by=["text_id", "character_id"])
-        return results_df[["text", "label", "text_id", "sentence_id", "character_id", "location_type"]].reset_index(drop=True)
+        results = [(x[0], x[1], int(x[2]), int(x[3]), int(x[4]), x[5], x[6]) for x in results]
+        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "sentence_id", "segment_id", "character_id", "location_type"]).sort_values(by=["text_id", "character_id"])
+        return results_df[["text", "label", "text_id", "sentence_id", "segment_id", "character_id", "location_type"]].reset_index(drop=True)
 
 
     def __process_texts(self, nlp, text_tuples, entities, callback=None):
         results = []
         index = 0
         for entities_per_text in entities:
-            results.extend(self.__process_text(text_tuples[index][1], text_tuples[index][0], nlp, entities_per_text))
-            if callback:
-                callback((100*(index+1)/len(entities)))
+            results.extend(self.__process_text(text_tuples[index][1], text_tuples[index][2], nlp, entities_per_text))
             index += 1
+            if callback:
+                callback(100*index/len(entities))
         return self.__sort_and_filter_results(results)
 
 
-    def __analyze_text_with_list(self, text, nlp, user_defined_entities):
+    def __analyze_text_with_list(self, sentences, nlp, user_defined_entities):
         matcher = Matcher(nlp.vocab)
         for entity_group in self.ENTITY_GROUPS:
             patterns = [[{"lower": entity_token} for entity_token in entity_text.lower().split()]
                 for entity_text, entity_label in list(user_defined_entities.items())
                     if entity_label in entity_group]
             matcher.add(entity_group[0], patterns)
-        tokens = nlp(text)
-        return {tokens[m[1]].idx: {
+        results = dict()
+        last_story_id = -1
+        character_id = 0
+        for story_id, sentence_id, segment_id, sentence_text in sentences:
+            if story_id != last_story_id:
+                last_story_id = story_id
+                character_id = 0
+            tokens = nlp(sentence_text)
+            for m in matcher(tokens):
+                results[character_id + tokens[m[1]].idx] = {
                     "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
                     "label_": nlp.vocab.strings[m[0]],
-                    "sentence_id": list(tokens.sents).index(tokens[m[1]:m[2]].sent) # might fail with duplicate sentences
-                } for m in matcher(tokens)}
+                    "sentence_id": sentence_id,
+                    "segment_id": segment_id
+                }
+            character_id += len(sentence_text) + 1
+        return results
+
+#        return {tokens[m[1]].idx: {
+#                    "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
+#                    "label_": nlp.vocab.strings[m[0]],
+#                    "sentence_id": list(tokens.sents).index(tokens[m[1]:m[2]].sent), # might fail with duplicate sentences
+#                    "segment_id": 99 # temporary filler
+#                } for m in matcher(tokens)}
 
 
     def __combine_analyses(self, spacy_analysis, list_analysis):
@@ -170,21 +191,19 @@ class SettingAnalyzer:
         return combined_analysis
 
 
-    def __process_text(self, text_id, text, nlp, spacy_analysis):
-        list_analysis = self.__analyze_text_with_list(text, nlp, self.user_defined_entities)
-        for key in list_analysis:
-            print("LIST_ANALYSIS", key, list_analysis[key])
-            break
+    def __process_text(self, text_id, sentences, nlp, spacy_analysis):
+        first_key = list(spacy_analysis.keys())[0]
+        list_analysis = self.__analyze_text_with_list(sentences, nlp, self.user_defined_entities) # will not be called if spacy found no entities
         combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
         combined_analysis = self.__expand_locations(combined_analysis)
         combined_analysis = self.__filter_dates(combined_analysis)
-        print('COMBINED_ANALYSIS', combined_analysis)
         return [(combined_analysis[start]["text"],
                  combined_analysis[start]["label_"],
                  text_id,
+                 combined_analysis[start]["sentence_id"],
+                 combined_analysis[start]["segment_id"],
                  start,
-                 combined_analysis[start]["location_type"],
-                 combined_analysis[start]['sentence_id']) for start in combined_analysis]
+                 combined_analysis[start]["location_type"]) for start in combined_analysis]
 
 
     def __normalize_entities(self, entity_data):
