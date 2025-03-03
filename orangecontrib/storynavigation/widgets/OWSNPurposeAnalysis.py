@@ -49,7 +49,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate purpose', Table)
+        dataset_level_data = Output('Purpose data', Table)
 
 
     def __init__(self):

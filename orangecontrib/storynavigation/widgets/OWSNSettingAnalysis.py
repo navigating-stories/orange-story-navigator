@@ -58,7 +58,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate settings', Table)
+        dataset_level_data = Output('Settings data', Table)
 
 
     def __init__(self):

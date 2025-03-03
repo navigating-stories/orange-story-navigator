@@ -54,7 +54,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate means', Table)
+        dataset_level_data = Output('Means data', Table)
 
 
     def __init__(self):

@@ -648,11 +648,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         otherids = []
 
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-            selected_storyids.append('ST' + str(c_index))
-            otherids.append(str(c_index))
+            selected_storyids.append(int(c_index))
+            otherids.append(int(c_index))
 
-        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
-        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+        self.actor_results_df = self.actor_results_df.rename(columns={'storyid': 'text_id'}).sort_values(by=['token_text_lowercase', 'text_id', 'segment_id']).reset_index(drop=True)
+        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
+        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
@@ -778,13 +779,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_storyids = []
             otherids = []
             for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append('ST' + str(c_index))
-                otherids.append(str(c_index))
+                selected_storyids.append(int(c_index))
+                otherids.append(int(c_index))
 
             selected_storyids = list(set(selected_storyids)) # only unique items
             otherids = list(set(otherids))
-            self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
-            self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+            self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
+            self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)

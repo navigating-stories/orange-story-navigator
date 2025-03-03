@@ -80,7 +80,7 @@ class SettingAnalyzer:
                 entity_iob = re.sub("-.*$", "", row["spacy_ne"])
                 entity_start_id = int(row["token_start_idx"]) + char_offset
                 if entity_class != last_entity_class or entity_iob == "B" or story_id != last_story_id:
-                    entities[-1][entity_start_id] = {"text": row["token_text"], "label_": entity_class, "sentence_id": row["sentence_id"], "segment_id": row["segment_id"]}
+                    entities[-1][entity_start_id] = {"text": row["token_text"], "label_": entity_class, "segment_id": row["segment_id"], "sentence_id": row["sentence_id"]}
                     last_entity_start_id = entity_start_id
                     last_entity_class = entity_class
                 else:
@@ -108,8 +108,8 @@ class SettingAnalyzer:
 
     def __sort_and_filter_results(self, results):
         results = [(x[0], x[1], int(x[2]), int(x[3]), int(x[4]), x[5], x[6]) for x in results]
-        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "sentence_id", "segment_id", "character_id", "location_type"]).sort_values(by=["text_id", "character_id"])
-        return results_df[["text", "label", "text_id", "sentence_id", "segment_id", "character_id", "location_type"]].reset_index(drop=True)
+        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "location_type"]).sort_values(by=["text_id", "character_id"])
+        return results_df[["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "location_type"]].reset_index(drop=True)
 
 
     def __process_texts(self, nlp, text_tuples, entities, callback=None):
@@ -133,7 +133,7 @@ class SettingAnalyzer:
         results = dict()
         last_story_id = -1
         character_id = 0
-        for story_id, sentence_id, segment_id, sentence_text in sentences:
+        for story_id, segment_id, sentence_id, sentence_text in sentences:
             if story_id != last_story_id:
                 last_story_id = story_id
                 character_id = 0
@@ -142,18 +142,11 @@ class SettingAnalyzer:
                 results[character_id + tokens[m[1]].idx] = {
                     "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
                     "label_": nlp.vocab.strings[m[0]],
-                    "sentence_id": sentence_id,
-                    "segment_id": segment_id
+                    "segment_id": segment_id,
+                    "sentence_id": sentence_id
                 }
             character_id += len(sentence_text) + 1
         return results
-
-#        return {tokens[m[1]].idx: {
-#                    "text": " ".join([tokens[token_id].text for token_id in range(m[1], m[2])]),
-#                    "label_": nlp.vocab.strings[m[0]],
-#                    "sentence_id": list(tokens.sents).index(tokens[m[1]:m[2]].sent), # might fail with duplicate sentences
-#                    "segment_id": 99 # temporary filler
-#                } for m in matcher(tokens)}
 
 
     def __combine_analyses(self, spacy_analysis, list_analysis):
@@ -200,8 +193,8 @@ class SettingAnalyzer:
         return [(combined_analysis[start]["text"],
                  combined_analysis[start]["label_"],
                  text_id,
-                 combined_analysis[start]["sentence_id"],
                  combined_analysis[start]["segment_id"],
+                 combined_analysis[start]["sentence_id"],
                  start,
                  combined_analysis[start]["location_type"]) for start in combined_analysis]
 
