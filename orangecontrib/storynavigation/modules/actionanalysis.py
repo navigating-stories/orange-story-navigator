@@ -328,29 +328,6 @@ class ActionTagger:
 
         return pd.DataFrame(rows, columns=["actor", "actions"])
 
-    # def __generate_tagging_cache(self, story_elements_df, callback=None):
-    #     result = {}
-    #     c = 1
-    #     for storyid in story_elements_df['storyid'].unique().tolist():
-    #         result[storyid] = {}
-    #         sents_df = story_elements_df[story_elements_df['storyid'] == storyid]
-    #         sorted_df = sents_df.sort_values(by=['sentence_id'], ascending=True)
-    #         sents = sorted_df['sentence'].unique().tolist()
-    #         result[storyid]['000'] = self.__postag_sents(sents, 0, 0, 0, story_elements_df)
-    #         result[storyid]['001'] = self.__postag_sents(sents, 0, 0, 1, story_elements_df)
-    #         result[storyid]['010'] = self.__postag_sents(sents, 0, 1, 0, story_elements_df)
-    #         result[storyid]['011'] = self.__postag_sents(sents, 0, 1, 1, story_elements_df)
-    #         result[storyid]['100'] = self.__postag_sents(sents, 1, 0, 0, story_elements_df)
-    #         result[storyid]['101'] = self.__postag_sents(sents, 1, 0, 1, story_elements_df)
-    #         result[storyid]['110'] = self.__postag_sents(sents, 1, 1, 0, story_elements_df)
-    #         result[storyid]['111'] = self.__postag_sents(sents, 1, 1, 1, story_elements_df)
-    #         c+=1
-    #         if callback:
-    #             increment = ((c/len(story_elements_df['storyid'].unique().tolist()))*80)
-    #             callback(increment)
-
-    #     return result
-    
     def __prepare_story_elements_frame_for_filtering(self, story_elements_df):
         story_elements_df = story_elements_df.copy()
         strcols = ['token_text', 'sentence', 'associated_action']
@@ -358,13 +335,12 @@ class ActionTagger:
         for col in strcols:
             story_elements_df[col] = story_elements_df[col].astype(str)
 
-        story_elements_df['storyid'] = 'ST' + story_elements_df['storyid'].astype(str)
-        story_elements_df['segment_id'] = 'SE' + story_elements_df['segment_id'].astype(str)
+        story_elements_df['storyid'] = story_elements_df['storyid'].astype(int)
+        story_elements_df['segment_id'] = story_elements_df['segment_id'].astype(int)
 
         return story_elements_df
     
     def generate_action_analysis_results(self, story_elements_df, callback=None):
-        # self.tagging_cache = self.__generate_tagging_cache(story_elements_df, callback)
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()
         story_elements_df = self.__prepare_story_elements_frame_for_filtering(story_elements_df)
         result_df = pd.DataFrame()

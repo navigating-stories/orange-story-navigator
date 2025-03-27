@@ -299,7 +299,6 @@ class ActorTagger:
             
         c = 1
         rel_rows = story_elements_df[story_elements_df['story_navigator_tag'].isin(['SP', 'SNP'])][word_col].unique().tolist()
-        print('rel_rows', rel_rows[0])
 
         for word in rel_rows: # loop through unique words that are subjects of sentences in a story
             df_word = story_elements_df[story_elements_df[word_col] == str(word)]

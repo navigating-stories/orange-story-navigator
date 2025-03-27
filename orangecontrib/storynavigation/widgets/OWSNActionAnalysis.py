@@ -581,6 +581,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
+        print('run 3', type(self.full_action_table_df.index), self.full_action_table_df.index)
         self.Outputs.actor_action_table_full.send(
             table_from_frame(
                 self.full_action_table_df
@@ -613,7 +614,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         selected_storyids = []
         otherids = []
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-            selected_storyids.append('ST' + str(c_index))
+            selected_storyids.append(int(c_index))
             otherids.append(str(c_index))
 
         self.word_col = next((word for word in self.story_elements.columns if word.startswith('custom_')), None)
@@ -626,8 +627,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
         self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
 
-        full_action_table_df = only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+        # full_action_table_df = only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
+        full_action_table_df = only_actions_df[['token_text_lowercase', 'storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col]].copy()
+        print('run 1', type(full_action_table_df), len(full_action_table_df))
+        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities', 'storyid': 'text_id', 'token_start_idx': 'character_id'})
+        print('run 2', type(self.full_action_table_df), len(self.full_action_table_df))
         selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
         self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
 
@@ -758,7 +762,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_storyids = []
             otherids = []
             for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append('ST' + str(c_index))
+                selected_storyids.append(int(c_index))
                 otherids.append(str(c_index))
 
             selected_storyids = list(set(selected_storyids)) # only unique items
@@ -991,8 +995,4 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 if __name__ == "__main__":
     from orangewidget.utils.widgetpreview import WidgetPreview
-#     from orangecontrib.text.preprocess import BASE_TOKENIZER
-#     corpus_ = Corpus.from_file("book-excerpts")
-#     corpus_ = corpus_[:3]
-#     corpus_ = BASE_TOKENIZER(corpus_)
     WidgetPreview(OWSNActionAnalysis).run(None)
