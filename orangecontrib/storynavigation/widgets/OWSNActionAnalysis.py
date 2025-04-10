@@ -4,6 +4,7 @@ import re
 import sre_constants
 from typing import Any, Iterable, List, Set
 import numpy as np
+import pandas as pd
 import spacy
 
 # Imports from Qt
@@ -581,7 +582,6 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
         )
 
-        print('run 3', type(self.full_action_table_df.index), self.full_action_table_df.index)
         self.Outputs.actor_action_table_full.send(
             table_from_frame(
                 self.full_action_table_df
@@ -628,12 +628,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
 
         # full_action_table_df = only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-        full_action_table_df = only_actions_df[['token_text_lowercase', 'storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col]].copy()
-        print('run 1', type(full_action_table_df), len(full_action_table_df))
-        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities', 'storyid': 'text_id', 'token_start_idx': 'character_id'})
-        print('run 2', type(self.full_action_table_df), len(self.full_action_table_df))
+        full_action_table_df = only_actions_df[['storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col]].copy()
+        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text', 'storyid': 'text_id', 'token_start_idx': 'character_id'})
+        self.full_action_table_df['character_id'] = pd.to_numeric(self.full_action_table_df['character_id'])
         selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text'})
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
@@ -775,7 +774,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
 
             selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'entities'})
+            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text'})
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)

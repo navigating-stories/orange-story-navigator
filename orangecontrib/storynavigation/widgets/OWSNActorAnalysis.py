@@ -651,7 +651,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_storyids.append(int(c_index))
             otherids.append(int(c_index))
 
-        self.actor_results_df = self.actor_results_df.rename(columns={'storyid': 'text_id', 'token_start_idx': 'character_id'}).sort_values(by=['token_text_lowercase', 'text_id', 'segment_id']).reset_index(drop=True)
+        self.actor_results_df = self.actor_results_df.rename(columns={'storyid': 'text_id', 'token_start_idx': 'character_id'}).sort_values(by=['text', 'text_id', 'segment_id']).reset_index(drop=True)
         self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
         self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
 

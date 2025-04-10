@@ -331,8 +331,6 @@ class ActorTagger:
                                             pd.merge(agency_df, prominence_df, on=['storyid', 'segment_id', word_col], how='outer')
                                            ), 
                                    on=['storyid', 'segment_id', word_col], how='outer')
-            #print('actors.py', len(result_df), combined_df)
-            #print('actors.py', len(result_df), occurrences_df)
             combined_df = occurrences_df.join(combined_df.set_index(['storyid', 'segment_id']), on=['storyid', 'segment_id'])
             result_df = pd.concat([result_df, combined_df], axis=0, ignore_index=True)
 
@@ -346,6 +344,7 @@ class ActorTagger:
             self.entity_prominence_scores[word] = result_df[result_df[word_col] == word]['prominence_sf'].tolist()[0]
 
         self.prominence_score_max = result_df['prominence_sf'].max()
+        result_df.rename(columns={word_col: 'text'}, inplace=True)
         return result_df
     
     def __setup_required_nlp_resources(self, lang):
