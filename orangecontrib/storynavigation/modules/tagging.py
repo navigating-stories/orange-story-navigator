@@ -228,6 +228,7 @@ class Tagger:
         if self.__is_valid_token(tag):
             vb = util.find_verb_ancestor(tag)
             vb_text = '-' if vb is None else vb.text
+            vb_idx = None if vb is None else int(vb.idx)
             if self.__is_subject(tag):
                 story_navigator_tag = "SP" if self.__is_pronoun(tag) else "SNP"
             elif self.__is_pronoun(tag):
@@ -241,7 +242,7 @@ class Tagger:
             else:
                 row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), story_navigator_tag,
                        tag[1], tag[2], tag[3], tag[4], tag[-1].lemma_, tag[-1].head.text, tag[-1].head.idx, 
-                       True, True, self.__is_active_voice_subject(tag), vb_text]
+                       True, True, self.__is_active_voice_subject(tag), vb_text, vb_idx]
         return row
     
     def __process_english_potential_action(self, tag):
@@ -483,7 +484,7 @@ class Tagger:
             tense_value = self.__process_potential_action(tag)            
             row = [storyid, sentence, tag[0], tag[-1].idx, tag[-1].idx + len(tag[0]), tense_value, 
                    tag[1], tag[2], tag[3], tag[4], tag[-1].lemma_, tag[-1].head.text, tag[-1].head.idx,
-                   False, False, False, '-']            
+                   False, False, False, '-', None]
             
         return row
     
@@ -665,22 +666,22 @@ class Tagger:
 
         return results
     
-    def __lookup_existing_association(self, word, sentence, story_elements_frame):
-        matching_rows_sent = story_elements_frame[story_elements_frame['sentence'] == sentence]
-        matching_rows_word = matching_rows_sent[matching_rows_sent['token_text'].str.lower() == word.lower()]
-        possible_actions = list(set(matching_rows_word['associated_action'].tolist()))
-        if len(possible_actions) == 0:
-            return '-'
-        if len(possible_actions) == 1:
-            return util.is_only_punctuation(possible_actions[0])
-        
-        result = '-'
-        for action in possible_actions:
-            result = util.is_only_punctuation(action)
-            if  result != '-':
-                continue
-
-        return result
+#   def __lookup_existing_association(self, word, sentence, story_elements_frame):
+#       matching_rows_sent = story_elements_frame[story_elements_frame['sentence'] == sentence]
+#       matching_rows_word = matching_rows_sent[matching_rows_sent['token_text'].str.lower() == word.lower()]
+#       possible_actions = list(set(matching_rows_word['associated_action'].tolist()))
+#       if len(possible_actions) == 0:
+#           return '-'
+#       if len(possible_actions) == 1:
+#           return util.is_only_punctuation(possible_actions[0])
+#       
+#       result = '-'
+#       for action in possible_actions:
+#           result = util.is_only_punctuation(action)
+#           if  result != '-':
+#               continue
+#
+#        return result
 
     def __setup_required_nlp_resources(self, lang):
         """Loads and initialises all language and nlp resources required by the tagger based on the given language

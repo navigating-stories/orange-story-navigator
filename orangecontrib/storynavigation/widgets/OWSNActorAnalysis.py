@@ -329,8 +329,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        # selected_story_results = Output("Actor stats: selected", Table)
-        story_collection_results = Output("Actor stats", Table)
+        # selected_story_results = Output("Actor data: selected", Table)
+        story_collection_results = Output("Actor data", Table)
         # selected_customfreq_table = Output("Custom tag stats: selected", Table)
         customfreq_table = Output("Custom tag stats", Table)
 
