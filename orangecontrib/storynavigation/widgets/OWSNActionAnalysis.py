@@ -31,6 +31,7 @@ from AnyQt.QtWidgets import (
 
 # Imports from Orange3
 from Orange.data import Variable, Table
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
@@ -575,6 +576,27 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 metas.append(item.metas.tolist())
             self.stories = Corpus(domain=domain, metas=np.array(metas))
             self.list_docs()
+        # specify domain for columns in full_action_table_df
+        full_action_table_domain = Domain(
+            attributes=[
+                ContinuousVariable("text_id"),
+                ContinuousVariable("sentence_id"),
+                ContinuousVariable("segment_id"),
+                ContinuousVariable("character_id"),
+                ContinuousVariable("character_id_action"),
+                DiscreteVariable.make("entities_type", 
+                    values=["NSNP", "NSP", "SNP", "SP"])
+            ],
+            class_vars=[],
+            metas=[
+                StringVariable("text"),
+                StringVariable("action")
+            ]
+        )
+        # reorder table columns to be able to link them  to doman
+        self.full_action_table_df = self.full_action_table_df[[
+            "text_id", "sentence_id", "segment_id", "character_id",
+            "character_id_action", "entities_type", "text", "action"]]
 
         self.Outputs.story_collection_results.send(
             table_from_frame(
@@ -583,9 +605,8 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         )
 
         self.Outputs.actor_action_table_full.send(
-            table_from_frame(
-                self.full_action_table_df
-            )
+            Table.from_list(full_action_table_domain, 
+                            self.full_action_table_df.values.tolist())
         )
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
@@ -642,6 +663,8 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
         
+        for column_name in ['text_id', 'segment_id', 'sentence_id', 'character_id']:
+            self.full_action_table_df[column_name] = pd.to_numeric(self.full_action_table_df[column_name], errors="raise")
         return self.action_results_df, self.valid_stories, self.selected_action_results_df, self.selected_action_table_df, self.full_action_table_df, self.selected_custom_freq, self.full_custom_freq
 
     def reset_widget(self):

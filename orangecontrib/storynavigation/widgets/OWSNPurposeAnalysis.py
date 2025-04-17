@@ -3,7 +3,8 @@ import pathlib
 import re
 import sys
 
-from Orange.data import Table
+from Orange.data import Table, Domain
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
@@ -292,7 +293,31 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.refresh_search()
         try:
-            self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.purpose_analysis))
+            # specify domain for columns in puropose_analysis
+            purpose_analysis_domain = Domain(
+                attributes=[
+                    ContinuousVariable("text_id"),
+                    ContinuousVariable("sentence_id"),
+                    ContinuousVariable("segment_id"),
+                    ContinuousVariable("character_id"),
+                    DiscreteVariable.make("label",
+                        values=["", "DATE", "EVENT", "GPE", "LOC",
+                                "MEANS", "PREP", "VERB",
+                                "PURPOSE"])
+                ],
+                class_vars=[],
+                metas=[
+                    StringVariable("text")
+                ]
+            )
+            # reorder table columns to be able to link them  to doman
+            self.analyzer.purpose_analysis = self.analyzer.purpose_analysis[[
+                "text_id", "sentence_id", "segment_id", "character_id",
+                "label", "text"]]
+
+            self.Outputs.dataset_level_data.send(Table.from_list(purpose_analysis_domain,
+                            self.analyzer.purpose_analysis.values.tolist()))
+
         except Exception as e:
             print("on_done", e)
 

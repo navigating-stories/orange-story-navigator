@@ -345,6 +345,8 @@ class ActorTagger:
 
         self.prominence_score_max = result_df['prominence_sf'].max()
         result_df.rename(columns={word_col: 'text'}, inplace=True)
+        for column_name in ['storyid', 'segment_id', 'sentence_id', 'token_start_idx']:
+            result_df[column_name] = pd.to_numeric(result_df[column_name], errors="raise")
         return result_df
     
     def __setup_required_nlp_resources(self, lang):

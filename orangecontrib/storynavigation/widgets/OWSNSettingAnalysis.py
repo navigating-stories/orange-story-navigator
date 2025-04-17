@@ -2,7 +2,8 @@ import os
 import pathlib
 import re
 
-from Orange.data import Table
+from Orange.data import Table, Domain
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
@@ -280,7 +281,33 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def on_done(self, result) -> None:
         self.refresh_search()
-        self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.settings_analysis))
+        # specify domain for columns in settings_analysis
+        settings_analysis_domain = Domain(
+            attributes=[
+                ContinuousVariable("text_id"),
+                ContinuousVariable("sentence_id"),
+                ContinuousVariable("segment_id"),
+                ContinuousVariable("character_id"),
+                DiscreteVariable.make("label",
+                        values=["", "DATE", "EVENT", "GPE", "LOC",
+                                "MEANS", "PREP", "VERB",
+                                "PURPOSE"]),
+                DiscreteVariable.make("selected",
+                    values=["", "selected"])
+            ],
+            class_vars=[],
+            metas=[
+                StringVariable("text"),
+                StringVariable("location_type")
+            ]
+        )
+        # reorder table columns to be able to link them  to doman
+        self.analyzer.settings_analysis = self.analyzer.settings_analysis[[
+            "text_id", "sentence_id", "segment_id", "character_id",
+            "label", "selected", "text", "location_type"]]
+
+        self.Outputs.dataset_level_data.send(Table.from_list(settings_analysis_domain,
+                            self.analyzer.settings_analysis.values.tolist()))
 
 
     def __make_entity_bar_for_html(self):

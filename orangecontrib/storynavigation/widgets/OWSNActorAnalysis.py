@@ -31,6 +31,7 @@ from AnyQt.QtWidgets import (
 
 # Imports from Orange3
 from Orange.data import Variable, Table
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
@@ -954,10 +955,29 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.stories = Corpus(domain=domain, metas=np.array(metas))
             self.list_docs()
 
+        # specify domain for columns in actor_results_df
+        actor_results_domain = Domain(
+            attributes=[
+                ContinuousVariable("text_id"),
+                ContinuousVariable("sentence_id"),
+                ContinuousVariable("segment_id"),
+                ContinuousVariable("character_id"),
+                ContinuousVariable("raw_freq"),
+                ContinuousVariable("subj_freq"),
+                ContinuousVariable("agency"),
+                ContinuousVariable("prominence_sf")
+            ],
+            class_vars=[],
+            metas=[ StringVariable("text")]
+        )
+        # reorder table columns to be able to link them  to doman
+        self.actor_results_df = self.actor_results_df[[
+            "text_id", "sentence_id", "segment_id", "character_id",
+            "raw_freq", "subj_freq", "agency", "prominence_sf", "text"]]
+
         self.Outputs.story_collection_results.send(
-            table_from_frame(
-                self.actor_results_df
-            )
+            Table.from_list(actor_results_domain,
+                            self.actor_results_df.values.tolist())
         )
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
