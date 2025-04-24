@@ -36,7 +36,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     language = 'nl'
     word_column = 'word'
     n_segments = 1
-    remove_stopwords = constants.YES
+    remove_stopwords = constants.NO
     use_infinitives = Setting(False)
 
     def __init__(self):

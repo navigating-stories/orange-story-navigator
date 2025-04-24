@@ -289,8 +289,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
                 ContinuousVariable("segment_id"),
                 ContinuousVariable("character_id"),
                 DiscreteVariable.make("label",
-                        values=["", "DATE", "EVENT", "GPE", "LOC",
-                                "MEANS", "PREP", "VERB",
+                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
+                                "MEANS", "PREP","TIME", "VERB",
                                 "PURPOSE"]),
                 DiscreteVariable.make("selected",
                     values=["", "selected"])
@@ -305,9 +305,10 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.analyzer.settings_analysis = self.analyzer.settings_analysis[[
             "text_id", "sentence_id", "segment_id", "character_id",
             "label", "selected", "text", "location_type"]]
-
-        self.Outputs.dataset_level_data.send(Table.from_list(settings_analysis_domain,
-                            self.analyzer.settings_analysis.values.tolist()))
+        output_table = Table.from_list(settings_analysis_domain,
+                                       self.analyzer.settings_analysis.values.tolist())
+        output_table.name = 'setting'
+        self.Outputs.dataset_level_data.send(output_table)
 
 
     def __make_entity_bar_for_html(self):

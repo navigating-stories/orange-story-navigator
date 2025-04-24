@@ -603,11 +603,10 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 self.action_results_df
             )
         )
-
-        self.Outputs.actor_action_table_full.send(
-            Table.from_list(full_action_table_domain, 
-                            self.full_action_table_df.values.tolist())
-        )
+        output_table = Table.from_list(full_action_table_domain,
+                                       self.full_action_table_df.values.tolist())
+        output_table.name = 'actions'
+        self.Outputs.actor_action_table_full.send(output_table)
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.Outputs.customfreq_table.send(

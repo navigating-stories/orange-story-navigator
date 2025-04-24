@@ -284,8 +284,8 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
                     ContinuousVariable("segment_id"),
                     ContinuousVariable("character_id"),
                     DiscreteVariable.make("label",
-                        values=["", "DATE", "EVENT", "GPE", "LOC",
-                                "MEANS", "PREP", "VERB",
+                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
+                                "MEANS", "PREP", "TIME", "VERB",
                                 "PURPOSE"])
                 ],
                 class_vars=[],
@@ -297,9 +297,10 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.analyzer.means_analysis = self.analyzer.means_analysis[[
                 "text_id", "sentence_id", "segment_id", "character_id",
                 "label", "text"]]
-
-            self.Outputs.dataset_level_data.send(Table.from_list(means_analysis_domain,
-                            self.analyzer.means_analysis.values.tolist()))
+            output_table = Table.from_list(means_analysis_domain,
+                                           self.analyzer.means_analysis.values.tolist())
+            output_table.name = 'means'
+            self.Outputs.dataset_level_data.send(output_table)
         except Exception as e:
             print("on_done", e)
 

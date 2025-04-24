@@ -975,10 +975,10 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             "text_id", "sentence_id", "segment_id", "character_id",
             "raw_freq", "subj_freq", "agency", "prominence_sf", "text"]]
 
-        self.Outputs.story_collection_results.send(
-            Table.from_list(actor_results_domain,
-                            self.actor_results_df.values.tolist())
-        )
+        output_table = Table.from_list(actor_results_domain,
+                                       self.actor_results_df.values.tolist())
+        output_table.name = 'actors'
+        self.Outputs.story_collection_results.send(output_table)
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.Outputs.customfreq_table.send(

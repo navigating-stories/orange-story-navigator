@@ -301,8 +301,8 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
                     ContinuousVariable("segment_id"),
                     ContinuousVariable("character_id"),
                     DiscreteVariable.make("label",
-                        values=["", "DATE", "EVENT", "GPE", "LOC",
-                                "MEANS", "PREP", "VERB",
+                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
+                                "MEANS", "PREP", "TIME", "VERB",
                                 "PURPOSE"])
                 ],
                 class_vars=[],
@@ -314,10 +314,10 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.analyzer.purpose_analysis = self.analyzer.purpose_analysis[[
                 "text_id", "sentence_id", "segment_id", "character_id",
                 "label", "text"]]
-
-            self.Outputs.dataset_level_data.send(Table.from_list(purpose_analysis_domain,
-                            self.analyzer.purpose_analysis.values.tolist()))
-
+            output_table = Table.from_list(purpose_analysis_domain,
+                            self.analyzer.purpose_analysis.values.tolist())
+            output_table.name = 'purpose'
+            self.Outputs.dataset_level_data.send(output_table)
         except Exception as e:
             print("on_done", e)
 
