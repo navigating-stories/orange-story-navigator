@@ -35,7 +35,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     autocommit = Setting(True)
     language = 'nl'
     word_column = 'word'
-    n_segments = 1
+    n_segments = 1 # n_segments initial value remains 2 in widget for some reason 
     remove_stopwords = constants.NO
     use_infinitives = Setting(False)
 

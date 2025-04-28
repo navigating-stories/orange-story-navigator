@@ -290,13 +290,14 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
                 ],
                 class_vars=[],
                 metas=[
-                    StringVariable("text")
+                    StringVariable("text"),
+                    StringVariable("means_id")
                 ]
             )
             # reorder table columns to be able to link them  to doman
             self.analyzer.means_analysis = self.analyzer.means_analysis[[
                 "text_id", "sentence_id", "segment_id", "character_id",
-                "label", "text"]]
+                "label", "text", "means_id"]]
             output_table = Table.from_list(means_analysis_domain,
                                            self.analyzer.means_analysis.values.tolist())
             output_table.name = 'means'

@@ -24,7 +24,7 @@ class MeansAnalyzer:
         entities = self.__process_texts(story_elements_df, callback=callback)
         sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
         entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
-        self.means_analysis = self.__sort_and_filter_results(entities_from_onsets)
+        self.means_analysis = self.__sort_and_filter_results(entities)
 
 
     def __convert_str_columns_to_ints(self, story_elements_df) -> None:
@@ -68,7 +68,7 @@ class MeansAnalyzer:
         for index, (sentence_dict_index, row_sentence_dict) in enumerate(sentence_dict.items()):
             row_sentence_dict = { token["token_start_idx"]: token
                                  for token_idx, token in row_sentence_dict.items() }
-            sentence_entities = self.__process_sentence(row_sentence_dict)
+            sentence_entities = self.__process_sentence(row_sentence_dict, sentence_dict_index[0])
             if sentence_entities:
                 entities.append([
                     sentence_dict_index[0],
@@ -115,7 +115,8 @@ class MeansAnalyzer:
                     "text": child_entity_text + in_between_text + sentence_entities[head_start_id]["text"],
                     "segment_id": sentence_df[child_entity_id]["segment_id"],
                     "sentence_id": sentence_df[child_entity_id]["sentence_id"],
-                    "label_": "MEANS" }
+                    "label_": "MEANS",
+                    "means_id": sentence_entities[head_start_id]["means_id"]}
                 del sentence_entities[head_start_id]
                 head_start_id = child_entity_id
                 processed_ids.add(child_entity_id)
@@ -133,7 +134,7 @@ class MeansAnalyzer:
                 processed_ids.add(child_entity_id)
 
 
-    def __process_sentence(self, sentence_dict) -> dict:
+    def __process_sentence(self, sentence_dict, storyid) -> dict:
         sentence_entities = {}
         for entity_start_id, token_data in sorted(sentence_dict.items()):
             try:
@@ -144,7 +145,7 @@ class MeansAnalyzer:
                 if self.language == constants.EN:
                     entity_start_id, head_start_id = head_start_id, entity_start_id
                 if self.__find_matching_dependencies(sentence_dict, entity_start_id, head_start_id, head_of_head_start_id):
-                    self.__add_sentence_entity(sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id)
+                    self.__add_sentence_entity(sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id, storyid)
             except AttributeError as e:
                 self.__log_key_error(e, token_data)
             except KeyError as e:
@@ -152,25 +153,29 @@ class MeansAnalyzer:
         return sentence_entities
 
 
-    def __add_sentence_entity(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id) -> None:
+    def __add_sentence_entity(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id, storyid) -> None:
         entity = sentence_dict[entity_start_id]
         segment_id = entity["segment_id"]
         sentence_id = entity["sentence_id"]
+        means_id = f'{storyid}_{sentence_id}_{segment_id}_{head_start_id}'
         sentence_entities[entity_start_id] = {
             "label_": "PREP", 
             "segment_id": segment_id,
             "sentence_id": sentence_id,
-            "text": entity["token_text"]}
+            "text": entity["token_text"],
+            "means_id": means_id}
         sentence_entities[head_start_id] = {
             "label_": "MEANS",
             "segment_id": segment_id,
             "sentence_id": sentence_id,
-            "text": sentence_dict[head_start_id]["token_text"]}
+            "text": sentence_dict[head_start_id]["token_text"],
+            "means_id": means_id}
         sentence_entities[head_of_head_start_id] = {
             "label_": "VERB",
             "segment_id": segment_id,
             "sentence_id": sentence_id,
-            "text": sentence_dict[head_of_head_start_id]["token_text"]}
+            "text": sentence_dict[head_of_head_start_id]["token_text"],
+            "means_id": means_id}
         self.__expand_means_phrase(sentence_dict, sentence_entities, entity_start_id, head_start_id)
 
 
@@ -188,10 +193,16 @@ class MeansAnalyzer:
 
 
     def __sort_and_filter_results(self, entities) -> pd.DataFrame:
-        results = [(entity["text"], entity["label_"], storyid, entity["segment_id"], entity["sentence_id"], char_id)
-                   for storyid, story_entities in entities.items()
-                   for char_id, entity in story_entities.items()]
-        results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "segment_id", "sentence_id", "character_id"])
+        results = [(entity_data[character_id]['text'], 
+                    entity_data[character_id]['label_'], 
+                    storyid, 
+                    entity_data[character_id]['segment_id'], 
+                    sentence_id, 
+                    character_id,
+                    entity_data[character_id]['means_id'])
+                   for storyid, sentence_id, entity_data in entities
+                   for character_id in entity_data]
+        results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "segment_id", "sentence_id", "character_id", "means_id"])
         results_df.sort_values(by=["storyid", "character_id"], inplace=True)
         results_df["text_id"] = results_df["storyid"].astype(int)
-        return results_df[["text", "label", "text_id", "segment_id", "sentence_id", "character_id"]].reset_index(drop=True)
+        return results_df[["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "means_id"]].reset_index(drop=True)

@@ -31,7 +31,9 @@ class PurposeAnalyzer:
         entities = self.__process_texts(story_elements_df, callback=callback)
         sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
         entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
-        entities_from_onsets = self.__add_missing_relation_parts(story_elements_df, entities_from_onsets, sentence_offsets)
+        print("1", entities)
+        # entities_from_onsets = self.__add_missing_relation_parts(story_elements_df, entities_from_onsets, sentence_offsets) # commented away 20250426
+        print("2", entities_from_onsets)
         self.purpose_analysis = self.__sort_and_filter_results(entities_from_onsets)
 
 
@@ -100,10 +102,12 @@ class PurposeAnalyzer:
     def __convert_entities(self, entities, sentence_offsets) -> dict:
         entities_from_onsets = {}
         for storyid, sentence_id, segment_id, sentence_data in entities:
-            story_entities = entities_from_onsets.setdefault(storyid, {})
-            char_offset_sentence = sentence_offsets.loc[(storyid, sentence_id)]["char_offset"]
+            if storyid not in entities_from_onsets:
+                entities_from_onsets[storyid] = {}
+            if sentence_id not in entities_from_onsets[storyid]:
+                entities_from_onsets[storyid][sentence_id] = {}
             for token_start_id, token_data in sentence_data.items():
-                story_entities[token_start_id + char_offset_sentence] = token_data
+                entities_from_onsets[storyid][sentence_id][token_start_id] = token_data
         return entities_from_onsets
 
 
@@ -278,10 +282,11 @@ class PurposeAnalyzer:
 
 
     def __sort_and_filter_results(self, entities) -> pd.DataFrame:
-        results = [(entity["text"], entity["label_"], storyid, entity["segment_id"], entity["sentence_id"], char_id)
+        results = [(entity["text"], entity["label_"], storyid, entity["segment_id"], sentence_id, char_id)
                    for storyid, story_entities in entities.items()
-                   for char_id, entity in story_entities.items()]
+                   for sentence_id, sentence_entities in story_entities.items()
+                   for char_id, entity in sentence_entities.items()]
         results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "segment_id", "sentence_id", "character_id"])
-        results_df.sort_values(by=["storyid", "character_id"], inplace=True)
+        results_df.sort_values(by=["storyid", "sentence_id", "character_id"], inplace=True)
         results_df["text_id"] = results_df["storyid"].astype(int)
         return results_df[["text", "label", "text_id", "segment_id", "sentence_id", "character_id"]].reset_index(drop=True)

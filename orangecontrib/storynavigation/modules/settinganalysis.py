@@ -189,9 +189,6 @@ class SettingAnalyzer:
         first_key = list(spacy_analysis.keys())[0]
         list_analysis = self.__analyze_text_with_list(sentences, nlp, self.user_defined_entities) # will not be called if spacy found no entities
         combined_analysis = self.__combine_analyses(spacy_analysis, list_analysis)
-        print('###', text_id, spacy_analysis)
-        print('###', text_id, list_analysis)
-        print('###', text_id, combined_analysis)
         combined_analysis = self.__expand_locations(combined_analysis)
         combined_analysis = self.__filter_dates(combined_analysis)
         return [(data['text'],

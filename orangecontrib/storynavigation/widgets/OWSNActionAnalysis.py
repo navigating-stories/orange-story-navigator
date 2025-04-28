@@ -582,21 +582,22 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 ContinuousVariable("text_id"),
                 ContinuousVariable("sentence_id"),
                 ContinuousVariable("segment_id"),
+                ContinuousVariable("character_id_role"),
                 ContinuousVariable("character_id"),
-                ContinuousVariable("character_id_action"),
                 DiscreteVariable.make("entities_type", 
                     values=["NSNP", "NSP", "SNP", "SP"])
             ],
             class_vars=[],
             metas=[
+                StringVariable("text_role"),
                 StringVariable("text"),
-                StringVariable("action")
+                StringVariable("spacy_dependency")
             ]
         )
         # reorder table columns to be able to link them  to doman
         self.full_action_table_df = self.full_action_table_df[[
-            "text_id", "sentence_id", "segment_id", "character_id",
-            "character_id_action", "entities_type", "text", "action"]]
+            "text_id", "sentence_id", "segment_id", "character_id_role",
+            "character_id", "entities_type", "text_role", "text", "spacy_dependency"]]
 
         self.Outputs.story_collection_results.send(
             table_from_frame(
@@ -647,12 +648,12 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
         self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
 
-        full_action_table_df = only_actions_df[['storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col, 'associated_action_idx']].copy()
-        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text', 'storyid': 'text_id', 'token_start_idx': 'character_id', 'associated_action_idx': 'character_id_action'})
+        full_action_table_df = only_actions_df[['storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col, 'associated_action_idx', 'spacy_dependency']].copy()
+        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role', 'storyid': 'text_id', 'token_start_idx': 'character_id_role', 'associated_action_idx': 'character_id'})
+        self.full_action_table_df['character_id_role'] = pd.to_numeric(self.full_action_table_df['character_id_role'])
         self.full_action_table_df['character_id'] = pd.to_numeric(self.full_action_table_df['character_id'])
-        self.full_action_table_df['character_id_action'] = pd.to_numeric(self.full_action_table_df['character_id_action'])
         selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text'})
+        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role'})
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
@@ -796,7 +797,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
 
             selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'action', 'story_navigator_tag': 'entities_type', self.word_col : 'text'})
+            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role'})
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)

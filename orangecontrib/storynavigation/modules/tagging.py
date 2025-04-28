@@ -26,6 +26,7 @@ class Tagger:
         self.text_tuples = text_tuples
         self.lang = lang
         self.n_segments = n_segments
+        print(f'n_segments value used by Elements widget: {n_segments}')
         self.remove_stopwords = remove_stopwords
         self.custom_tags = None
         self.word_column = None
