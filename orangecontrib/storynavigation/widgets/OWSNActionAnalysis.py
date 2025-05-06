@@ -594,10 +594,11 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 StringVariable("spacy_dependency")
             ]
         )
-        # reorder table columns to be able to link them  to doman
+        # reorder table columns to be able to link them to domain
         self.full_action_table_df = self.full_action_table_df[[
             "text_id", "sentence_id", "segment_id", "character_id_role",
             "character_id", "entities_type", "text_role", "text", "spacy_dependency"]]
+        self.full_action_table_df = self.full_action_table_df.drop_duplicates(ignore_index=True)
 
         self.Outputs.story_collection_results.send(
             table_from_frame(

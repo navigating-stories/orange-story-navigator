@@ -970,10 +970,11 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             class_vars=[],
             metas=[ StringVariable("text")]
         )
-        # reorder table columns to be able to link them  to doman
+        # reorder table columns to be able to link them to domain
         self.actor_results_df = self.actor_results_df[[
             "text_id", "sentence_id", "segment_id", "character_id",
             "raw_freq", "subj_freq", "agency", "prominence_sf", "text"]]
+        self.actor_results_df = self.actor_results_df.drop_duplicates(ignore_index=True)
 
         output_table = Table.from_list(actor_results_domain,
                                        self.actor_results_df.values.tolist())
