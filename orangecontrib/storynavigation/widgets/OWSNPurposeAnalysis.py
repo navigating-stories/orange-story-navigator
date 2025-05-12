@@ -341,10 +341,12 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __add_entity_colors_to_story_text(self, story_text, story_id):
         entity_data = []
         first_id = sys.maxsize
+        print(self.analyzer.sentence_offsets)
         try:
             for index, row in self.analyzer.purpose_analysis.loc[
                              self.analyzer.purpose_analysis["text_id"] == story_id].iloc[::-1].iterrows():
-                start = int(row["character_id"])
+                sentence_id = int(row["sentence_id"])
+                start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, sentence_id)]["char_offset"]
                 end = start + len(row["text"])
                 if end >= first_id:
                     print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
@@ -353,7 +355,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
                         story_text, start, end, row["label"])
                     first_id = start
         except Exception as e:
-            print("__add_entity_colors_to_story_text", e)
+            print("error __add_entity_colors_to_story_text", e)
         return story_text
 
 

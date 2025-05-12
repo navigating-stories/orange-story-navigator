@@ -328,14 +328,16 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __add_entity_colors_to_story_text(self, story_text, story_id):
-        for index, row in self.analyzer.settings_analysis.loc[
-                             self.analyzer.settings_analysis["text_id"] == int(story_id)].iloc[::-1].iterrows():
-           start = int(row["character_id"])
-           end = start + len(row["text"])
-           story_text = self.__insert_entity_color_in_story_text(story_text,
-                                                                 start,
-                                                                 end,
-                                                                 row["label"])
+        story_id = int(story_id)
+        for index, row in self.analyzer.settings_analysis[self.analyzer.settings_analysis['text_id'] == story_id].sort_values(by=['sentence_id', 'segment_id', 'character_id'], ascending=False).iterrows():
+            sentence_id = int(row["sentence_id"])
+            segment_id = int(row["segment_id"])
+            start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, sentence_id)]["char_offset"]
+            end = start + len(row["text"])
+            story_text = self.__insert_entity_color_in_story_text(story_text,
+                                                                  start,
+                                                                  end,
+                                                                  row["label"])
         return story_text
 
 

@@ -45,13 +45,32 @@ class SettingAnalyzer:
         self.__setup_required_nlp_resources(language)
         self.nlp = util.load_spacy_pipeline(self.model)
 
-        entities = self.extract_entities_from_table(story_elements)
+        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+        self.sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
+        entities = self.extract_entities_from_table(story_elements_df)
         self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, entities, self.callback)
         self.settings_analysis = self.__select_best_entities(self.text_analysis)
 
 
-    def extract_entities_from_table(self, story_elements):
-        story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
+    def __compute_sentence_offsets(self, story_elements_df) -> pd.DataFrame:
+        sentences_df = story_elements_df.groupby(["storyid", "sentence_id"]).first().reset_index()[["storyid", "segment_id", "sentence_id", "sentence"]]
+        char_offsets = []
+        last_sentence = ""
+        for sentence_id, sentence in zip(sentences_df["sentence_id"],
+                                         sentences_df["sentence"]):
+            if sentence_id == sentences_df.iloc[0]["sentence_id"]:
+                char_offset = 0
+            else:
+                char_offset += len(last_sentence) + 1
+            char_offsets.append(char_offset)
+            last_sentence = sentence
+        sentences_df["char_offset"] = char_offsets
+        sentences_df["storyid"] = pd.to_numeric(sentences_df["storyid"])
+        sentences_df["sentence_id"] = pd.to_numeric(sentences_df["sentence_id"])
+        return sentences_df[["storyid", "segment_id", "sentence_id", "char_offset"]].set_index(["storyid", "sentence_id"])
+
+
+    def extract_entities_from_table(self, story_elements_df):
         last_story_id = -1
         last_sentence = ""
         last_sentence_id = -1

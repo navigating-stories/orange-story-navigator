@@ -29,10 +29,10 @@ class PurposeAnalyzer:
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         self.__convert_str_columns_to_ints(story_elements_df)
         entities = self.__process_texts(story_elements_df, callback=callback)
-        sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
-        entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
-        print("1", entities)
-        # entities_from_onsets = self.__add_missing_relation_parts(story_elements_df, entities_from_onsets, sentence_offsets) # commented away 20250426
+        self.sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
+        entities_from_onsets = self.__convert_entities(entities, self.sentence_offsets)
+        print("1", entities_from_onsets)
+        #entities_from_onsets = self.__add_missing_relation_parts(story_elements_df, entities_from_onsets, self.sentence_offsets) # commented away 20250426
         print("2", entities_from_onsets)
         self.purpose_analysis = self.__sort_and_filter_results(entities_from_onsets)
 
@@ -65,6 +65,7 @@ class PurposeAnalyzer:
 
     def __add_missing_relation_part(self, entities_from_onsets, sentence_offsets, storyid, sentence_id, segment_id, previous_sentence) -> None:
         missing_labels = self.__get_missing_label(entities_from_onsets, storyid, sentence_id)
+        print('missing_labels', missing_labels)
         if len(missing_labels) == 1:
             char_id_start = sentence_offsets.loc[(storyid, sentence_id - 1)]["char_offset"]
             char_id_end = sentence_offsets.loc[(storyid, sentence_id)]["char_offset"] - 1
@@ -74,6 +75,13 @@ class PurposeAnalyzer:
                 'segment_id': segment_id,
                 'text': previous_sentence
             }
+            print("adding label", storyid, char_id_start, {
+                'label_': missing_labels[0],
+                'sentence_id': sentence_id,
+                'segment_id': segment_id,
+                'text': previous_sentence
+            })
+
 
 
     def __add_missing_relation_parts(self, story_elements_df, entities_from_onsets, sentence_offsets) -> dict:
@@ -81,6 +89,7 @@ class PurposeAnalyzer:
         for storyid in entities_from_onsets:
             sentence_ids = {}
             for char_id in entities_from_onsets[storyid]:
+                print("__add_missing_relation_parts (93)", storyid, char_id)
                 sentence_id = entities_from_onsets[storyid][char_id]['sentence_id']
                 segment_id = entities_from_onsets[storyid][char_id]['segment_id']
                 label = entities_from_onsets[storyid][char_id]['label_']
@@ -226,6 +235,7 @@ class PurposeAnalyzer:
 
 
     def __add_sentence_entity_adverb(self, sentence_dict, sentence_entities, entity_start_id, head_start_id, head_of_head_start_id) -> None:
+        print(' __add_sentence_entity_adverb')
         entity = sentence_dict[entity_start_id]
         sentence_id = entity["sentence_id"]
         segment_id = entity["segment_id"]
@@ -261,6 +271,7 @@ class PurposeAnalyzer:
 
 
     def __add_sentence_entity_verb(self, sentence_dict, sentence_entities, entity_start_id) -> None:
+        print('__add_sentence_entity_verb')
         entity = sentence_dict[entity_start_id]
         sentence_id = entity["sentence_id"]
         segment_id = entity["segment_id"]

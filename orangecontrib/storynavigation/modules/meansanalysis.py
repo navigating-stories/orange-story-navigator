@@ -22,8 +22,8 @@ class MeansAnalyzer:
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         self.__convert_str_columns_to_ints(story_elements_df)
         entities = self.__process_texts(story_elements_df, callback=callback)
-        sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
-        entities_from_onsets = self.__convert_entities(entities, sentence_offsets)
+        self.sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
+        entities_from_onsets = self.__convert_entities(entities, self.sentence_offsets)
         self.means_analysis = self.__sort_and_filter_results(entities)
 
 
