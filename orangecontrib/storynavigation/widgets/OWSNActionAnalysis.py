@@ -344,6 +344,8 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     regexp_filter = ContextSetting("")
     show_tokens = Setting(False)
     autocommit = Setting(True)
+    remove_stopwords = Setting(False)
+    number = Setting(1)
 
     # POS or NER? radiobutton selection of entity type to highlight
     tag_type = Setting(1)
@@ -432,6 +434,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             callback=self.pos_selection_changed,
         )
 
+
         self.custom_tags = gui.checkBox(
             self.postags_box,
             self,
@@ -439,6 +442,9 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             "Custom tokens",
             callback=self.pos_selection_changed
         )
+
+
+        
 
         self.custom_tags.setChecked(False)
         self.custom_tags.setEnabled(False)

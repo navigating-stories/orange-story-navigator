@@ -635,7 +635,15 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
 
         self.story_elements = story_elements
         self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements, callback=advance)
+        self.actor_results_df = util.standardize_columns(self.actor_results_df)
         self.agent_prominence_score_max = self.actortagger.prominence_score_max
+        
+        sample_path = "/home/ankitkarki/actor_results_sample.csv"
+        try:
+            self.actor_results_df.head(10).to_csv(sample_path, index=False)
+            print(f"✅ Sample exported to: {sample_path}")
+        except Exception as e:
+            print(f"❌ Failed to export sample: {e}")
 
         # deal with stories that do not have any text / entry in story elements: remove them from doc list
         story_elements_grouped_by_story = self.story_elements.groupby('storyid')

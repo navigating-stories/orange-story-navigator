@@ -309,6 +309,33 @@ class ActorTagger:
     #     return result
 
     def generate_actor_analysis_results(self, story_elements_df, callback=None):
+        # Determine column used for word lookup
+        word_col = next((word for word in story_elements_df.columns if word.startswith('custom_')), None)
+        if not word_col or word_col not in story_elements_df.columns:
+            word_col = 'token_text_lowercase'
+
+        # Print tag frequency to debug issues
+        print("🔍 Tag frequency:\n", story_elements_df['story_navigator_tag'].value_counts())
+
+        # Try SP/SNP tags first
+        rel_rows = story_elements_df[
+            story_elements_df['story_navigator_tag'].isin(['SP', 'SNP'])
+        ][word_col].unique().tolist()
+
+        # If empty, fall back to NSP/NSNP
+        if not rel_rows:
+            print("⚠️ No SP/SNP found. Falling back to NSP/NSNP.")
+            rel_rows = story_elements_df[
+                story_elements_df['story_navigator_tag'].isin(['NSP', 'NSNP'])
+            ][word_col].unique().tolist()
+
+        # If still empty, fallback to all lowercased tokens
+        if not rel_rows:
+            print("⚠️ No NSP/NSNP either. Using all unique tokens.")
+            rel_rows = story_elements_df[word_col].unique().tolist()
+    
+
+
         story_elements_df = story_elements_df.copy()
         # self.tagging_cache = self.__generate_tagging_cache(story_elements_df, callback)
         self.num_sents_in_stories = story_elements_df.groupby('storyid')['sentence'].nunique().to_dict()

@@ -45,6 +45,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
                       "FAC": "silver",
                       "GPE": "lemonchiffon",
                       "LOC": "lightgreen",
+                      "LOC": "lightgreen",
                       "TIME": "thistle", }
     dlgFormats = (
         "All readable files ({});;".format(
@@ -76,6 +77,9 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.__make_entities_file_dialog()
         self.__make_regexp_filter_dialog()
         self.__make_document_viewer()
+
+
+
 
 
     def __make_language_selection_menu(self):

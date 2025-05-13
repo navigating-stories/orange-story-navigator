@@ -328,3 +328,38 @@ def tupelize_corpus(corpus: Corpus):
             stories.append((text, idx))
 
     return stories
+
+def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardizes actor columns and computes accurate frequency-based metrics."""
+
+    # Drop unnecessary columns
+    drop_columns = [
+        "Agency", "Prominence_sf", "agency", "prominence_sf",
+        "raw_freq", "Raw Frequency", "subj_freq", "Subject Frequency"
+    ]
+    df = df.drop(columns=[col for col in drop_columns if col in df.columns], errors="ignore")
+
+    # Compute Absolute Frequency per Text
+    if "storyid" in df.columns and "token_text_lowercase" in df.columns:
+        abs_freq = (
+            df.groupby(["storyid", "token_text_lowercase"])
+            .size()
+            .reset_index(name="Absolute Frequency per Text")
+        )
+        df = df.drop(columns=["Absolute Frequency per Text"], errors="ignore")
+        df = df.merge(abs_freq, on=["storyid", "token_text_lowercase"], how="left")
+
+    # Compute Relative Frequency (% per segment)
+    if "segment_id" in df.columns:
+        seg_total = df.groupby("segment_id")["Absolute Frequency per Text"].transform("sum")
+        df["Relative Frequency"] = (df["Absolute Frequency per Text"] / seg_total) * 100
+
+    # Compute Nominal Ratio (%) across entire story
+    if "storyid" in df.columns and "Absolute Frequency per Text" in df.columns:
+        total_freq_per_story = df.groupby("storyid")["Absolute Frequency per Text"].transform("sum")
+        df["Nominal Ratio (%)"] = (df["Absolute Frequency per Text"] / total_freq_per_story) * 100
+
+    return df
+
+
+

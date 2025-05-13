@@ -36,7 +36,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
     language = 'nl'
     word_column = 'word'
     n_segments = 1
-    remove_stopwords = constants.YES
+    remove_stopwords = constants.NO
     use_infinitives = Setting(False)
 
     def __init__(self):
@@ -81,6 +81,7 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
             sendSelectedValue=True,
             sizePolicy=QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         )
+        self.select_n_segments_combo.setCurrentIndex(0)
         self.controlArea.layout().addWidget(self.select_n_segments_combo)
 
         self.remove_stopwords_combo = gui.comboBox(
