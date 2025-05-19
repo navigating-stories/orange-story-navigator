@@ -48,7 +48,7 @@ class Tagger:
         self.nlp = util.load_spacy_pipeline(self.model)
         self.n = 20 # top n scoring tokens for all metrics
 
-        self.complete_data = self.__process_stories(self.nlp, self.text_tuples, callback)
+        self.complete_data_df = self.__process_stories(self.nlp, self.text_tuples, callback)
 
     def __calculate_story_wordcounts(self, collection_df):
         story_sentence_column = collection_df['sentence'].tolist()
@@ -103,6 +103,10 @@ class Tagger:
         collection_df['lang'] = lang_col_values
         story_wordcount_values = self.__calculate_story_wordcounts(collection_df)
         collection_df['num_words_in_sentence'] = story_wordcount_values
+
+        # Convert position columns to numeric and sort
+        collection_df[["storyid", "segment_id", "sentence_id", "token_start_idx"]] = collection_df[["storyid",  "segment_id", "sentence_id", "token_start_idx"]].apply(pd.to_numeric)
+        collection_df = collection_df.sort_values(by=["storyid",  "segment_id", "sentence_id", "token_start_idx"])
         
         return collection_df
     
