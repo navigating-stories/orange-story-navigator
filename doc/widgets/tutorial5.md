@@ -14,13 +14,13 @@ How can we extract the most probable components of story settings such as time, 
 We use the following workflow:
 ![Workflow](../../doc/widgets/images/setting_widget.png)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows), and it uses a dataset of Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 ### Step 1: Load the Corpus
-To begin, load the corpus of stories using the Corpus widget. This widget allows you to import and inspect your dataset.
+To begin, load the corpus of stories from a folder using the Import Documents widget.
 
-- Task: Load your dataset (stories) for visual inspection.
-- Outcome: You will be able to visually inspect the text and ensure that your dataset is loaded correctly with the Corpus Viewer.
+- Task: Load your dataset (stories)
+- Outcome: You can visually inspect the texts with an extra Corpus Viewer.
 
 ### Step 2: Extract Story Elements
 Next, use the Elements widget to extract the components of the story. The elements widget is the 'motor' of the StoryNavigator which provides information on the texts on a token level, while the actors widget is used to extract the agents from the text.
@@ -57,6 +57,8 @@ Finally, use the Data Table widget to inspect the overall settings for each stor
 
 - Task: Inspect the final dataset.
 - Outcome: You will have a complete table of the overall settings extracted from the corpus, with one entry per story.
+
+![Workflow](../../doc/widgets/images/tutorial5-data-table.jpg)
 
 ### Conclusion
 By following these steps, you can extract and analyze story settings such as time, place, and surroundings from a corpus using the **Setting widget** in Orange. This will help you study how various elements of the setting are distributed across stories, enhancing your understanding of the narrative environment. 

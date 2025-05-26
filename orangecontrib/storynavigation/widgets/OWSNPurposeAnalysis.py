@@ -3,7 +3,8 @@ import pathlib
 import re
 import sys
 
-from Orange.data import Table
+from Orange.data import Table, Domain
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
@@ -49,7 +50,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate purpose', Table)
+        dataset_level_data = Output('Purpose data', Table)
 
 
     def __init__(self):
@@ -80,10 +81,10 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             str(constants.PKG),
             str(constants.RESOURCES_SUBPACKAGE),
             ("dutch" if self.language == "nl" else "english") + "_purpose_verbs.csv")
-        self.recent_strategy_files = [self.verbs_strategy_file_name,
-                                      self.adverbs_strategy_file_name]
+        self.recent_strategy_files = [self.adverbs_strategy_file_name,
+                                      self.verbs_strategy_file_name]
         self.strategy_file_name = self.recent_strategy_files[0]
-        self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
+        self.purpose_strategy = constants.PURPOSE_STRATEGY_ADVERBS
 
 
     def __make_language_selection_menu(self):
@@ -107,7 +108,8 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_VERBS, constants.PURPOSE_STRATEGY_ADVERBS],
+            items=[constants.PURPOSE_STRATEGY_ADVERBS,
+                   constants.PURPOSE_STRATEGY_VERBS], 
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,
@@ -292,7 +294,29 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.refresh_search()
         try:
-            self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.purpose_analysis))
+            # specify domain for columns in puropose_analysis
+            purpose_analysis_domain = Domain(
+                attributes=[
+                    ContinuousVariable("text_id"),
+                    ContinuousVariable("segment_id"),
+                    ContinuousVariable("sentence_id"),
+                    ContinuousVariable("character_id"),
+                    DiscreteVariable.make("label",
+                        values=["", "ADVERB", "CONTEXT", "PURPOSE"])
+                ],
+                class_vars=[],
+                metas=[
+                    StringVariable("text")
+                ]
+            )
+            # reorder table columns to be able to link them  to doman
+            self.analyzer.purpose_analysis = self.analyzer.purpose_analysis[[
+                "text_id", "segment_id", "sentence_id", "character_id",
+                "label", "text"]]
+            output_table = Table.from_list(purpose_analysis_domain,
+                            self.analyzer.purpose_analysis.values.tolist())
+            output_table.name = 'purpose'
+            self.Outputs.dataset_level_data.send(output_table)
         except Exception as e:
             print("on_done", e)
 
@@ -316,10 +340,12 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __add_entity_colors_to_story_text(self, story_text, story_id):
         entity_data = []
         first_id = sys.maxsize
+        print(self.analyzer.sentence_offsets)
         try:
             for index, row in self.analyzer.purpose_analysis.loc[
-                             self.analyzer.purpose_analysis["text_id"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-                start = int(row["character_id"])
+                             self.analyzer.purpose_analysis["text_id"] == story_id].iloc[::-1].iterrows():
+                sentence_id = int(row["sentence_id"])
+                start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, sentence_id)]["char_offset"]
                 end = start + len(row["text"])
                 if end >= first_id:
                     print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
@@ -328,7 +354,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
                         story_text, start, end, row["label"])
                     first_id = start
         except Exception as e:
-            print("__add_entity_colors_to_story_text", e)
+            print("error __add_entity_colors_to_story_text", e)
         return story_text
 
 
@@ -341,7 +367,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
         html_text += self.__make_entity_bar_for_html()
         for story_text, story_id in self.text_tuples:
             if len(self.stories_selected) == 0 or int(story_id) in self.stories_selected:
-                story_text = self.__add_entity_colors_to_story_text(story_text, story_id)
+                story_text = self.__add_entity_colors_to_story_text(story_text, int(story_id))
                 html_text += "<hr>" + self.__add_paragraphs_to_story_text(story_text)
         html_text += "</body></html>"
         self.doc_webview.setHtml(html_text)

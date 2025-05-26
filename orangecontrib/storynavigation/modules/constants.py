@@ -194,6 +194,7 @@ TAGGING_DATAFRAME_COLUMNNAMES_BASE = ['storyid',
                                       'is_sentence_subject_boolean',
                                       'active_voice_subject_boolean',
                                       'associated_action',
+                                      'associated_action_idx',
                                       'voice',
                                       'future_verb']
 TAGGING_DATAFRAME_COLUMNNAMES = TAGGING_DATAFRAME_COLUMNNAMES_BASE + ['sentence_id', 'segment_id', 'lang', 'num_words_in_sentence']

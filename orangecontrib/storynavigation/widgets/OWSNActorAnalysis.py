@@ -31,6 +31,7 @@ from AnyQt.QtWidgets import (
 
 # Imports from Orange3
 from Orange.data import Variable, Table
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.data.domain import Domain, filter_visible
 from Orange.widgets import gui
 from Orange.widgets.settings import ContextSetting, Setting, DomainContextHandler
@@ -329,8 +330,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_elements = Input("Story elements", Table)
 
     class Outputs:
-        # selected_story_results = Output("Actor stats: selected", Table)
-        story_collection_results = Output("Actor stats", Table)
+        # selected_story_results = Output("Actor data: selected", Table)
+        story_collection_results = Output("Actor data", Table)
         # selected_customfreq_table = Output("Custom tag stats: selected", Table)
         customfreq_table = Output("Custom tag stats", Table)
 
@@ -648,11 +649,12 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         otherids = []
 
         for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-            selected_storyids.append('ST' + str(c_index))
-            otherids.append(str(c_index))
+            selected_storyids.append(int(c_index))
+            otherids.append(int(c_index))
 
-        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
-        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+        self.actor_results_df = self.actor_results_df.rename(columns={'storyid': 'text_id', 'token_start_idx': 'character_id'}).sort_values(by=['text', 'text_id', 'segment_id']).reset_index(drop=True)
+        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
+        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
@@ -778,13 +780,13 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             selected_storyids = []
             otherids = []
             for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append('ST' + str(c_index))
-                otherids.append(str(c_index))
+                selected_storyids.append(int(c_index))
+                otherids.append(int(c_index))
 
             selected_storyids = list(set(selected_storyids)) # only unique items
             otherids = list(set(otherids))
-            self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['storyid'].isin(selected_storyids)]
-            self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['storyid']) # assume single story is selected
+            self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
+            self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
 
             if util.frame_contains_custom_tag_columns(self.story_elements):
                 self.custom_tags.setEnabled(True)
@@ -845,7 +847,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             custom=self.custom,
                             selected_prominence_metric=self.agent_prominence_metric,
                             prominence_score_min=self.agent_prominence_score_min,
-                            story_elements_df=self.story_elements_dict[str(c_index)]
+                            story_elements_df=self.story_elements_dict[c_index]
                         )                   
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
@@ -953,11 +955,31 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
             self.stories = Corpus(domain=domain, metas=np.array(metas))
             self.list_docs()
 
-        self.Outputs.story_collection_results.send(
-            table_from_frame(
-                self.actor_results_df
-            )
+        # specify domain for columns in actor_results_df
+        actor_results_domain = Domain(
+            attributes=[
+                ContinuousVariable("text_id"),
+                ContinuousVariable("sentence_id"),
+                ContinuousVariable("segment_id"),
+                ContinuousVariable("character_id"),
+                ContinuousVariable("raw_freq"),
+                ContinuousVariable("subj_freq"),
+                ContinuousVariable("agency"),
+                ContinuousVariable("prominence_sf")
+            ],
+            class_vars=[],
+            metas=[ StringVariable("text")]
         )
+        # reorder table columns to be able to link them to domain
+        self.actor_results_df = self.actor_results_df[[
+            "text_id", "sentence_id", "segment_id", "character_id",
+            "raw_freq", "subj_freq", "agency", "prominence_sf", "text"]]
+        self.actor_results_df = self.actor_results_df.drop_duplicates(ignore_index=True)
+
+        output_table = Table.from_list(actor_results_domain,
+                                       self.actor_results_df.values.tolist())
+        output_table.name = 'actors'
+        self.Outputs.story_collection_results.send(output_table)
 
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.Outputs.customfreq_table.send(

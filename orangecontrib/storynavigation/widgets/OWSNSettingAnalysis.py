@@ -2,7 +2,8 @@ import os
 import pathlib
 import re
 
-from Orange.data import Table
+from Orange.data import Table, Domain
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
@@ -58,7 +59,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate settings', Table)
+        dataset_level_data = Output('Settings data', Table)
 
 
     def __init__(self):
@@ -156,6 +157,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
         self.doc_webview.setHtml("")
         self.mainArea.layout().addWidget(self.splitter)
+        total_size = self.splitter.size().width()
+        self.splitter.setSizes([int(0.2 * total_size), int(0.8 * total_size)])
 
 
     def __update_stories_selected(self):
@@ -217,13 +220,12 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         if story_elements is not None:
             self.text_tuples = self.make_text_tuples(story_elements)
             self.__action_analyze_setting_wrapper()
-
-            self.doc_list_model.setup_data(self.make_document_names(self.text_tuples), [text for text, text_id in self.text_tuples])
+            self.doc_list_model.setup_data(self.make_document_names(self.text_tuples), [text for text, _, _ in self.text_tuples])
 
 
     def make_document_names(self, text_tuples):
         document_names = []
-        for text, text_id in text_tuples:
+        for _, text_id, _ in text_tuples:
             document_names.append("Document " + str(int(text_id) + 1))
         return document_names
 
@@ -234,19 +236,25 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         current_story_id = ""
         last_sentence = ""
         text_tuples = []
+        sentences = []
         for index, row in story_elements_df.iterrows():
             story_id = row["storyid"]
             if story_id != current_story_id:
                 if current_story_id != "":
-                    text_tuples.append((current_story, current_story_id))
+                    text_tuples.append((current_story, current_story_id, sentences))
                 current_story = ""
                 current_story_id = story_id
                 last_sentence = ""
+                sentences = story_elements_df.loc[story_elements_df['storyid'] == current_story_id].groupby('sentence_id').first()['sentence'].tolist()
+                sentences = [(current_story_id,
+                              row['segment_id'],
+                              row['sentence_id'],
+                              sentence_text) for sentence_text in sentences]
             if row["sentence"] != last_sentence:
                 current_story += row["sentence"] if current_story == "" else " " + row["sentence"]
                 last_sentence = row["sentence"]
         if current_story != "":
-            text_tuples.append((current_story, current_story_id))
+            text_tuples.append((current_story, current_story_id, sentences))
         return text_tuples
 
 
@@ -277,7 +285,34 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
     def on_done(self, result) -> None:
         self.refresh_search()
-        self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.settings_analysis))
+        # specify domain for columns in settings_analysis
+        settings_analysis_domain = Domain(
+            attributes=[
+                ContinuousVariable("text_id"),
+                ContinuousVariable("segment_id"),
+                ContinuousVariable("sentence_id"),
+                ContinuousVariable("character_id"),
+                DiscreteVariable.make("label",
+                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
+                                "MEANS", "PREP","TIME", "VERB",
+                                "PURPOSE"]),
+                DiscreteVariable.make("selected",
+                    values=["", "selected"])
+            ],
+            class_vars=[],
+            metas=[
+                StringVariable("text"),
+                StringVariable("location_type")
+            ]
+        )
+        # reorder table columns to be able to link them  to doman
+        self.analyzer.settings_analysis = self.analyzer.settings_analysis[[
+            "text_id", "segment_id", "sentence_id", "character_id",
+            "label", "selected", "text", "location_type"]]
+        output_table = Table.from_list(settings_analysis_domain,
+                                       self.analyzer.settings_analysis.values.tolist())
+        output_table.name = 'setting'
+        self.Outputs.dataset_level_data.send(output_table)
 
 
     def __make_entity_bar_for_html(self):
@@ -297,14 +332,16 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __add_entity_colors_to_story_text(self, story_text, story_id):
-        for index, row in self.analyzer.settings_analysis.loc[
-                             self.analyzer.settings_analysis["storyid"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-           start = int(row["character id"])
-           end = start + len(row["text"])
-           story_text = self.__insert_entity_color_in_story_text(story_text,
-                                                                 start,
-                                                                 end,
-                                                                 row["label"])
+        story_id = int(story_id)
+        for index, row in self.analyzer.settings_analysis[self.analyzer.settings_analysis['text_id'] == story_id].sort_values(by=['segment_id', 'sentence_id', 'character_id'], ascending=False).iterrows():
+            sentence_id = int(row["sentence_id"])
+            segment_id = int(row["segment_id"])
+            start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, segment_id, sentence_id)]["char_offset"]
+            end = start + len(row["text"])
+            story_text = self.__insert_entity_color_in_story_text(story_text,
+                                                                  start,
+                                                                  end,
+                                                                  row["label"])
         return story_text
 
 
@@ -315,7 +352,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __visualize_text_data(self):
         html_text = "<html><body>"
         html_text += self.__make_entity_bar_for_html()
-        for story_text, story_id in self.text_tuples:
+        for story_text, story_id, _ in self.text_tuples:
             if len(self.stories_selected) == 0 or int(story_id) in self.stories_selected:
                 story_text = self.__add_entity_colors_to_story_text(story_text, story_id)
                 html_text += "<hr>" + self.__add_paragraphs_to_story_text(story_text)

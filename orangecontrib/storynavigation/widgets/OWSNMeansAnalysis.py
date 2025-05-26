@@ -3,7 +3,8 @@ import pathlib
 import re
 import sys
 
-from Orange.data import Table
+from Orange.data import Table, Domain
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 from Orange.widgets.settings import Setting, DomainContextHandler, ContextSetting
 from Orange.widgets.utils.concurrent import ConcurrentWidgetMixin, TaskState
 from Orange.widgets.widget import Input, Output, OWWidget
@@ -54,7 +55,7 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     class Outputs:
-        dataset_level_data = Output('Intermediate means', Table)
+        dataset_level_data = Output('Means data', Table)
 
 
     def __init__(self):
@@ -275,7 +276,32 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
     def on_done(self, result) -> None:
         self.refresh_search()
         try:
-            self.Outputs.dataset_level_data.send(table_from_frame(self.analyzer.means_analysis))
+            # specify domain for columns in means_analysis
+            means_analysis_domain = Domain(
+                attributes=[
+                    ContinuousVariable("text_id"),
+                    ContinuousVariable("segment_id"),
+                    ContinuousVariable("sentence_id"),
+                    ContinuousVariable("character_id"),
+                    DiscreteVariable.make("label",
+                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
+                                "MEANS", "PREP", "TIME", "VERB",
+                                "PURPOSE"])
+                ],
+                class_vars=[],
+                metas=[
+                    StringVariable("text"),
+                    StringVariable("means_id")
+                ]
+            )
+            # reorder table columns to be able to link them  to doman
+            self.analyzer.means_analysis = self.analyzer.means_analysis[[
+                "text_id", "segment_id", "sentence_id", "character_id",
+                "label", "text", "means_id"]]
+            output_table = Table.from_list(means_analysis_domain,
+                                           self.analyzer.means_analysis.values.tolist())
+            output_table.name = 'means'
+            self.Outputs.dataset_level_data.send(output_table)
         except Exception as e:
             print("on_done", e)
 
@@ -297,19 +323,26 @@ class OWSNMeansAnalysis(OWWidget, ConcurrentWidgetMixin):
 
 
     def __add_entity_colors_to_story_text(self, story_text, story_id):
+        story_id = int(story_id)
         entity_data = []
-        first_id = sys.maxsize
+        last_segment_id = -1
+        last_sentence_id = -1
         try:
-            for index, row in self.analyzer.means_analysis.loc[
-                             self.analyzer.means_analysis["text_id"] == "ST" + str(story_id)].iloc[::-1].iterrows():
-                start = int(row["character_id"])
+            for index, row in self.analyzer.means_analysis[self.analyzer.means_analysis['text_id'] == story_id].sort_values(by=['sentence_id', 'segment_id', 'character_id'], ascending=False).iterrows():
+                segment_id = int(row["segment_id"])
+                sentence_id = int(row["sentence_id"])
+                start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, segment_id, sentence_id)]["char_offset"]
                 end = start + len(row["text"])
-                if end >= first_id:
-                    print(f"cannot visualize story {story_id}'s overlapping {start} {end} ({first_id})")
+                if sentence_id != last_sentence_id or segment_id != last_segment_id:
+                    last_start = sys.maxsize
+                    last_segment_id = segment_id
+                    last_sentence_id = sentence_id
+                if end >= last_start:
+                    print(f"cannot visualize story {story_id}'s overlapping {start} {end}")
                 else:
                     story_text = self.__insert_entity_color_in_story_text(
                         story_text, start, end, row["label"])
-                    first_id = start
+                    last_start = start
         except Exception as e:
             print("__add_entity_colors_to_story_text", e)
         return story_text
