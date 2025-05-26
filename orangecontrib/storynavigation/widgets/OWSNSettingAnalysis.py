@@ -157,6 +157,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_webview = gui.WebviewWidget(self.splitter, debug=False)
         self.doc_webview.setHtml("")
         self.mainArea.layout().addWidget(self.splitter)
+        total_size = self.splitter.size().width()
+        self.splitter.setSizes([int(0.2 * total_size), int(0.8 * total_size)])
 
 
     def __update_stories_selected(self):
@@ -218,13 +220,11 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         if story_elements is not None:
             self.text_tuples = self.make_text_tuples(story_elements)
             self.__action_analyze_setting_wrapper()
-            print("reset_story_elements", self.text_tuples)
             self.doc_list_model.setup_data(self.make_document_names(self.text_tuples), [text for text, _, _ in self.text_tuples])
 
 
     def make_document_names(self, text_tuples):
         document_names = []
-        print("make_document_names", text_tuples)
         for _, text_id, _ in text_tuples:
             document_names.append("Document " + str(int(text_id) + 1))
         return document_names
@@ -289,8 +289,8 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         settings_analysis_domain = Domain(
             attributes=[
                 ContinuousVariable("text_id"),
-                ContinuousVariable("sentence_id"),
                 ContinuousVariable("segment_id"),
+                ContinuousVariable("sentence_id"),
                 ContinuousVariable("character_id"),
                 DiscreteVariable.make("label",
                         values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
@@ -307,7 +307,7 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         )
         # reorder table columns to be able to link them  to doman
         self.analyzer.settings_analysis = self.analyzer.settings_analysis[[
-            "text_id", "sentence_id", "segment_id", "character_id",
+            "text_id", "segment_id", "sentence_id", "character_id",
             "label", "selected", "text", "location_type"]]
         output_table = Table.from_list(settings_analysis_domain,
                                        self.analyzer.settings_analysis.values.tolist())
@@ -335,11 +335,9 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
         story_id = int(story_id)
         for index, row in self.analyzer.settings_analysis[self.analyzer.settings_analysis['text_id'] == story_id].sort_values(by=['segment_id', 'sentence_id', 'character_id'], ascending=False).iterrows():
             sentence_id = int(row["sentence_id"])
-            #print(self.analyzer.sentence_offsets.loc[(story_id, sentence_id)])
             segment_id = int(row["segment_id"])
-            start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, sentence_id)]["char_offset"]
+            start = int(row["character_id"]) + self.analyzer.sentence_offsets.loc[(story_id, segment_id, sentence_id)]["char_offset"]
             end = start + len(row["text"])
-            print(f"[{start}, {end}, {story_text[start:end]} processing {row}")
             story_text = self.__insert_entity_color_in_story_text(story_text,
                                                                   start,
                                                                   end,
@@ -354,7 +352,6 @@ class OWSNSettingAnalysis(OWWidget, ConcurrentWidgetMixin):
     def __visualize_text_data(self):
         html_text = "<html><body>"
         html_text += self.__make_entity_bar_for_html()
-        print("__visualize_text_data", self.text_tuples)
         for story_text, story_id, _ in self.text_tuples:
             if len(self.stories_selected) == 0 or int(story_id) in self.stories_selected:
                 story_text = self.__add_entity_colors_to_story_text(story_text, story_id)

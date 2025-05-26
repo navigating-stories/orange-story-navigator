@@ -16,7 +16,7 @@ In this tutorial, you will learn how to identify and analyze agency within a cor
 We use the following workflow:
 ![](../../doc/widgets/images/agency.jpg)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/). In addition, it uses a dataset of 35 Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows). In addition, it uses a dataset of 35 Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 ### Step 1: Load the corpus
 To start, load the corpus of Dutch fairytales called fairytales.tab using the **Corpus** widget. This widget allows you to import and inspect your dataset.
@@ -43,6 +43,8 @@ Next, we use the **GroupBy** widget to either group the data based on *storyid* 
 
 ### Step 5: Visualizing agency
 To visualize the results, we can use the **Bar Chart** widget. Connect the **GroupBy** widget to the **Bar Chart** widget and select the *frequency* column or for example the *agency* column as the variable to be plotted. The Bar Chart will show the most frequent agents in the corpus or in a specific story. We can control the amount of output in the barchart by using the **Select Rows** widget to select only the rows in which we are interested in, or else select a specific story we are interested in the dataTable directly befroe the barchart widget. The barchart updates automatically when a selection of data is made. 
+
+![](../../doc/widgets/images/tutorial1-bar-plot.jpg)
 
 ## Interpreting the results and changing the set of agency words
 The results can be used to answer the research questions mentioned above. For example, the results can show that the most frequent agents throughout  the corpus are 'prince', 'king', and 'queen'. The results can also show that the most frequent agents in a specific story are 'prince', 'king', and 'queen'. In case one is interested in a specific type of noun, or else do not want to include words like 'ik' 'zij' or 'hen', one can use the **Select Rows** widget to select only the rows in which the desired noun is present.

@@ -19,7 +19,7 @@ The workflow consists of three main steps:
 We use the following workflow:
 ![Workflow](../../doc/widgets/images/clustering_on_setting.png)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 Note that you need a ChatGTP key to run this tutorial. To do so, you need to sign up for a ChatGPT account and obtain a key. You can find more information on how to obtain a key [here](https://platform.openai.com/account/api-keys).
 
@@ -97,7 +97,7 @@ In the **end** field, we used the following prompt: *Answer with up to ten words
 
 Based on your selected cluster in the dendrogram in the previous widget, the name of the cluster is provided in the **answer** field of the chatGPT summarize widget.
 
-![Workflow](../../doc/widgets/images/chatgpt_summarize.png)
+![Workflow](../../doc/widgets/images/tutorial7-chatgpt-summarize.jpg)
 
 
 - **Task:** Summarize the common characteristics of each cluster.

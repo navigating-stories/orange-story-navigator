@@ -33,33 +33,31 @@ class MeansAnalyzer:
 
 
     def __compute_sentence_offsets(self, story_elements_df) -> pd.DataFrame:
-        sentences_df = story_elements_df.groupby(["storyid", "sentence_id"]).first().reset_index()[["storyid", "segment_id", "sentence_id", "sentence"]]
+        sentences_df = story_elements_df.sort_values(by=["storyid", "segment_id", "sentence_id"]).groupby(["storyid", "segment_id", "sentence_id"]).first().reset_index()[["storyid", "segment_id", "sentence_id", "sentence"]]
+        current_storyid = -1
         char_offsets = []
-        last_sentence = ""
-        for sentence_id, sentence in zip(sentences_df["sentence_id"],
-                                         sentences_df["sentence"]):
-            if sentence_id == sentences_df.iloc[0]["sentence_id"]:
+        for index, row in sentences_df.iterrows():
+            if row["storyid"] != current_storyid:
                 char_offset = 0
-            else:
-                char_offset += len(last_sentence) + 1
+                current_storyid = row["storyid"]
             char_offsets.append(char_offset)
-            last_sentence = sentence
+            char_offset += len(row["sentence"]) + 1
         sentences_df["char_offset"] = char_offsets
-        return sentences_df[["storyid", "segment_id", "sentence_id", "char_offset"]].set_index(["storyid", "sentence_id"])
+        return sentences_df[["storyid", "segment_id", "sentence_id", "char_offset"]].set_index(["storyid", "segment_id", "sentence_id"])
 
 
     def __convert_entities(self, entities, sentence_offsets) -> dict:
         entities_from_onsets = {}
-        for storyid, sentence_id, sentence_data in entities:
+        for storyid, segment_id, sentence_id, sentence_data in entities:
             story_entities = entities_from_onsets.setdefault(storyid, {})
-            char_offset_sentence = sentence_offsets.loc[(storyid, sentence_id)]["char_offset"]
+            char_offset_sentence = sentence_offsets.loc[(storyid, segment_id, sentence_id)]["char_offset"]
             for token_start_id, token_data in sentence_data.items():
                 story_entities[token_start_id + char_offset_sentence] = token_data
         return entities_from_onsets
 
 
     def __convert_stories_to_sentences(self, story_elements_df) -> pd.DataFrame:
-        return { index: group.to_dict(orient="index") for index, group in story_elements_df.groupby(["storyid", "sentence_id"])}
+        return { index: group.to_dict(orient="index") for index, group in story_elements_df.groupby(["storyid", "segment_id", "sentence_id"])}
 
 
     def __process_texts(self, story_elements_df, callback=None) -> list:
@@ -73,6 +71,7 @@ class MeansAnalyzer:
                 entities.append([
                     sentence_dict_index[0],
                     sentence_dict_index[1],
+                    sentence_dict_index[2],
                     sentence_entities])
             if callback:
                 callback((100*(index + 1))/len(sentence_dict))
@@ -196,11 +195,11 @@ class MeansAnalyzer:
         results = [(entity_data[character_id]['text'], 
                     entity_data[character_id]['label_'], 
                     storyid, 
-                    entity_data[character_id]['segment_id'], 
+                    segment_id, 
                     sentence_id, 
                     character_id,
                     entity_data[character_id]['means_id'])
-                   for storyid, sentence_id, entity_data in entities
+                   for storyid, segment_id, sentence_id, entity_data in entities
                    for character_id in entity_data]
         results_df = pd.DataFrame(results, columns=["text", "label", "storyid", "segment_id", "sentence_id", "character_id", "means_id"])
         results_df.sort_values(by=["storyid", "character_id"], inplace=True)

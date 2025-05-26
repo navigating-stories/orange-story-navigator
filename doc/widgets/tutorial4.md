@@ -17,7 +17,7 @@ We use the following workflow:
 
 ![Workflow](../../doc/widgets/images/radarplot_individual_figure.png)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows), and it uses a dataset of Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 ### Step 1: Load the Corpus
 - Task: Import the corpus of Dutch fairytales in tabular format using the Import Documents widget.

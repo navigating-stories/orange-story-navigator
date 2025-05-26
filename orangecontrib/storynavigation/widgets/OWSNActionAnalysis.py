@@ -846,7 +846,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                             self.present_vbz,
                             self.future_vbz,
                             self.custom,
-                            self.story_elements_dict[str(c_index)]
+                            self.story_elements_dict[c_index]
                         )
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):

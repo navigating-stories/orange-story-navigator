@@ -20,7 +20,7 @@ To answer this, we will:
 We use the following workflow:
 ![Workflow](../../doc/widgets/images/past_present_future_tense.png)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/), and it uses a dataset of Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows), and it uses a dataset of Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 ### Step 1: Load the Corpus
 Start by loading the text corpus using the Import Documents widget.
@@ -63,13 +63,12 @@ Once the data has been merged, use the **Group By widget** to organize the data 
 
 ![Workflow](../../doc/widgets/images/group_by.png)
 
-### Step 7: Visualizing Tense Distribution
-You can now visualize the distribution of actions in each tense using a **Bar Plot widget** after the last data table to visualize the results. Select the appropriate column to show the number of actions performed in each tense (past, present, future).
+### Step 7: Inspecting Tense Distribution
+You can now inspect the distribution of actions in each tense using a **Data Table widget**, see below.
 
-- Task: Use the Bar Chart widget to visualize the frequency of actions in each tense.
-- Outcome: A bar chart that displays the distribution of tense usage across the corpus or within specific stories.
+![Workflow](../../doc/widgets/images/tutorial6-data-table.jpg)
 
-### Step 8: Analyzing the Results
+### Conclusion
 The results can help you answer the research question regarding tense distribution. For example, you can compare whether certain characters perform more actions in the past, present, or future compared to other characters in the story, or even compare across the entire corpus. If desired, refine your analysis by selecting rows with specific tenses or characters using the **Select Rows widget**. You can also decide to test for significant differences in tense usage between characters or stories.
 
 By following these steps, you will be able to analyze the distribution of tense within a narrative corpus and understand how characters interact with different timelines in the stories.

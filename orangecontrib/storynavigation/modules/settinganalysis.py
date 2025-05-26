@@ -47,32 +47,23 @@ class SettingAnalyzer:
 
         story_elements_df = util.convert_orangetable_to_dataframe(story_elements)
         self.sentence_offsets = self.__compute_sentence_offsets(story_elements_df)
-        print(self.sentence_offsets)
-        print(self.sentence_offsets.loc[(34,6)])
-        print(self.sentence_offsets.loc[(34,13)])
         entities = self.extract_entities_from_table(story_elements_df)
         self.text_analysis = self.__process_texts(self.nlp, self.text_tuples, entities, self.callback)
         self.settings_analysis = self.__select_best_entities(self.text_analysis)
 
 
     def __compute_sentence_offsets(self, story_elements_df) -> pd.DataFrame:
-        sentences_df = story_elements_df.groupby(["storyid", "sentence_id"]).first().reset_index()[["storyid", "segment_id", "sentence_id", "sentence"]]
+        sentences_df = story_elements_df.sort_values(by=["storyid", "segment_id", "sentence_id"]).groupby(["storyid", "segment_id", "sentence_id"]).first().reset_index()[["storyid", "segment_id", "sentence_id", "sentence"]]
+        current_storyid = -1
         char_offsets = []
-        last_sentence = ""
-        for sentence_id, sentence in zip(sentences_df["sentence_id"],
-                                         sentences_df["sentence"]):
-            if sentence_id == sentences_df.iloc[0]["sentence_id"]:
-                print(sentence_id,  type(sentences_df.iloc[0]["sentence_id"]),sentences_df.iloc[0])
+        for index, row in sentences_df.iterrows():
+            if row["storyid"] != current_storyid:
                 char_offset = 0
-            else:
-                char_offset += len(last_sentence) + 1
+                current_storyid = row["storyid"]
             char_offsets.append(char_offset)
-            last_sentence = sentence
-        print(len(sentences_df), len(char_offsets), char_offsets)
+            char_offset += len(row["sentence"]) + 1
         sentences_df["char_offset"] = char_offsets
-        sentences_df["storyid"] = pd.to_numeric(sentences_df["storyid"])
-        sentences_df["sentence_id"] = pd.to_numeric(sentences_df["sentence_id"])
-        return sentences_df[["storyid", "segment_id", "sentence_id", "char_offset"]].set_index(["storyid", "sentence_id"])
+        return sentences_df[["storyid", "segment_id", "sentence_id", "char_offset"]].set_index(["storyid", "segment_id", "sentence_id"])
 
 
     def extract_entities_from_table(self, story_elements_df):
@@ -128,7 +119,7 @@ class SettingAnalyzer:
 
     def __sort_and_filter_results(self, results):
         results = [(x[0], x[1], int(x[2]), int(x[3]), int(x[4]), x[5], x[6]) for x in results]
-        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "location_type"]).sort_values(by=["text_id", "character_id"])
+        results_df = pd.DataFrame(results, columns=["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "location_type"]).sort_values(by=["text_id", "segment_id", "sentence_id", "character_id"])
         return results_df[["text", "label", "text_id", "segment_id", "sentence_id", "character_id", "location_type"]].reset_index(drop=True)
 
 

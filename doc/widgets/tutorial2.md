@@ -15,7 +15,7 @@ We will achieve this by walking through a predefined Orange workflow that tracks
 
 ![](../../doc/widgets/images/story_sentiment.png)
 
-This workflow can be downloaded [here](../../doc/widgets/workflows/). In addition, it uses a dataset of 35 Dutch fairytales which can be found [here](../../doc/widgets/fairytales/).
+This workflow can be downloaded [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/workflows). In addition, it uses a dataset of 35 Dutch fairytales which can be found [here](https://github.com/navigating-stories/orange-story-navigator/tree/master/doc/widgets/fairytales/).
 
 ### Step 1: Load the corpus
 First, use the **Corpus widget** to load the dataset of Dutch fairytales. This widget allows you to import and inspect your dataset.
@@ -55,7 +55,7 @@ To visualize sentiment trends, use the **Bar Plot widget**. Connect the **GroupB
 - Task: Create a bar plot to visualize the evolving sentiment across story segments.
 - Outcome: The bar plot will display the sentiment evolution in the selected story, showing positive and negative shifts in emotional tone over time.
 
-![](../../doc/widgets/images/sentiment_per_segment.png)
+![](../../doc/widgets/images/tutorial2-bar-plot.jpg)
 
 ### Step 7: Select specific stories for analysis
 If you're interested in exploring sentiment evolution for specific stories, you can use the **Data Table widget** to filter the stories of interest. From here, you can refine your analysis and view sentiment trends for those selected stories in the Bar Plot.

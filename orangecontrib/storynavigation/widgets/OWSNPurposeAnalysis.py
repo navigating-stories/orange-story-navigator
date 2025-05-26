@@ -81,10 +81,10 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             str(constants.PKG),
             str(constants.RESOURCES_SUBPACKAGE),
             ("dutch" if self.language == "nl" else "english") + "_purpose_verbs.csv")
-        self.recent_strategy_files = [self.verbs_strategy_file_name,
-                                      self.adverbs_strategy_file_name]
+        self.recent_strategy_files = [self.adverbs_strategy_file_name,
+                                      self.verbs_strategy_file_name]
         self.strategy_file_name = self.recent_strategy_files[0]
-        self.purpose_strategy = constants.PURPOSE_STRATEGY_VERBS
+        self.purpose_strategy = constants.PURPOSE_STRATEGY_ADVERBS
 
 
     def __make_language_selection_menu(self):
@@ -108,7 +108,8 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             master=self,
             label="Strategy:",
             value="purpose_strategy",
-            items=[constants.PURPOSE_STRATEGY_VERBS, constants.PURPOSE_STRATEGY_ADVERBS],
+            items=[constants.PURPOSE_STRATEGY_ADVERBS,
+                   constants.PURPOSE_STRATEGY_VERBS], 
             sendSelectedValue=True,
             currentIndex=0,
             callback=self.__process_purpose_strategy_change,
@@ -297,13 +298,11 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             purpose_analysis_domain = Domain(
                 attributes=[
                     ContinuousVariable("text_id"),
-                    ContinuousVariable("sentence_id"),
                     ContinuousVariable("segment_id"),
+                    ContinuousVariable("sentence_id"),
                     ContinuousVariable("character_id"),
                     DiscreteVariable.make("label",
-                        values=["", "DATE", "EVENT", "FAC", "GPE", "LOC",
-                                "MEANS", "PREP", "TIME", "VERB",
-                                "PURPOSE"])
+                        values=["", "ADVERB", "CONTEXT", "PURPOSE"])
                 ],
                 class_vars=[],
                 metas=[
@@ -312,7 +311,7 @@ class OWSNPurposeAnalysis(OWWidget, ConcurrentWidgetMixin):
             )
             # reorder table columns to be able to link them  to doman
             self.analyzer.purpose_analysis = self.analyzer.purpose_analysis[[
-                "text_id", "sentence_id", "segment_id", "character_id",
+                "text_id", "segment_id", "sentence_id", "character_id",
                 "label", "text"]]
             output_table = Table.from_list(purpose_analysis_domain,
                             self.analyzer.purpose_analysis.values.tolist())

@@ -1,22 +1,22 @@
 <?xml version='1.0' encoding='utf-8'?>
 <scheme version="2.0" title="" description="">
 	<nodes>
-		<node id="0" name="Corpus" qualified_name="orangecontrib.text.widgets.owcorpus.OWCorpus" project_name="Orange3-Text" version="" title="Corpus (1)" position="(254.3888888888889, 666.3333333333335)" />
-		<node id="1" name="Bar Plot" qualified_name="Orange.widgets.visualize.owbarplot.OWBarPlot" project_name="Orange3" version="" title="Bar Plot" position="(1112.388888888889, 380.9487179487179)" />
-		<node id="2" name="Group by" qualified_name="Orange.widgets.data.owgroupby.OWGroupBy" project_name="Orange3" version="" title="Group by" position="(947.5225885225885, 544.6483516483518)" />
-		<node id="3" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (4)" position="(1090.4017094017092, 548.1293706293707)" />
-		<node id="4" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (1)" position="(1537.2185592185585, 553.3058608058604)" />
-		<node id="5" name="Python Script" qualified_name="Orange.widgets.data.owpythonscript.OWPythonScript" project_name="Orange3" version="" title="Python Script" position="(1705.235042735041, 550.4908424908422)" />
-		<node id="6" name="Edit Domain" qualified_name="Orange.widgets.data.oweditdomain.OWEditDomain" project_name="Orange3" version="" title="Edit Domain" position="(1403.8357753357757, 550.6593406593405)" />
-		<node id="7" name="Corpus Viewer" qualified_name="orangecontrib.text.widgets.owcorpusviewer.OWCorpusViewer" project_name="Orange3-Text" version="" title="Corpus Viewer" position="(376.77350427350416, 528.2564102564102)" />
-		<node id="8" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table" position="(411.5, 864.0)" />
-		<node id="9" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (2)" position="(850.1666666666667, 693.3333333333334)" />
-		<node id="10" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (3)" position="(936.5714285714286, 377.37662337662346)" />
-		<node id="11" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (5)" position="(726.0, 695.0909090909091)" />
-		<node id="12" name="Select Rows" qualified_name="Orange.widgets.data.owselectrows.OWSelectRows" project_name="Orange3" version="" title="Select Rows" position="(1245.0, 549.0)" />
-		<node id="13" name="File" qualified_name="Orange.widgets.data.owfile.OWFile" project_name="Orange3" version="" title="File" position="(246.0, 859.0)" />
-		<node id="14" name="Elements" qualified_name="storynavigation.widgets.OWSNTagger.OWSNTagger" project_name="storynavigator" version="" title="Elements" position="(501.0, 689.0)" />
-		<node id="15" name="Actors" qualified_name="storynavigation.widgets.OWSNActorAnalysis.OWSNActorAnalysis" project_name="storynavigator" version="" title="Actors" position="(629.0, 542.0)" />
+		<node id="0" name="Corpus" qualified_name="orangecontrib.text.widgets.owcorpus.OWCorpus" project_name="Orange3-Text" version="" title="Corpus (1)" position="(269.3888888888889, 470.3333333333335)" />
+		<node id="1" name="Bar Plot" qualified_name="Orange.widgets.visualize.owbarplot.OWBarPlot" project_name="Orange3" version="" title="Bar Plot" position="(1127.388888888889, 184.9487179487179)" />
+		<node id="2" name="Group by" qualified_name="Orange.widgets.data.owgroupby.OWGroupBy" project_name="Orange3" version="" title="Group by" position="(962.5225885225886, 348.64835164835176)" />
+		<node id="3" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (4)" position="(1104.401709401709, 352.12937062937067)" />
+		<node id="4" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (1)" position="(1552.2185592185585, 357.30586080586045)" />
+		<node id="5" name="Python Script" qualified_name="Orange.widgets.data.owpythonscript.OWPythonScript" project_name="Orange3" version="" title="Python Script" position="(1720.2350427350411, 356.49084249084217)" />
+		<node id="6" name="Edit Domain" qualified_name="Orange.widgets.data.oweditdomain.OWEditDomain" project_name="Orange3" version="" title="Edit Domain" position="(1418.8357753357757, 354.6593406593405)" />
+		<node id="7" name="Corpus Viewer" qualified_name="orangecontrib.text.widgets.owcorpusviewer.OWCorpusViewer" project_name="Orange3-Text" version="" title="Corpus Viewer" position="(391.77350427350416, 332.25641025641016)" />
+		<node id="8" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table" position="(426.5, 668.0)" />
+		<node id="9" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (2)" position="(865.1666666666667, 497.33333333333337)" />
+		<node id="10" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (3)" position="(951.5714285714284, 181.37662337662346)" />
+		<node id="11" name="Data Table" qualified_name="Orange.widgets.data.owtable.OWTable" project_name="Orange3" version="" title="Data Table (5)" position="(741.0, 499.0909090909091)" />
+		<node id="12" name="Select Rows" qualified_name="Orange.widgets.data.owselectrows.OWSelectRows" project_name="Orange3" version="" title="Select Rows" position="(1260.0, 353.0)" />
+		<node id="13" name="File" qualified_name="Orange.widgets.data.owfile.OWFile" project_name="Orange3" version="" title="File" position="(261.0, 663.0)" />
+		<node id="14" name="Elements" qualified_name="storynavigation.widgets.OWSNTagger.OWSNTagger" project_name="storynavigator" version="" title="Elements" position="(516.0, 493.0)" />
+		<node id="15" name="Actors" qualified_name="storynavigation.widgets.OWSNActorAnalysis.OWSNActorAnalysis" project_name="storynavigator" version="" title="Actors" position="(644.0, 346.0)" />
 	</nodes>
 	<links>
 		<link id="0" source_node_id="2" sink_node_id="3" source_channel="Data" sink_channel="Data" enabled="true" source_channel_id="data" sink_channel_id="data" />
@@ -32,107 +32,115 @@
 		<link id="10" source_node_id="13" sink_node_id="14" source_channel="Data" sink_channel="Custom tags" enabled="true" source_channel_id="data" sink_channel_id="custom_tag_dict" />
 		<link id="11" source_node_id="0" sink_node_id="15" source_channel="Corpus" sink_channel="Stories" enabled="true" source_channel_id="corpus" sink_channel_id="stories" />
 		<link id="12" source_node_id="14" sink_node_id="15" source_channel="Story elements" sink_channel="Story elements" enabled="true" source_channel_id="dataset_level_data" sink_channel_id="story_elements" />
-		<link id="13" source_node_id="15" sink_node_id="9" source_channel="Actor stats" sink_channel="Data" enabled="true" source_channel_id="story_collection_results" sink_channel_id="data" />
+		<link id="13" source_node_id="15" sink_node_id="9" source_channel="Actor data" sink_channel="Data" enabled="true" source_channel_id="story_collection_results" sink_channel_id="data" />
 		<link id="14" source_node_id="15" sink_node_id="2" source_channel="Custom tag stats" sink_channel="Data" enabled="true" source_channel_id="customfreq_table" sink_channel_id="data" />
 		<link id="15" source_node_id="15" sink_node_id="10" source_channel="Custom tag stats" sink_channel="Data" enabled="true" source_channel_id="customfreq_table" sink_channel_id="data" />
 	</links>
 	<annotations>
-		<arrow id="0" start="(158.33440170940128, 900.727564102564)" end="(197.70940170940128, 879.352564102564)" fill="#C1272D" />
-		<text id="1" type="text/plain" rect="(51.122863247862824, 913.6217948717949, 157.0, 63.0)" font-family=".AppleSystemUIFont" font-size="14">Load the custom
+		<arrow id="0" start="(173.3344017094013, 704.727564102564)" end="(212.7094017094013, 683.352564102564)" fill="#C1272D" />
+		<text id="1" type="text/plain" rect="(66.12286324786282, 717.6217948717949, 157.0, 63.0)" font-family=".AppleSystemUIFont" font-size="14">Load the custom
 word list by Hallilday</text>
-		<text id="2" type="text/plain" rect="(686.9786324786326, 836.8301282051281, 149.0, 63.0)" font-family=".AppleSystemUIFont" font-size="14">Look what is produced by the elements widget</text>
-		<arrow id="3" start="(736.3824786324783, 828.8782051282054)" end="(732.9978632478627, 756.5705128205133)" fill="#C1272D" />
-		<text id="4" type="text/plain" rect="(821.9914187120064, 246.65705128205093, 253.0, 80.0)" font-family=".AppleSystemUIFont" font-size="14">Frequencies of classification groups per story (and segment of story)</text>
-		<arrow id="5" start="(922.8716977466971, 301.7899184149182)" end="(933.0864413364407, 337.7610722610721)" fill="#C1272D" />
-		<text id="6" type="text/plain" rect="(1190.7560217560215, 268.7718531468532, 188.0, 97.0)" font-family=".AppleSystemUIFont" font-size="14">Plotting the distribution of categories from the custom word list for a selected story </text>
-		<arrow id="7" start="(1223.9503690753677, 334.125874125874)" end="(1158.9247280497268, 351.63869463869446)" fill="#C1272D" />
-		<text id="8" type="text/plain" rect="(592.9561965811965, 346.53846153846155, 156.9999999999999, 97.0)" font-family=".AppleSystemUIFont" font-size="14">Directly observe custom tokens highlighted in the texts</text>
-		<arrow id="9" start="(622.4690170940167, 435.15384615384585)" end="(625.9690170940167, 490.9871794871792)" fill="#C1272D" />
-		<arrow id="10" start="(157.9273504273503, 610.8717948717947)" end="(211.00427350427333, 643.9487179487178)" fill="#C1272D" />
-		<text id="11" type="text/plain" rect="(21.3888888888888, 569.2564102564103, 191.23076923076928, 69.0)" font-family="MS Shell Dlg 2" font-size="16">Load the Dutch fairytales (tab format)</text>
-		<arrow id="12" start="(1689.4017094017117, 422.48717948717945)" end="(1704.017094017096, 498.48717948717945)" fill="#C1272D" />
-		<text id="13" type="text/plain" rect="(1591.5811965811956, 347.1153846153845, 218.46153846153857, 72.30769230769229)" font-family="MS Shell Dlg 2" font-size="16">Make a radar plot comparable to the Andrade paper</text>
-		<text id="14" type="text/plain" rect="(57.3333333333334, 226.11111111111114, 410.0, 110.0)" font-family="MS Shell Dlg 2" font-size="16">We use the Haliday custom word list to make a radarplot for each story based on the dimensions of Haliday as specified in the workflow. </text>
-		<arrow id="15" start="(354.49999999999994, 1028.0)" end="(390.49999999999994, 930.0)" fill="#C1272D" />
-		<text id="16" type="text/plain" rect="(273.5, 1040.0, 301.0, 76.0)" font-family="MS Shell Dlg 2" font-size="16">Categorizing words (i.e., should be only verbs)</text>
-		<arrow id="17" start="(997.5000000000001, 703.3333333333334)" end="(954.666666666667, 606.8333333333335)" fill="#C1272D" />
-		<text id="18" type="text/plain" rect="(936.6666666666667, 730.8333333333331, 220.0000000000001, 69.0)" font-family="MS Shell Dlg 2" font-size="16">We group by storyid and category and count the occurances (i.e., freq = sum)</text>
-		<arrow id="19" start="(1045.8333333333335, 721.6666666666667)" end="(1092.5, 615.0)" fill="#C1272D" />
-		<arrow id="20" start="(1242.4999999999998, 712.5)" end="(1240.8333333333333, 609.1666666666666)" fill="#C1272D" />
-		<text id="21" type="text/plain" rect="(1187.5000000000002, 722.5, 175.83333333333348, 107.0)" font-family="MS Shell Dlg 2" font-size="16">Select the categories or dimensions in which we are interested and want to plot</text>
-		<arrow id="22" start="(1399.880952380953, 455.2380952380952)" end="(1398.928571428572, 506.30952380952374)" fill="#C1272D" />
-		<text id="23" type="text/plain" rect="(1349.8809523809523, 331.19047619047626, 165.3571428571429, 126.0)" font-family="MS Shell Dlg 2" font-size="16">Change variable type of 'storyid' to numeric and 'category' to text for optimal plotting purposes</text>
-		<arrow id="24" start="(1141.8181818181818, 630.0)" end="(1116.3636363636363, 606.3636363636364)" fill="#C1272D" />
-		<text id="25" type="text/plain" rect="(1109.0909090909092, 629.9999999999999, 115.4545454545455, 75.0)" font-family="Segoe UI" font-size="16">Add data table to enable data selection</text>
-		<arrow id="26" start="(1531.4285714285716, 702.8571428571429)" end="(1532.857142857143, 605.7142857142858)" fill="#C1272D" />
-		<text id="27" type="text/plain" rect="(1476.4285714285716, 708.5714285714286, 211.42857142857133, 81.42857142857144)" font-family="Segoe UI" font-size="16">Remember to make a selection of your data, i.e.,  select all rows as part of a specific story!</text>
-		<arrow id="28" start="(244.16666666666669, 472.5)" end="(328.33333333333337, 502.5)" fill="#C1272D" />
-		<text id="29" type="text/plain" rect="(95.83333333333334, 419.1666666666667, 152.5, 45.833333333333314)" font-family="Segoe UI" font-size="16">Inspect your data</text>
+		<text id="2" type="text/plain" rect="(701.9786324786326, 640.8301282051281, 149.0, 63.0)" font-family=".AppleSystemUIFont" font-size="14">Look what is produced by the elements widget</text>
+		<arrow id="3" start="(751.3824786324783, 632.8782051282054)" end="(747.9978632478627, 560.5705128205133)" fill="#C1272D" />
+		<text id="4" type="text/plain" rect="(836.9914187120064, 50.65705128205093, 253.0, 80.0)" font-family=".AppleSystemUIFont" font-size="14">Frequencies of classification groups per story (and segment of story)</text>
+		<arrow id="5" start="(937.8716977466971, 105.78991841491819)" end="(948.0864413364407, 141.76107226107212)" fill="#C1272D" />
+		<text id="6" type="text/plain" rect="(1205.7560217560215, 72.77185314685318, 188.0, 97.0)" font-family=".AppleSystemUIFont" font-size="14">Plotting the distribution of categories from the custom word list for a selected story </text>
+		<arrow id="7" start="(1238.9503690753677, 138.12587412587402)" end="(1173.9247280497268, 155.63869463869446)" fill="#C1272D" />
+		<text id="8" type="text/plain" rect="(607.9561965811965, 150.53846153846155, 156.9999999999999, 97.0)" font-family=".AppleSystemUIFont" font-size="14">Directly observe custom tokens highlighted in the texts</text>
+		<arrow id="9" start="(637.4690170940167, 239.15384615384585)" end="(640.9690170940167, 294.9871794871792)" fill="#C1272D" />
+		<arrow id="10" start="(172.9273504273503, 414.8717948717947)" end="(226.00427350427333, 447.9487179487178)" fill="#C1272D" />
+		<text id="11" type="text/plain" rect="(36.3888888888888, 373.2564102564103, 191.23076923076928, 69.0)" font-family="MS Shell Dlg 2" font-size="16">Load the Dutch fairytales (tab format)</text>
+		<arrow id="12" start="(1704.4017094017115, 226.48717948717945)" end="(1719.0170940170958, 302.48717948717945)" fill="#C1272D" />
+		<text id="13" type="text/plain" rect="(1606.5811965811956, 151.11538461538453, 218.46153846153857, 72.30769230769229)" font-family="MS Shell Dlg 2" font-size="16">Make a radar plot comparable to the Andrade paper</text>
+		<text id="14" type="text/plain" rect="(72.33333333333337, 30.111111111111143, 410.0, 110.0)" font-family="MS Shell Dlg 2" font-size="16">We use the Haliday custom word list to make a radarplot for each story based on the dimensions of Haliday as specified in the workflow. </text>
+		<arrow id="15" start="(369.49999999999994, 832.0)" end="(405.49999999999994, 734.0)" fill="#C1272D" />
+		<text id="16" type="text/plain" rect="(288.5, 844.0, 301.0, 76.0)" font-family="MS Shell Dlg 2" font-size="16">Categorizing words (i.e., should be only verbs)</text>
+		<arrow id="17" start="(1012.5000000000002, 507.33333333333337)" end="(969.6666666666671, 410.8333333333335)" fill="#C1272D" />
+		<text id="18" type="text/plain" rect="(951.6666666666667, 534.8333333333331, 220.0000000000001, 88.0)" font-family="MS Shell Dlg 2" font-size="16">We group by storyid and category and count the occurances (i.e., freq = sum)</text>
+		<arrow id="19" start="(1060.8333333333335, 525.6666666666667)" end="(1107.5, 419.0)" fill="#C1272D" />
+		<arrow id="20" start="(1257.4999999999998, 516.5)" end="(1255.8333333333333, 413.16666666666663)" fill="#C1272D" />
+		<text id="21" type="text/plain" rect="(1202.5000000000002, 526.5, 175.83333333333348, 107.0)" font-family="MS Shell Dlg 2" font-size="16">Select the categories or dimensions in which we are interested and want to plot</text>
+		<arrow id="22" start="(1414.880952380953, 259.23809523809524)" end="(1413.928571428572, 310.3095238095238)" fill="#C1272D" />
+		<text id="23" type="text/plain" rect="(1364.8809523809523, 135.19047619047626, 165.3571428571429, 126.0)" font-family="MS Shell Dlg 2" font-size="16">Change variable type of 'storyid' to numeric and 'category' to text for optimal plotting purposes</text>
+		<arrow id="24" start="(1156.8181818181818, 434.0)" end="(1131.3636363636363, 410.3636363636364)" fill="#C1272D" />
+		<text id="25" type="text/plain" rect="(1124.0909090909092, 433.9999999999999, 115.4545454545455, 88.0)" font-family="Segoe UI" font-size="16">Add data table to enable data selection</text>
+		<arrow id="26" start="(1546.4285714285716, 506.8571428571429)" end="(1547.857142857143, 409.7142857142858)" fill="#C1272D" />
+		<text id="27" type="text/plain" rect="(1491.4285714285716, 512.5714285714286, 211.42857142857133, 88.0)" font-family="Segoe UI" font-size="16">Remember to make a selection of your data, i.e.,  select all rows as part of a specific story!</text>
+		<arrow id="28" start="(259.16666666666663, 276.5)" end="(343.33333333333337, 306.5)" fill="#C1272D" />
+		<text id="29" type="text/plain" rect="(110.83333333333337, 223.16666666666674, 152.5, 45.833333333333314)" font-family="Segoe UI" font-size="16">Inspect your data</text>
 	</annotations>
 	<thumbnail />
 	<node_properties>
-		<properties node_id="0" format="pickle">gASVSAQAAAAAAAB9lCiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjAxyZWNlbnRfZmlsZXOUXZQojDtD
-Oi9Qcm9qZWN0cy9OYXZpZ2F0aW5nU3Rvcmllcy9EYXRhL3Nwcm9va2plcy9mYWlyeXRhbGVzLnRh
-YpSMikM6L1VzZXJzL1RoaWpzVnJvZWdoL0Rlc2t0b3AvdGVzdGluZy9uYXZfc3Rvcmllcy9vcmFu
-Z2Utc3RvcnktbmF2aWdhdG9yL3ZlbnYvTGliL3NpdGUtcGFja2FnZXMvb3JhbmdlY29udHJpYi90
-ZXh0L2RhdGFzZXRzL2dyaW1tLXRhbGVzLnRhYpSMEWJvb2stZXhjZXJwdHMudGFilIwYZ3JpbW0t
-dGFsZXMtc2VsZWN0ZWQudGFilIwYZWxlY3Rpb24tdHdlZXRzLTIwMTYudGFilIwXZnJpZW5kcy10
-cmFuc2NyaXB0cy50YWKUjAxhbmRlcnNlbi50YWKUZYwTc2F2ZWRXaWRnZXRHZW9tZXRyeZRDQgHZ
-0MsAAwAAAAAFeQAAAecAAAf4AAADxgAABXkAAAHnAAAH+AAAA8YAAAAAAAAAAA1wAAAFeQAAAecA
-AAf4AAADxpSMC19fdmVyc2lvbl9flEsCjBBjb250ZXh0X3NldHRpbmdzlF2UKIwVb3Jhbmdld2lk
-Z2V0LnNldHRpbmdzlIwHQ29udGV4dJSTlCmBlH2UKIwGdmFsdWVzlH2UKIwIbGFuZ3VhZ2WUjAJu
-bJRK/v///4aUjA50aXRsZV92YXJpYWJsZZSMBVRpdGxllEtnhpSMCnVzZWRfYXR0cnOUXZQojAdD
-b250ZW50lEtnhpRoG0tnhpSMB1NlY3Rpb26US2eGlGVK/f///4aUaA1LAnWMCmF0dHJpYnV0ZXOU
-fZSMBW1ldGFzlH2UKIwHU2VjdGlvbpRLA4wFVGl0bGWUSwOMB0NvbnRlbnSUSwN1jA5kb2N1bWVu
-dHNfaGFzaJSKEMI1WdqmLxByKOZtwSXZQgpoF051YmgSKYGUfZQoaBV9lCiMCGxhbmd1YWdllIwC
-ZW6USv7///+GlIwOdGl0bGVfdmFyaWFibGWUjAVUaXRsZZRLZ4aUjAp1c2VkX2F0dHJzlF2UjAdD
-b250ZW50lEtnhpRhSv3///+GlGgNSwJ1aCV9lIwJQVRVIFRvcGljlEsBc2gnfZQoaDRLA4wIQWJz
-dHJhY3SUSwNoOEsDjA1BVFUgTnVtZXJpY2FslEsDjAhBVFUgVHlwZZRLAXVoLIoQwsvM5jN9pVQ/
-2bC4t4Kmd2gXjAJlbpR1YmgSKYGUfZQoaBV9lChoMGgxSv7///+GlGgzTkr+////hpRoNl2UjARU
-ZXh0lEtnhpRhSv3///+GlGgNSwJ1aCV9lIwIQ2F0ZWdvcnmUSwFzaCd9lGhISwNzaCyKEaw1BwQZ
-tAhLt7rkdtqukZcAaBeMAmVulHViZXUu
+		<properties node_id="0" format="pickle">gASVogQAAAAAAAB9lCiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjAxyZWNlbnRfZmlsZXOUXZQojGQv
+aG9tZS9lcmlrdC9wcm9qZWN0cy9uYXZpZ2F0aW5nc3Rvcmllcy9vcmFuZ2Utc3RvcnktbmF2aWdh
+dG9yL2RvYy93aWRnZXRzL2ZhaXJ5dGFsZXMvZmFpcnl0YWxlczQudGFilIwRYm9vay1leGNlcnB0
+cy50YWKUjBhncmltbS10YWxlcy1zZWxlY3RlZC50YWKUjBhlbGVjdGlvbi10d2VldHMtMjAxNi50
+YWKUjBdmcmllbmRzLXRyYW5zY3JpcHRzLnRhYpSMDGFuZGVyc2VuLnRhYpRljBNzYXZlZFdpZGdl
+dEdlb21ldHJ5lENCAdnQywADAAAAAAJdAAABHgAABNwAAAL9AAACXQAAAR4AAATcAAAC/QAAAAAA
+AAAAB4AAAAJdAAABHgAABNwAAAL9lIwLX192ZXJzaW9uX1+USwKMEGNvbnRleHRfc2V0dGluZ3OU
+XZQojBVvcmFuZ2V3aWRnZXQuc2V0dGluZ3OUjAdDb250ZXh0lJOUKYGUfZQojAZ2YWx1ZXOUfZQo
+jAhsYW5ndWFnZZSMAmNhlEr+////hpSMDnRpdGxlX3ZhcmlhYmxllIwFVGl0bGWUS2eGlIwKdXNl
+ZF9hdHRyc5RdlIwHU2VjdGlvbpRLZ4aUYUr9////hpRoDEsCdYwKYXR0cmlidXRlc5R9lIwFbWV0
+YXOUfZQojAdTZWN0aW9ulEsDjAVUaXRsZZRLA4wHQ29udGVudJRLA3WMDmRvY3VtZW50c19oYXNo
+lIoQvyXkZt6liMLwdxkmJPP7aYwIbGFuZ3VhZ2WUTnViaBEpgZR9lChoFH2UKGgWjAJlbpRK/v//
+/4aUaBlOSv7///+GlGgcXZSMBFRleHSUS2eGlGFK/f///4aUaAxLAnVoIX2UjAhDYXRlZ29yeZRL
+AXNoI32UjARUZXh0lEsDc2goihGsNQcEGbQIS7e65HbarpGXAGgpjAJlbpR1YmgRKYGUfZQoaBR9
+lCiMCGxhbmd1YWdllIwCbmyUSv7///+GlIwOdGl0bGVfdmFyaWFibGWUjAVUaXRsZZRLZ4aUjAp1
+c2VkX2F0dHJzlF2UKIwHQ29udGVudJRLZ4aUaEBLZ4aUjAdTZWN0aW9ulEtnhpRlSv3///+GlGgM
+SwJ1aCF9lGgjfZQojAdTZWN0aW9ulEsDjAVUaXRsZZRLA4wHQ29udGVudJRLA3VoKIoQwjVZ2qYv
+EHIo5m3BJdlCCmgpTnViaBEpgZR9lChoFH2UKIwIbGFuZ3VhZ2WUaC1K/v///4aUjA50aXRsZV92
+YXJpYWJsZZSMBVRpdGxllEtnhpSMCnVzZWRfYXR0cnOUXZSMB0NvbnRlbnSUS2eGlGFK/f///4aU
+aAxLAnVoIX2UjAlBVFUgVG9waWOUSwFzaCN9lChoVUsDjAhBYnN0cmFjdJRLA2hZSwOMDUFUVSBO
+dW1lcmljYWyUSwOMCEFUVSBUeXBllEsBdWgoihDCy8zmM32lVD/ZsLi3gqZ3aCmMAmVulHViZXUu
 </properties>
-		<properties node_id="1" format="pickle">gASVKAMAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBNzYXZl
+		<properties node_id="1" format="pickle">gASV5gMAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBNzYXZl
 ZFdpZGdldEdlb21ldHJ5lENCAdnQywADAAAAAAAAAAAAFwAACf8AAAVvAAAAAAAAABcAAAn/AAAF
 bwAAAAACAAAACgAAAAAAAAAAFwAACf8AAAVvlIwJc2VsZWN0aW9ulE6MD3Zpc3VhbF9zZXR0aW5n
 c5R9lIwFZ3JhcGiUfZSMC19fdmVyc2lvbl9flEsBjBBjb250ZXh0X3NldHRpbmdzlF2UKIwVb3Jh
 bmdld2lkZ2V0LnNldHRpbmdzlIwHQ29udGV4dJSTlCmBlH2UKIwGdmFsdWVzlH2UKIwJYW5ub3Rf
-dmFylIwIY2F0ZWdvcnmUS2WGlIwJY29sb3JfdmFylIwOY2xhc3NpZmljYXRpb26US2WGlIwJZ3Jv
-dXBfdmFylE5K/v///4aUjAxzZWxlY3RlZF92YXKUjARmcmVxlEtmhpRoCH2UaApLAXWMCmF0dHJp
-YnV0ZXOUfZQojAdzdG9yeWlklEsBjApzZWdtZW50X2lklEsBjAhjYXRlZ29yeZRLAYwEZnJlcZRL
-AowOY2xhc3NpZmljYXRpb26USwF1jAVtZXRhc5R9lHViaA8pgZR9lChoEn2UKGgUTkr+////hpRo
-F4wHc3RvcnlpZJRLZYaUaBpoLUtlhpRoHIwGYWdlbmN5lEtmhpRoCH2UaApLAXVoIH2UKGgtSwGM
-CnNlZ21lbnRfaWSUSwGMCHJhd19mcmVxlEsCjAlzdWJqX2ZyZXGUSwJoMEsCjA1wcm9taW5lbmNl
-X3NmlEsCdWgnfZSMC2N1c3RvbV93b3JklEsDc3ViaA8pgZR9lChoEn2UKIwJYW5ub3RfdmFylE5K
-/v///4aUjAljb2xvcl92YXKUTkr+////hpSMCWdyb3VwX3ZhcpROSv7///+GlIwMc2VsZWN0ZWRf
-dmFylIwEZnJlcZRLZoaUjAVncmFwaJR9lGgKSwF1aCB9lChoIksBaCNLAWgkSwFoJUsCaCZLAYwI
-U2VsZWN0ZWSUSwF1aCd9lHViZXUu
+dmFylE5K/v///4aUjAljb2xvcl92YXKUTkr+////hpSMCWdyb3VwX3ZhcpROSv7///+GlIwMc2Vs
+ZWN0ZWRfdmFylIwEZnJlcZRLZoaUaAh9lGgKSwF1jAphdHRyaWJ1dGVzlH2UKIwHc3RvcnlpZJRL
+AYwKc2VnbWVudF9pZJRLAWgbSwKMDmNsYXNzaWZpY2F0aW9ulEsBdYwFbWV0YXOUfZSMCGNhdGVn
+b3J5lEsDc3ViaA8pgZR9lChoEn2UKIwJYW5ub3RfdmFylE5K/v///4aUjAljb2xvcl92YXKUTkr+
+////hpSMCWdyb3VwX3ZhcpROSv7///+GlIwMc2VsZWN0ZWRfdmFylIwEZnJlcZRLZoaUjAVncmFw
+aJR9lGgKSwF1aB59lCiMB3N0b3J5aWSUSwGMCnNlZ21lbnRfaWSUSwGMCGNhdGVnb3J5lEsBjARm
+cmVxlEsCjA5jbGFzc2lmaWNhdGlvbpRLAYwIU2VsZWN0ZWSUSwF1aCN9lHViaA8pgZR9lChoEn2U
+KIwJYW5ub3RfdmFylIwIY2F0ZWdvcnmUS2WGlIwJY29sb3JfdmFylIwOY2xhc3NpZmljYXRpb26U
+S2WGlIwJZ3JvdXBfdmFylE5K/v///4aUjAxzZWxlY3RlZF92YXKUjARmcmVxlEtmhpSMBWdyYXBo
+lH2UaApLAXVoHn2UKGg1SwFoNksBaDdLAWg4SwJoOUsBdWgjfZR1YmgPKYGUfZQoaBJ9lChoP05K
+/v///4aUaEKMB3N0b3J5aWSUS2WGlGhFaFJLZYaUaEeMBmFnZW5jeZRLZoaUaEp9lGgKSwF1aB59
+lChoUksBjApzZWdtZW50X2lklEsBjAhyYXdfZnJlcZRLAowJc3Vial9mcmVxlEsCaFVLAowNcHJv
+bWluZW5jZV9zZpRLAnVoI32UjAtjdXN0b21fd29yZJRLA3N1YmV1Lg==
 </properties>
-		<properties node_id="2" format="pickle">gASVmwQAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBNzYXZl
-ZFdpZGdldEdlb21ldHJ5lENCAdnQywADAAAAAAceAAAC6gAACaAAAATJAAAHHgAAAuoAAAmgAAAE
-yQAAAAAAAAAACgAAAAceAAAC6gAACaAAAATJlIwLX192ZXJzaW9uX1+USwGMEGNvbnRleHRfc2V0
+		<properties node_id="2" format="pickle">gASVagUAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBNzYXZl
+ZFdpZGdldEdlb21ldHJ5lENCAdnQywADAAAAAABGAAAAGwAAAvoAAAIfAAAARgAAAEAAAAL6AAAC
+HwAAAAAAAAAAB4AAAABGAAAAQAAAAvoAAAIflIwLX192ZXJzaW9uX1+USwGMEGNvbnRleHRfc2V0
 dGluZ3OUXZQojBVvcmFuZ2V3aWRnZXQuc2V0dGluZ3OUjAdDb250ZXh0lJOUKYGUfZQojAZ2YWx1
-ZXOUfZQojAxhZ2dyZWdhdGlvbnOUfZQojApzZWdtZW50X2lklEtlhpSPlIwHc3RvcnlpZJRLZYaU
-j5SMCGNhdGVnb3J5lEtlhpSPlIwEZnJlcZRLZoaUj5QojANTdW2UkIwOY2xhc3NpZmljYXRpb26U
-S2WGlI+UdUr8////hpSMCGdiX2F0dHJzlF2UKGgUS2WGlGgXS2WGlGVK/f///4aUaAVLAXWMCmF0
-dHJpYnV0ZXOUfZQojAdzdG9yeWlklEsBjApzZWdtZW50X2lklEsBjAhjYXRlZ29yeZRLAYwEZnJl
-cZRLAowOY2xhc3NpZmljYXRpb26USwF1jAVtZXRhc5R9lHViaAopgZR9lChoDX2UKGgPfZQoaBRL
-ZYaUj5QojARNb2RllJBoEUtlhpSPlChoNpCMCHJhd19mcmVxlEtmhpSPlCiMBE1lYW6UkIwJc3Vi
-al9mcmVxlEtmhpSPlChoPJCMBmFnZW5jeZRLZoaUj5QoaDyQjA1wcm9taW5lbmNlX3NmlEtmhpSP
-lChoPJCMC2N1c3RvbV93b3JklEtnhpSPlCiMC0NvbmNhdGVuYXRllJB1Svz///+GlGgiXZRoFEtl
-hpRhSv3///+GlGgFSwF1aCd9lChoFEsBaBFLAWg5SwJoPUsCaEBLAmhDSwJ1aC59lIwLY3VzdG9t
-X3dvcmSUSwNzdWJoCimBlH2UKGgNfZQoaA99lChoFEtlhpSPlChoNpBoEUtlhpSPlChoNpBoOUtm
-hpSPlChoPJBoPUtmhpSPlChoPJBoQEtmhpSPlChoPJBoQ0tmhpSPlChoPJCMCFNlbGVjdGVklEtl
-hpSPlChoNpBoUEtnhpSPlChoSZB1Svz///+GlGgiXZRoYUtlhpRhSv3///+GlGgFSwF1aCd9lCho
-FEsBaBFLAWg5SwJoPUsCaEBLAmhDSwJoYUsBdWgufZRoUEsDc3ViaAopgZR9lChoDX2UKIwMYWdn
-cmVnYXRpb25zlH2UKIwKc2VnbWVudF9pZJRLZYaUj5SMB3N0b3J5aWSUS2WGlI+UjAhjYXRlZ29y
-eZRLZYaUj5SMBGZyZXGUS2aGlI+UKIwDU3VtlJCMDmNsYXNzaWZpY2F0aW9ulEtlhpSPlIwIU2Vs
-ZWN0ZWSUS2WGlI+UdUr8////hpSMCGdiX2F0dHJzlF2UKGh0S2WGlGh3S2WGlGVK/f///4aUaAVL
-AXVoJ32UKGgpSwFoKksBaCtLAWgsSwJoLUsBjAhTZWxlY3RlZJRLAXVoLn2UdWJldS4=
+ZXOUfZQojAxhZ2dyZWdhdGlvbnOUfZQojAdzdG9yeWlklEtlhpSPlIwKc2VnbWVudF9pZJRLZYaU
+j5SMBGZyZXGUS2aGlI+UKIwDU3VtlJCMDmNsYXNzaWZpY2F0aW9ulEtlhpSPlIwIY2F0ZWdvcnmU
+S2eGlI+UdUr8////hpSMCGdiX2F0dHJzlF2UKGgRS2WGlGgeS2eGlGVK/f///4aUaAVLAXWMCmF0
+dHJpYnV0ZXOUfZQoaBFLAWgUSwFoF0sCaBtLAXWMBW1ldGFzlH2UaB5LA3N1YmgKKYGUfZQoaA19
+lCiMDGFnZ3JlZ2F0aW9uc5R9lCiMCnNlZ21lbnRfaWSUS2WGlI+UjAdzdG9yeWlklEtlhpSPlIwI
+Y2F0ZWdvcnmUS2WGlI+UjARmcmVxlEtmhpSPlCiMA1N1bZSQjA5jbGFzc2lmaWNhdGlvbpRLZYaU
+j5R1Svz///+GlIwIZ2JfYXR0cnOUXZQoaDNLZYaUaDZLZYaUZUr9////hpRoBUsBdWgnfZQojAdz
+dG9yeWlklEsBjApzZWdtZW50X2lklEsBjAhjYXRlZ29yeZRLAYwEZnJlcZRLAowOY2xhc3NpZmlj
+YXRpb26USwF1aCl9lHViaAopgZR9lChoDX2UKGgufZQoaDNLZYaUj5QojARNb2RllJBoMEtlhpSP
+lChoU5CMCHJhd19mcmVxlEtmhpSPlCiMBE1lYW6UkIwJc3Vial9mcmVxlEtmhpSPlChoWZCMBmFn
+ZW5jeZRLZoaUj5QoaFmQjA1wcm9taW5lbmNlX3NmlEtmhpSPlChoWZCMC2N1c3RvbV93b3JklEtn
+hpSPlCiMC0NvbmNhdGVuYXRllJB1Svz///+GlGhBXZRoM0tlhpRhSv3///+GlGgFSwF1aCd9lCho
+M0sBaDBLAWhWSwJoWksCaF1LAmhgSwJ1aCl9lIwLY3VzdG9tX3dvcmSUSwNzdWJoCimBlH2UKGgN
+fZQoaC59lChoM0tlhpSPlChoU5BoMEtlhpSPlChoU5BoVktmhpSPlChoWZBoWktmhpSPlChoWZBo
+XUtmhpSPlChoWZBoYEtmhpSPlChoWZCMCFNlbGVjdGVklEtlhpSPlChoU5BobUtnhpSPlChoZpB1
+Svz///+GlGhBXZRofktlhpRhSv3///+GlGgFSwF1aCd9lChoM0sBaDBLAWhWSwJoWksCaF1LAmhg
+SwJofksBdWgpfZRobUsDc3ViaAopgZR9lChoDX2UKIwMYWdncmVnYXRpb25zlH2UKIwKc2VnbWVu
+dF9pZJRLZYaUj5SMB3N0b3J5aWSUS2WGlI+UjAhjYXRlZ29yeZRLZYaUj5SMBGZyZXGUS2aGlI+U
+KIwDU3VtlJCMDmNsYXNzaWZpY2F0aW9ulEtlhpSPlIwIU2VsZWN0ZWSUS2WGlI+UdUr8////hpSM
+CGdiX2F0dHJzlF2UKGiRS2WGlGiUS2WGlGVK/f///4aUaAVLAXVoJ32UKGhHSwFoSEsBaElLAWhK
+SwJoS0sBjAhTZWxlY3RlZJRLAXVoKX2UdWJldS4=
 </properties>
-		<properties node_id="3" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': False, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
-		<properties node_id="4" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': False, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [23, 24, 25, 26, 27, 28, 29], 'columns': [0, 1, 2]}, 'stored_sort': [], '__version__': 1}</properties>
-		<properties node_id="5" format="literal">{'controlAreaVisible': True, 'currentScriptIndex': 0, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'scriptLibrary': [{'name': 'radar plot', 'script': '\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Initialize the outputs\nout_data = in_data\nout_learner = None\nout_classifier = None\nout_object = None\n\nif in_data is not None and len(in_data) &gt; 0:  # Ensure there is data to plot\n    try:\n        # Extract \'category\' and \'freq-sum\' columns from the input data\n        storyid = in_data.get_column(in_data.domain["storyid"])[0]  # Assuming storyid is the same for all rows\n        categories = in_data.get_column(in_data.domain["category"])\n        freq_sum = in_data.get_column(in_data.domain["freq - Sum"])\n        \n        # Convert categories to string\n        categories = [str(cat) for cat in categories]\n        \n        # Number of categories\n        N = len(categories)\n        \n        # Compute the angles for the polar bars\n        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()\n        angles += angles[:1]  # Complete the circle for the radar plot\n\n        # Repeat the first value to close the loop\n        freq_sum = freq_sum.tolist() + [freq_sum[0]]\n\n        # Initialize polar bar plot\n        fig = plt.figure(figsize=(8, 8))\n        ax = fig.add_subplot(111, polar=True)\n\n        # Assign different colors for each bar using a colormap\n        colors = plt.cm.viridis(np.linspace(0, 1, N))\n\n        # Plot bars on the polar plot with different colors\n        bars = ax.bar(angles, freq_sum, width=0.4, color=colors, alpha=0.7)\n\n        # Set the category names as the x-ticks\n        ax.set_xticks(angles[:-1])  # Exclude the last angle (repeat of the first one)\n        ax.set_xticklabels(categories)\n\n        # Optional: Customize y-axis labels or grid\n        ax.yaxis.grid(True)\n        \n        # Display the storyID below the plot\n        plt.figtext(0.5, 0.01, f\'StoryID: {storyid}\', ha=\'center\', va=\'center\', fontsize=12, color=\'black\')\n\n        # Display the polar bar plot\n        plt.show()\n\n    except KeyError as e:\n        print(f"Error: Column \'{e}\' not found in the data. Check the column names.")', 'filename': None}], 'scriptText': '\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Initialize the outputs\nout_data = in_data\nout_learner = None\nout_classifier = None\nout_object = None\n\nif in_data is not None and len(in_data) &gt; 0:  # Ensure there is data to plot\n    try:\n        # Extract \'category\' and \'freq-sum\' columns from the input data\n        storyid = in_data.get_column(in_data.domain["storyid"])[0]  # Assuming storyid is the same for all rows\n        categories = in_data.get_column(in_data.domain["category"])\n        freq_sum = in_data.get_column(in_data.domain["freq - Sum"])\n        \n        # Convert categories to string\n        categories = [str(cat) for cat in categories]\n        \n        # Number of categories\n        N = len(categories)\n        \n        # Compute the angles for the polar bars\n        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()\n        angles += angles[:1]  # Complete the circle for the radar plot\n\n        # Repeat the first value to close the loop\n        freq_sum = freq_sum.tolist() + [freq_sum[0]]\n\n        # Initialize polar bar plot\n        fig = plt.figure(figsize=(8, 8))\n        ax = fig.add_subplot(111, polar=True)\n\n        # Assign different colors for each bar using a colormap\n        colors = plt.cm.viridis(np.linspace(0, 1, N))\n\n        # Plot bars on the polar plot with different colors\n        bars = ax.bar(angles, freq_sum, width=0.4, color=colors, alpha=0.7)\n\n        # Set the category names as the x-ticks\n        ax.set_xticks(angles[:-1])  # Exclude the last angle (repeat of the first one)\n        ax.set_xticklabels(categories)\n\n        # Optional: Customize y-axis labels or grid\n        ax.yaxis.grid(True)\n        \n        # Display the storyID below the plot\n        plt.figtext(0.5, 0.01, f\'StoryID: {storyid}\', ha=\'center\', va=\'center\', fontsize=12, color=\'black\')\n\n        # Display the polar bar plot\n        plt.show()\n\n    except KeyError as e:\n        print(f"Error: Column \'{e}\' not found in the data. Check the column names.")', 'splitterState': b'\x00\x00\x00\xff\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\xa3\x00\x00\x00m\x01\xff\xff\xff\xff\x01\x00\x00\x00\x02\x00', 'vimModeEnabled': False, '__version__': 2}</properties>
+		<properties node_id="3" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00F\x00\x00\x00\x1b\x00\x00\x05R\x00\x00\x02\x1f\x00\x00\x00F\x00\x00\x00@\x00\x00\x05R\x00\x00\x02\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x00F\x00\x00\x00@\x00\x00\x05R\x00\x00\x02\x1f', 'select_rows': False, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
+		<properties node_id="4" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00F\x00\x00\x00\x1b\x00\x00\x05\\\x00\x00\x02\x1f\x00\x00\x00F\x00\x00\x00@\x00\x00\x05\\\x00\x00\x02\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x00F\x00\x00\x00@\x00\x00\x05\\\x00\x00\x02\x1f', 'select_rows': False, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], 'columns': [0, 1, 2]}, 'stored_sort': [], '__version__': 1}</properties>
+		<properties node_id="5" format="literal">{'controlAreaVisible': True, 'currentScriptIndex': 0, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00F\x00\x00\x00\x1b\x00\x00\x03\x8c\x00\x00\x02\x1f\x00\x00\x00F\x00\x00\x00@\x00\x00\x03\x8c\x00\x00\x02\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x00F\x00\x00\x00@\x00\x00\x03\x8c\x00\x00\x02\x1f', 'scriptLibrary': [{'name': 'radar plot', 'script': '\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Initialize the outputs\nout_data = in_data\nout_learner = None\nout_classifier = None\nout_object = None\n\nif in_data is not None and len(in_data) &gt; 0:  # Ensure there is data to plot\n    try:\n        # Extract \'category\' and \'freq-sum\' columns from the input data\n        storyid = in_data.get_column(in_data.domain["storyid"])[0]  # Assuming storyid is the same for all rows\n        categories = in_data.get_column(in_data.domain["category"])\n        freq_sum = in_data.get_column(in_data.domain["freq - Sum"])\n        \n        # Convert categories to string\n        categories = [str(cat) for cat in categories]\n        \n        # Number of categories\n        N = len(categories)\n        \n        # Compute the angles for the polar bars\n        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()\n        angles += angles[:1]  # Complete the circle for the radar plot\n\n        # Repeat the first value to close the loop\n        freq_sum = freq_sum.tolist() + [freq_sum[0]]\n\n        # Initialize polar bar plot\n        fig = plt.figure(figsize=(8, 8))\n        ax = fig.add_subplot(111, polar=True)\n\n        # Assign different colors for each bar using a colormap\n        colors = plt.cm.viridis(np.linspace(0, 1, N))\n\n        # Plot bars on the polar plot with different colors\n        bars = ax.bar(angles, freq_sum, width=0.4, color=colors, alpha=0.7)\n\n        # Set the category names as the x-ticks\n        ax.set_xticks(angles[:-1])  # Exclude the last angle (repeat of the first one)\n        ax.set_xticklabels(categories)\n\n        # Optional: Customize y-axis labels or grid\n        ax.yaxis.grid(True)\n        \n        # Display the storyID below the plot\n        plt.figtext(0.5, 0.01, f\'StoryID: {storyid}\', ha=\'center\', va=\'center\', fontsize=12, color=\'black\')\n\n        # Display the polar bar plot\n        plt.show()\n\n    except KeyError as e:\n        print(f"Error: Column \'{e}\' not found in the data. Check the column names.")', 'filename': None}], 'scriptText': '\nimport matplotlib.pyplot as plt\nimport numpy as np\n\n# Initialize the outputs\nout_data = in_data\nout_learner = None\nout_classifier = None\nout_object = None\n\nif in_data is not None and len(in_data) &gt; 0:  # Ensure there is data to plot\n    try:\n        # Extract \'category\' and \'freq-sum\' columns from the input data\n        storyid = in_data.get_column(in_data.domain["storyid"])[0]  # Assuming storyid is the same for all rows\n        categories = in_data.get_column(in_data.domain["category"])\n        freq_sum = in_data.get_column(in_data.domain["freq - Sum"])\n        \n        # Convert categories to string\n        categories = [str(cat) for cat in categories]\n        \n        # Number of categories\n        N = len(categories)\n        \n        # Compute the angles for the polar bars\n        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()\n        angles += angles[:1]  # Complete the circle for the radar plot\n\n        # Repeat the first value to close the loop\n        freq_sum = freq_sum.tolist() + [freq_sum[0]]\n\n        # Initialize polar bar plot\n        fig = plt.figure(figsize=(8, 8))\n        ax = fig.add_subplot(111, polar=True)\n\n        # Assign different colors for each bar using a colormap\n        colors = plt.cm.viridis(np.linspace(0, 1, N))\n\n        # Plot bars on the polar plot with different colors\n        bars = ax.bar(angles, freq_sum, width=0.4, color=colors, alpha=0.7)\n\n        # Set the category names as the x-ticks\n        ax.set_xticks(angles[:-1])  # Exclude the last angle (repeat of the first one)\n        ax.set_xticklabels(categories)\n\n        # Optional: Customize y-axis labels or grid\n        ax.yaxis.grid(True)\n        \n        # Display the storyID below the plot\n        plt.figtext(0.5, 0.01, f\'StoryID: {storyid}\', ha=\'center\', va=\'center\', fontsize=12, color=\'black\')\n\n        # Display the polar bar plot\n        plt.show()\n\n    except KeyError as e:\n        print(f"Error: Column \'{e}\' not found in the data. Check the column names.")', 'splitterState': b'\x00\x00\x00\xff\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\xaa\x00\x00\x00m\x01\xff\xff\xff\xff\x01\x00\x00\x00\x02\x00', 'vimModeEnabled': False, '__version__': 2}</properties>
 		<properties node_id="6" format="pickle">gASVOgMAAAAAAAB9lCiMFF9kb21haW5fY2hhbmdlX2hpbnRzlH2UKIwLQ2F0ZWdvcmljYWyUjAhj
 YXRlZ29yeZQojA1BY3RzIHZlcmJhbGx5lIwKQmVoYXZpb3JhbJSMBUJlaW5nlIwPQm9kaWx5IHBv
 c3R1cmVzlIwOQ2lyY3Vtc3RhbnRpYWyUjAlDb2duaXRpdmWUjAhDcmVhdGl2ZZSMDERlc2lkZXJh
@@ -146,128 +154,156 @@ OJSMAjE5lIwBMpSMAjIwlIwCMjGUjAIyMpSMAjIzlIwCMjSUjAIyNZSMAjI2lIwCMjeUjAIyOJSM
 AjI5lIwBM5SMAjMwlIwCMzGUjAIzMpSMAjMzlIwCMzSUjAE0lIwBNZSMATaUjAE3lIwBOJSMATmU
 dJQph5SGlF2UjAxBc0NvbnRpbnVvdXOUKYaUYXWMFl9tZXJnZV9kaWFsb2dfc2V0dGluZ3OUfZSM
 EmNvbnRyb2xBcmVhVmlzaWJsZZSIjBFvdXRwdXRfdGFibGVfbmFtZZSMAJSME3NhdmVkV2lkZ2V0
-R2VvbWV0cnmUQ0IB2dDLAAMAAAAAA8EAAAHnAAAGQAAAA8YAAAPBAAAB5wAABkAAAAPGAAAAAAAA
-AAAKAAAAA8EAAAHnAAAGQAAAA8aUjAtfX3ZlcnNpb25fX5RLBHUu
+R2VvbWV0cnmUQ0IB2dDLAAMAAAAAAEYAAAAbAAACxQAAAh8AAABGAAAAQAAAAsUAAAIfAAAAAAAA
+AAAHgAAAAEYAAABAAAACxQAAAh+UjAtfX3ZlcnNpb25fX5RLBHUu
 </properties>
-		<properties node_id="7" format="pickle">gASV2gEAAAAAAAB9lCiMCmF1dG9jb21taXSUiIwSY29udHJvbEFyZWFWaXNpYmxllIiME3NhdmVk
+		<properties node_id="7" format="pickle">gASVPwIAAAAAAAB9lCiMCmF1dG9jb21taXSUiIwSY29udHJvbEFyZWFWaXNpYmxllIiME3NhdmVk
 V2lkZ2V0R2VvbWV0cnmUQ0IB2dDLAAMAAAAAA8AAAAHIAAAGQQAAA8cAAAPBAAAB5wAABkAAAAPG
-AAAAAAAAAAAKAAAAA8EAAAHnAAAGQAAAA8aUjBJzZWxlY3RlZF9kb2N1bWVudHOUj5QoSxaQjAtz
-aG93X3Rva2Vuc5SJjAtfX3ZlcnNpb25fX5RLAowQY29udGV4dF9zZXR0aW5nc5RdlIwVb3Jhbmdl
-d2lkZ2V0LnNldHRpbmdzlIwHQ29udGV4dJSTlCmBlH2UKIwGdmFsdWVzlH2UKIwQZGlzcGxheV9m
-ZWF0dXJlc5RdlCiMB1NlY3Rpb26US2eGlIwFVGl0bGWUS2eGlIwHQ29udGVudJRLZ4aUZUr9////
-hpSMDXJlZ2V4cF9maWx0ZXKUjAphZmdlc2xhZ2VulEr+////hpSMD3NlYXJjaF9mZWF0dXJlc5Rd
-lGgYS2eGlGFK/f///4aUaAhLAnWMCmF0dHJpYnV0ZXOUfZSMBW1ldGFzlH2UKIwHU2VjdGlvbpRL
-A4wFVGl0bGWUSwOMB0NvbnRlbnSUSwN1dWJhdS4=
+AAAAAAAAAAAKAAAAA8EAAAHnAAAGQAAAA8aUjBJzZWxlY3RlZF9kb2N1bWVudHOUj5QoSwCQjAtz
+aG93X3Rva2Vuc5SJjAtfX3ZlcnNpb25fX5RLAowQY29udGV4dF9zZXR0aW5nc5RdlCiMFW9yYW5n
+ZXdpZGdldC5zZXR0aW5nc5SMB0NvbnRleHSUk5QpgZR9lCiMBnZhbHVlc5R9lCiMEGRpc3BsYXlf
+ZmVhdHVyZXOUXZQojAdTZWN0aW9ulEtnhpSMBVRpdGxllEtnhpSMB0NvbnRlbnSUS2eGlGVK/f//
+/4aUjA1yZWdleHBfZmlsdGVylIwKYWZnZXNsYWdlbpRK/v///4aUjA9zZWFyY2hfZmVhdHVyZXOU
+XZRoGEtnhpRhSv3///+GlGgISwJ1jAphdHRyaWJ1dGVzlH2UjAVtZXRhc5R9lCiMB1NlY3Rpb26U
+SwOMBVRpdGxllEsDjAdDb250ZW50lEsDdXViaA0pgZR9lChoEH2UKGgSXZSMBFRleHSUS2eGlGFK
+/f///4aUaBuMAJRK/v///4aUaB5dlGgtS2eGlGFK/f///4aUaAhLAnVoIn2UjAhDYXRlZ29yeZRL
+AXNoJH2UaC1LA3N1YmV1Lg==
 </properties>
 		<properties node_id="8" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
 		<properties node_id="9" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\xff\xff\xff\xff\xff\xff\xff\xf8\x00\x00\n\x00\x00\x00\x05p\x00\x00\x03\xc1\x00\x00\x01\xe7\x00\x00\x06@\x00\x00\x03\xc6\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
-		<properties node_id="10" format="literal">{'auto_commit': True, 'color_by_class': True, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [568], 'columns': [0, 1, 2, 3, 4]}, 'stored_sort': [('storyid', 1)], '__version__': 1}</properties>
-		<properties node_id="11" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o\x00\x00\x00\x00\x02\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x17\x00\x00\t\xff\x00\x00\x05o', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
-		<properties node_id="12" format="pickle">gASV8AoAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBBwdXJn
+		<properties node_id="10" format="literal">{'auto_commit': True, 'color_by_class': True, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00F\x00\x00\x00\x1b\x00\x00\x02\xc5\x00\x00\x02\x1f\x00\x00\x00F\x00\x00\x00@\x00\x00\x02\xc5\x00\x00\x02\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x00F\x00\x00\x00@\x00\x00\x02\xc5\x00\x00\x02\x1f', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [('storyid', 1)], '__version__': 1}</properties>
+		<properties node_id="11" format="literal">{'auto_commit': True, 'color_by_class': False, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x00F\x00\x00\x00\x1b\x00\x00\x02\xc5\x00\x00\x02\x1f\x00\x00\x00F\x00\x00\x00@\x00\x00\x02\xc5\x00\x00\x02\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x00F\x00\x00\x00@\x00\x00\x02\xc5\x00\x00\x02\x1f', 'select_rows': True, 'show_attribute_labels': False, 'show_distributions': False, 'stored_selection': {'rows': [], 'columns': []}, 'stored_sort': [], '__version__': 1}</properties>
+		<properties node_id="12" format="pickle">gASVexAAAAAAAAB9lCiMC2F1dG9fY29tbWl0lIiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjBBwdXJn
 ZV9hdHRyaWJ1dGVzlImMDXB1cmdlX2NsYXNzZXOUiYwTc2F2ZWRXaWRnZXRHZW9tZXRyeZRDQgHZ
-0MsAAwAAAAADwQAAAecAAAgpAAADxgAAA8EAAAHnAAAIKQAAA8YAAAAAAAAAAAoAAAADwQAAAecA
-AAgpAAADxpSMEHVwZGF0ZV9vbl9jaGFuZ2WUiIwLX192ZXJzaW9uX1+USwKMEGNvbnRleHRfc2V0
+0MsAAwAAAAAARgAAABsAAALFAAACHwAAAEYAAABAAAACxQAAAh8AAAAAAAAAAAeAAAAARgAAAEAA
+AALFAAACH5SMEHVwZGF0ZV9vbl9jaGFuZ2WUiIwLX192ZXJzaW9uX1+USwKMEGNvbnRleHRfc2V0
 dGluZ3OUXZQojBVvcmFuZ2V3aWRnZXQuc2V0dGluZ3OUjAdDb250ZXh0lJOUKYGUfZQojAZ2YWx1
-ZXOUfZQojApjb25kaXRpb25zlF2UKIwIY2F0ZWdvcnmUSwFLAl2UKIwOQ2lyY3Vtc3RhbnRpYWyU
-jAhDcmVhdGl2ZZSMB0Vtb3RpdmWUjAtFeGlzdGVudGlhbJSMCE1hdGVyaWFslIwGTWVudGFslIwK
-UmVsYXRpb25hbJSMBlZlcmJhbJRldJRhaAhLAnWMCmF0dHJpYnV0ZXOUfZSMCmZyZXEgLSBTdW2U
-SwJzjAVtZXRhc5R9lCiMB3N0b3J5aWSUSwFoFEsBdXViaA0pgZR9lChoEH2UKGgSXZQojApmcmVx
-IC0gU3VtlEsCSwBdlEcAAAAAAAAAAGF0lGFoCEsCdWgffZRoKUsCc2gifZRoJEsBc3ViaA0pgZR9
-lChoEH2UKGgSXZQojApmcmVxIC0gU3VtlEsCSwBdlEcAAAAAAAAAAGF0lGFoCEsCdWgffZRoMksC
-c2gifZSMBGZyZXGUSwJzdWJoDSmBlH2UKGgQfZQoaBJdlCiMEGNhdGVnb3J5IC0gQ291bnSUSwJL
-AF2URwAAAAAAAAAAYXSUYWgISwJ1aB99lChoPEsCjApmcmVxIC0gU3VtlEsCdWgifZRoN0sCc3Vi
-aA0pgZR9lChoEH2UKGgSXZQojBBjYXRlZ29yeSAtIENvdW50lEsCSwBdlEcAAAAAAAAAAGF0lGFo
-CEsCdWgffZRoRksCc2gifZRoN0sCc3ViaA0pgZR9lChoEH2UKGgSXZQoaBRLAUsCXZQoaBZoF2gY
-aBloGmgbaBxoHWV0lGFoCEsCdWgffZSMEGNhdGVnb3J5IC0gQ291bnSUSwJzaCJ9lChoJEsBaBRL
-AXV1YmgNKYGUfZQoaBB9lChoEl2UKGgUSwFLAl2UKGgWaBdoGGgZaBpoG2gcaB1ldJRhaAhLAnVo
-H32UKGgkSwGMCnNlZ21lbnRfaWSUSwFoFEsBaDdLAowOY2xhc3NpZmljYXRpb26USwF1aCJ9lHVi
-aA0pgZR9lChoEH2UKGgSXZQoaBRLAUsCXZQoaBZoF2gYaBloGmgbaBxoHWV0lGFoCEsCdWgffZRo
-In2UKGgkSwFoFEsBdXViaA0pgZR9lChoEH2UKGgSXZQoaBRLAUsCXZQoaBZoF2gYaBloGmgbaBxo
-HWV0lGFoCEsCdWgffZSMDGZyZXEgLSBDb3VudJRLAnNoIn2UKGgkSwFoFEsBdXViaA0pgZR9lCho
-EH2UKGgSXZQoaCRLAUsAXZSMAJRhdJRhaAhLAnVoH32UjAxmcmVxIC0gQ291bnSUSwJzaCJ9lGgk
-SwFzdWJoDSmBlH2UKGgQfZQoaBJdlChoFEsBSwJdlChoFmgXaBhoGWgaaBtoHGgdZXSUYWgISwJ1
-aB99lIwMZnJlcSAtIENvdW50lEsCc2gifZRoFEsBc3ViaA0pgZR9lChoEH2UKGgSXZQoaBRLAUsC
-XZQoaBZoF2gYaBloGmgbaBxoHWV0lGFoCEsCdWgffZQojBBjYXRlZ29yeSAtIENvdW50lEsCjAxm
-cmVxIC0gQ291bnSUSwJ1aCJ9lChoJEsBaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKGgUSwFLAl2U
-KGgWaBdoGGgZaBpoG2gcaB1ldJRhaAhLAnVoH32UjA9jYXRlZ29yeSAtIE1vZGWUSwFzaCJ9lCho
-JEsBaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKGgUSwFLAl2UKGgWaBdoGGgZaBpoG2gcaB1ldJRh
-aAhLAnVoH32UKIwPY2F0ZWdvcnkgLSBNb2RllEsBjBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1
-aCJ9lChoJEsBaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKGgUSwFLAl2UKGgWaBdoGGgZaBpoG2gc
-aB1ldJRhaAhLAnVoH32UKIwPY2F0ZWdvcnkgLSBNb2RllEsBjApmcmVxIC0gU3VtlEsCjBVjbGFz
-c2lmaWNhdGlvbiAtIE1vZGWUSwF1aCJ9lChoJEsBaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKGgU
-SwFLAl2UKGgWaBdoGGgZaBpoG2gcaB1ldJRhaAhLAnVoH32UKIwRc2VnbWVudF9pZCAtIE1vZGWU
-SwGMD2NhdGVnb3J5IC0gTW9kZZRLAYwKZnJlcSAtIFN1bZRLAowVY2xhc3NpZmljYXRpb24gLSBN
-b2RllEsBdWgifZQoaCRLAWgUSwF1dWJoDSmBlH2UKGgQfZQoaBJdlCiMDnN0b3J5aWQgLSBNb2Rl
-lEsBSwBdlGh0YXSUYWgISwJ1aB99lCiMEXNlZ21lbnRfaWQgLSBNb2RllEsBaLpLAYwPY2F0ZWdv
-cnkgLSBNb2RllEsBjApmcmVxIC0gU3VtlEsCjBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1aCJ9
-lChoJEsBaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaHRh
-dJRhaAhLAnVoH32UKIwOc3RvcnlpZCAtIE1vZGWUSwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9y
-YXdfZnJlcSAtIE1lYW6USwKMEHN1YmpfZnJlcSAtIE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKM
-FHByb21pbmVuY2Vfc2YgLSBNZWFulEsCdWgifZQojBljdXN0b21fd29yZCAtIENvbmNhdGVuYXRl
-lEsDaCRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaHRhdJRh
-aAhLAnVoH32UKGjXSwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9yYXdfZnJlcSAtIE1lYW6USwKM
-EHN1YmpfZnJlcSAtIE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKMFHByb21pbmVuY2Vfc2YgLSBN
-ZWFulEsCdWgifZQojBljdXN0b21fd29yZCAtIENvbmNhdGVuYXRllEsDjAtjdXN0b21fd29yZJRL
-A3V1YmgNKYGUfZQoaBB9lChoEl2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaHRhdJRhaAhLAnVo
-H32UKGjnSwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9yYXdfZnJlcSAtIE1lYW6USwKMEHN1Ympf
-ZnJlcSAtIE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKMFHByb21pbmVuY2Vfc2YgLSBNZWFulEsC
-jA9TZWxlY3RlZCAtIE1vZGWUSwF1aCJ9lCiMGWN1c3RvbV93b3JkIC0gQ29uY2F0ZW5hdGWUSwOM
-CFNlbGVjdGVklEsBdXViZXUu
+ZXOUfZQojApjb25kaXRpb25zlF2UKIwHc3RvcnlpZJRLAUsAXZSMAJRhdJRhaAhLAnWMCmF0dHJp
+YnV0ZXOUfZSMCmZyZXEgLSBTdW2USwJzjAVtZXRhc5R9lChoFEsBjAhjYXRlZ29yeZRLA3V1YmgN
+KYGUfZQoaBB9lChoEl2UKGgUSwFLAF2UaBZhdJRhaAhLAnVoGH2UjApmcmVxIC0gU3VtlEsCc2gb
+fZQoaBRLAYwOY2xhc3NpZmljYXRpb26USwFoHUsDdXViaA0pgZR9lChoEH2UKGgSXZQoaBRLAUsA
+XZRoFmF0lGFoCEsCdWgYfZSMCmZyZXEgLSBTdW2USwJzaBt9lChoFEsBaCdLAXV1YmgNKYGUfZQo
+aBB9lChoEl2UKGgUSwFLAF2UaBZhdJRhaAhLAnVoGH2UjApmcmVxIC0gU3VtlEsCc2gbfZQojBZj
+YXRlZ29yeSAtIENvbmNhdGVuYXRllEsDaBRLAWgnSwF1dWJoDSmBlH2UKGgQfZQoaBJdlChoFEsB
+SwBdlGgWYXSUYWgISwJ1aBh9lCiMCmZyZXEgLSBTdW2USwKMFWNsYXNzaWZpY2F0aW9uIC0gTW9k
+ZZRLAXVoG32UKIwWY2F0ZWdvcnkgLSBDb25jYXRlbmF0ZZRLA2gUSwFoJ0sBdXViaA0pgZR9lCho
+EH2UKGgSXZQoaBRLAUsAXZRoFmF0lGFoCEsCdWgYfZQojAtmcmVxIC0gTWVhbpRLAowKZnJlcSAt
+IFN1bZRLAowVY2xhc3NpZmljYXRpb24gLSBNb2RllEsBdWgbfZQojBZjYXRlZ29yeSAtIENvbmNh
+dGVuYXRllEsDaBRLAWgnSwF1dWJoDSmBlH2UKGgQfZQoaBJdlChoFEsBSwBdlGgWYXSUYWgISwJ1
+aBh9lCiMC2ZyZXEgLSBNZWFulEsCjBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1aBt9lCiMFmNh
+dGVnb3J5IC0gQ29uY2F0ZW5hdGWUSwNoFEsBaCdLAXV1YmgNKYGUfZQoaBB9lChoEl2UKGgUSwFL
+AF2UaBZhdJRhaAhLAnVoGH2UKIwRc2VnbWVudF9pZCAtIE1vZGWUSwGMC2ZyZXEgLSBNZWFulEsC
+jBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1aBt9lCiMFmNhdGVnb3J5IC0gQ29uY2F0ZW5hdGWU
+SwNoFEsBaCdLAXV1YmgNKYGUfZQoaBB9lCiMCmNvbmRpdGlvbnOUXZQojAdzdG9yeWlklEsBSwBd
+lGgWYXSUYWgISwJ1aBh9lIwMZnJlcSAtIENvdW50lEsCc2gbfZRobksBc3ViaA0pgZR9lChoEH2U
+KGgSXZQojA5zdG9yeWlkIC0gTW9kZZRLAUsAXZRoFmF0lGFoCEsCdWgYfZQoaHhLAYwRc2VnbWVu
+dF9pZCAtIE1vZGWUSwGMC2ZyZXEgLSBNZWFulEsCjBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1
+aBt9lCiMFmNhdGVnb3J5IC0gQ29uY2F0ZW5hdGWUSwNoFEsBaCdLAXV1YmgNKYGUfZQoaBB9lCho
+El2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2UKGiFSwGMEXNlZ21lbnRf
+aWQgLSBNb2RllEsBjAtmcmVxIC0gTWVhbpRLAowVY2xhc3NpZmljYXRpb24gLSBNb2RllEsBdWgb
+fZQojBZjYXRlZ29yeSAtIENvbmNhdGVuYXRllEsDaBRLAXV1YmgNKYGUfZQoaBB9lChoEl2UKIwO
+c3RvcnlpZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2UKGiSSwGMEXNlZ21lbnRfaWQgLSBN
+b2RllEsBjAtmcmVxIC0gTWVhbpRLAowVY2xhc3NpZmljYXRpb24gLSBNb2RllEsBdWgbfZQojBZj
+YXRlZ29yeSAtIENvbmNhdGVuYXRllEsDaB1LA3V1YmgNKYGUfZQoaBB9lChobF2UKIwOc3Rvcnlp
+ZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2UKIwRc2VnbWVudF9pZCAtIE1vZGWUSwFon0sB
+jA9jYXRlZ29yeSAtIE1vZGWUSwGMCmZyZXEgLSBTdW2USwKMFWNsYXNzaWZpY2F0aW9uIC0gTW9k
+ZZRLAXVoG32UKGhuSwGMCGNhdGVnb3J5lEsBdXViaA0pgZR9lChoEH2UKGhsXZQoaKhLAUsCXZQo
+jA5DaXJjdW1zdGFudGlhbJSMCENyZWF0aXZllIwHRW1vdGl2ZZSMC0V4aXN0ZW50aWFslIwITWF0
+ZXJpYWyUjAZNZW50YWyUjApSZWxhdGlvbmFslIwGVmVyYmFslGV0lGFoCEsCdWgYfZSMCmZyZXEg
+LSBTdW2USwJzaBt9lChobksBaKhLAXV1YmgNKYGUfZQoaBB9lChobF2UKIwKZnJlcSAtIFN1bZRL
+AksAXZRHAAAAAAAAAABhdJRhaAhLAnVoGH2UaL5LAnNoG32UaG5LAXN1YmgNKYGUfZQoaBB9lCho
+bF2UKIwKZnJlcSAtIFN1bZRLAksAXZRHAAAAAAAAAABhdJRhaAhLAnVoGH2UaMdLAnNoG32UjARm
+cmVxlEsCc3ViaA0pgZR9lChoEH2UKGhsXZQojBBjYXRlZ29yeSAtIENvdW50lEsCSwBdlEcAAAAA
+AAAAAGF0lGFoCEsCdWgYfZQoaNFLAowKZnJlcSAtIFN1bZRLAnVoG32UaMxLAnN1YmgNKYGUfZQo
+aBB9lChobF2UKIwQY2F0ZWdvcnkgLSBDb3VudJRLAksAXZRHAAAAAAAAAABhdJRhaAhLAnVoGH2U
+aNtLAnNoG32UaMxLAnN1YmgNKYGUfZQoaBB9lChobF2UKGioSwFLAl2UKGiuaK9osGixaLJos2i0
+aLVldJRhaAhLAnVoGH2UjBBjYXRlZ29yeSAtIENvdW50lEsCc2gbfZQoaG5LAWioSwF1dWJoDSmB
+lH2UKGgQfZQoaGxdlChoqEsBSwJdlChormivaLBosWiyaLNotGi1ZXSUYWgISwJ1aBh9lChobksB
+jApzZWdtZW50X2lklEsBaKhLAWjMSwKMDmNsYXNzaWZpY2F0aW9ulEsBdWgbfZR1YmgNKYGUfZQo
+aBB9lChobF2UKGioSwFLAl2UKGiuaK9osGixaLJos2i0aLVldJRhaAhLAnVoGH2UaBt9lChobksB
+aKhLAXV1YmgNKYGUfZQoaBB9lChobF2UKGioSwFLAl2UKGiuaK9osGixaLJos2i0aLVldJRhaAhL
+AnVoGH2UjAxmcmVxIC0gQ291bnSUSwJzaBt9lChobksBaKhLAXV1YmgNKYGUfZQoaBB9lChobF2U
+KGioSwFLAl2UKGiuaK9osGixaLJos2i0aLVldJRhaAhLAnVoGH2UjAxmcmVxIC0gQ291bnSUSwJz
+aBt9lGioSwFzdWJoDSmBlH2UKGgQfZQoaGxdlChoqEsBSwJdlChormivaLBosWiyaLNotGi1ZXSU
+YWgISwJ1aBh9lCiMEGNhdGVnb3J5IC0gQ291bnSUSwKMDGZyZXEgLSBDb3VudJRLAnVoG32UKGhu
+SwFoqEsBdXViaA0pgZR9lChoEH2UKGhsXZQoaKhLAUsCXZQoaK5or2iwaLFosmizaLRotWV0lGFo
+CEsCdWgYfZSMD2NhdGVnb3J5IC0gTW9kZZRLAXNoG32UKGhuSwFoqEsBdXViaA0pgZR9lChoEH2U
+KGhsXZQoaKhLAUsCXZQoaK5or2iwaLFosmizaLRotWV0lGFoCEsCdWgYfZQojA9jYXRlZ29yeSAt
+IE1vZGWUSwGMFWNsYXNzaWZpY2F0aW9uIC0gTW9kZZRLAXVoG32UKGhuSwFoqEsBdXViaA0pgZR9
+lChoEH2UKGhsXZQoaKhLAUsCXZQoaK5or2iwaLFosmizaLRotWV0lGFoCEsCdWgYfZQojA9jYXRl
+Z29yeSAtIE1vZGWUSwGMCmZyZXEgLSBTdW2USwKMFWNsYXNzaWZpY2F0aW9uIC0gTW9kZZRLAXVo
+G32UKGhuSwFoqEsBdXViaA0pgZR9lChoEH2UKGhsXZQoaKhLAUsCXZQoaK5or2iwaLFosmizaLRo
+tWV0lGFoCEsCdWgYfZQojBFzZWdtZW50X2lkIC0gTW9kZZRLAYwPY2F0ZWdvcnkgLSBNb2RllEsB
+jApmcmVxIC0gU3VtlEsCjBVjbGFzc2lmaWNhdGlvbiAtIE1vZGWUSwF1aBt9lChobksBaKhLAXV1
+YmgNKYGUfZQoaBB9lChobF2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2U
+KIwOc3RvcnlpZCAtIE1vZGWUSwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9yYXdfZnJlcSAtIE1l
+YW6USwKMEHN1YmpfZnJlcSAtIE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKMFHByb21pbmVuY2Vf
+c2YgLSBNZWFulEsCdWgbfZQojBljdXN0b21fd29yZCAtIENvbmNhdGVuYXRllEsDaG5LAXV1YmgN
+KYGUfZQoaBB9lChobF2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2UKGpV
+AQAASwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9yYXdfZnJlcSAtIE1lYW6USwKMEHN1YmpfZnJl
+cSAtIE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKMFHByb21pbmVuY2Vfc2YgLSBNZWFulEsCdWgb
+fZQojBljdXN0b21fd29yZCAtIENvbmNhdGVuYXRllEsDjAtjdXN0b21fd29yZJRLA3V1YmgNKYGU
+fZQoaBB9lChobF2UKIwOc3RvcnlpZCAtIE1vZGWUSwFLAF2UaBZhdJRhaAhLAnVoGH2UKGplAQAA
+SwGMEXNlZ21lbnRfaWQgLSBNb2RllEsBjA9yYXdfZnJlcSAtIE1lYW6USwKMEHN1YmpfZnJlcSAt
+IE1lYW6USwKMDWFnZW5jeSAtIE1lYW6USwKMFHByb21pbmVuY2Vfc2YgLSBNZWFulEsCjA9TZWxl
+Y3RlZCAtIE1vZGWUSwF1aBt9lCiMGWN1c3RvbV93b3JkIC0gQ29uY2F0ZW5hdGWUSwOMCFNlbGVj
+dGVklEsBdXViZXUu
 </properties>
-		<properties node_id="13" format="pickle">gASVWAsAAAAAAAB9lCiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjAxyZWNlbnRfcGF0aHOUXZQojB5v
+		<properties node_id="13" format="pickle">gASVwAsAAAAAAAB9lCiMEmNvbnRyb2xBcmVhVmlzaWJsZZSIjAxyZWNlbnRfcGF0aHOUXZQojB5v
 cmFuZ2V3aWRnZXQudXRpbHMuZmlsZWRpYWxvZ3OUjApSZWNlbnRQYXRolJOUKYGUfZQojAdhYnNw
-YXRolIxfQzovUHJvamVjdHMvTmF2aWdhdGluZ1N0b3JpZXMvaXNzdWVzL29yYW5nZS1zdG9yeS1u
-YXZpZ2F0b3IvZGF0YS9kdXRjaF9oYWxsaWRheV9hY3Rpb25fbGlzdC5jc3aUjAZwcmVmaXiUTowH
-cmVscGF0aJROjAV0aXRsZZSMAJSMBXNoZWV0lGgOjAtmaWxlX2Zvcm1hdJROdWJoBimBlH2UKGgJ
-jFdDOi9Qcm9qZWN0cy9OYXZpZ2F0aW5nU3Rvcmllcy9pc3N1ZXMvb3JhbmdlLXN0b3J5LW5hdmln
-YXRvci9kYXRhL2RpY3Rfc2luZ2xlX2NvbHVtbi5jc3aUaAtOaAxOaA1oDmgPaA5oEIwYT3Jhbmdl
-LmRhdGEuaW8uQ1NWUmVhZGVylHViaAYpgZR9lChoCYxZQzovUHJvamVjdHMvTmF2aWdhdGluZ1N0
-b3JpZXMvb3JhbmdlLXN0b3J5LW5hdmlnYXRvci9kYXRhMi9kdXRjaF9oYWxsaWRheV9hY3Rpb25f
-bGlzdC5jc3aUaAtOaAxOaA1oDmgPaA5oEE51YmgGKYGUfZQoaAmMbEM6L1Byb2plY3RzL05hdmln
-YXRpbmdTdG9yaWVzL2lzc3Vlcy9vcmFuZ2Utc3RvcnktbmF2aWdhdG9yLy52ZW52L0xpYi9zaXRl
-LXBhY2thZ2VzL09yYW5nZS9kYXRhc2V0cy9pcmlzLnRhYpRoC4wPc2FtcGxlLWRhdGFzZXRzlGgM
-jAhpcmlzLnRhYpRoDWgOaA9oDmgQTnViaAYpgZR9lChoCYxvQzovUHJvamVjdHMvTmF2aWdhdGlu
-Z1N0b3JpZXMvaXNzdWVzL29yYW5nZS1zdG9yeS1uYXZpZ2F0b3IvLnZlbnYvTGliL3NpdGUtcGFj
-a2FnZXMvT3JhbmdlL2RhdGFzZXRzL3RpdGFuaWMudGFilGgLaBtoDIwLdGl0YW5pYy50YWKUaA1o
-DmgPaA5oEE51YmgGKYGUfZQoaAmMb0M6L1Byb2plY3RzL05hdmlnYXRpbmdTdG9yaWVzL2lzc3Vl
-cy9vcmFuZ2Utc3RvcnktbmF2aWdhdG9yLy52ZW52L0xpYi9zaXRlLXBhY2thZ2VzL09yYW5nZS9k
-YXRhc2V0cy9ob3VzaW5nLnRhYpRoC2gbaAyMC2hvdXNpbmcudGFilGgNaA5oD2gOaBBOdWJoBimB
-lH2UKGgJjHVDOi9Qcm9qZWN0cy9OYXZpZ2F0aW5nU3Rvcmllcy9pc3N1ZXMvb3JhbmdlLXN0b3J5
-LW5hdmlnYXRvci8udmVudi9MaWIvc2l0ZS1wYWNrYWdlcy9PcmFuZ2UvZGF0YXNldHMvaGVhcnRf
-ZGlzZWFzZS50YWKUaAtoG2gMjBFoZWFydF9kaXNlYXNlLnRhYpRoDWgOaA9oDmgQTnViaAYpgZR9
-lChoCYx2QzovUHJvamVjdHMvTmF2aWdhdGluZ1N0b3JpZXMvaXNzdWVzL29yYW5nZS1zdG9yeS1u
-YXZpZ2F0b3IvLnZlbnYvTGliL3NpdGUtcGFja2FnZXMvT3JhbmdlL2RhdGFzZXRzL2Jyb3duLXNl
-bGVjdGVkLnRhYpRoC2gbaAyMEmJyb3duLXNlbGVjdGVkLnRhYpRoDWgOaA9oDmgQTnViaAYpgZR9
-lChoCYxrQzovUHJvamVjdHMvTmF2aWdhdGluZ1N0b3JpZXMvaXNzdWVzL29yYW5nZS1zdG9yeS1u
-YXZpZ2F0b3IvLnZlbnYvTGliL3NpdGUtcGFja2FnZXMvT3JhbmdlL2RhdGFzZXRzL3pvby50YWKU
-aAtoG2gMjAd6b28udGFilGgNaA5oD2gOaBBOdWJljAtyZWNlbnRfdXJsc5RdlIwTc2F2ZWRXaWRn
-ZXRHZW9tZXRyeZRDQgHZ0MsAAwAAAAADwQAAAcsAAAZAAAAD9AAAA8EAAAHLAAAGQAAAA/QAAAAA
-AAAAAAoAAAADwQAAAcsAAAZAAAAD9JSMC3NoZWV0X25hbWVzlH2UjAZzb3VyY2WUSwCMA3VybJRo
-DowNZG9tYWluX2VkaXRvcpR9lIwLX192ZXJzaW9uX1+USwGMEGNvbnRleHRfc2V0dGluZ3OUXZSM
-FW9yYW5nZXdpZGdldC5zZXR0aW5nc5SMB0NvbnRleHSUk5QpgZR9lCiMBnZhbHVlc5R9lCiMCXZh
-cmlhYmxlc5RdlGg5fZRoRV2UKF2UKIwFcmVhbG2UjBRPcmFuZ2UuZGF0YS52YXJpYWJsZZSMEERp
-c2NyZXRlVmFyaWFibGWUk5RLAIwVQmVpbmcsIERvaW5nLCBTZW5zaW5nlIllXZQojAdwcm9jZXNz
-lGhNSwCMPUJlaGF2aW9yYWwsIEV4aXN0ZW50aWFsLCBNYXRlcmlhbCwgTWVudGFsLCBSZWxhdGlv
-bmFsLCBWZXJiYWyUiWVdlCiMBnByb3N1YpRoTUsAjIRCZWhhdmlvcmFsLCBFeGlzdGVudGlhbCwg
-TWF0ZXJpYWwsIE1lbnRhbDogQ29nbml0aXZlLCBNZW50YWw6IERlc2lkZXJhdGl2ZSwgTWVudGFs
-OiBFbW90aXZlLCBNZW50YWw6IFBlcnNwZWN0aXZlLCBSZWxhdGlvbmFsLCBWZXJiYWyUiWVdlCiM
-A3N1YpRoTUsAjLNBY3RzIHZlcmJhbGx5LCBCb2RpbHkgcG9zdHVyZXMsIENpcmN1bXN0YW50aWFs
-LCBDb2duaXRpdmUsIENyZWF0aXZlLCBEZXNpZGVyYXRpdmUsIERpc3Bvc2l0aXZlLCBFbW90aXZl
-LCBFeGlzdGVudGlhbCwgSW50ZW5zaXZlLCBQZXJzcGVjdGl2ZSwgUGh5c2lvbG9naWNhbCwgUG9z
-c2Vzc2l2ZSwgVmVyYmFsIGFjdJSJZV2UKIwEd29yZJRoS4wOU3RyaW5nVmFyaWFibGWUk5RLAmgO
-iWVlc2g7SwF1jAphdHRyaWJ1dGVzlCiMBXJlYWxtlF2UKIwFQmVpbmeUjAVEb2luZ5SMB1NlbnNp
-bmeUZYaUjAdwcm9jZXNzlF2UKIwKQmVoYXZpb3JhbJSMC0V4aXN0ZW50aWFslIwITWF0ZXJpYWyU
-jAZNZW50YWyUjApSZWxhdGlvbmFslIwGVmVyYmFslGWGlIwGcHJvc3VilF2UKIwKQmVoYXZpb3Jh
-bJSMC0V4aXN0ZW50aWFslIwITWF0ZXJpYWyUjBFNZW50YWw6IENvZ25pdGl2ZZSMFE1lbnRhbDog
-RGVzaWRlcmF0aXZllIwPTWVudGFsOiBFbW90aXZllIwTTWVudGFsOiBQZXJzcGVjdGl2ZZSMClJl
-bGF0aW9uYWyUjAZWZXJiYWyUZYaUjANzdWKUXZQojA1BY3RzIHZlcmJhbGx5lIwPQm9kaWx5IHBv
-c3R1cmVzlIwOQ2lyY3Vtc3RhbnRpYWyUjAlDb2duaXRpdmWUjAhDcmVhdGl2ZZSMDERlc2lkZXJh
-dGl2ZZSMC0Rpc3Bvc2l0aXZllIwHRW1vdGl2ZZSMC0V4aXN0ZW50aWFslIwJSW50ZW5zaXZllIwL
-UGVyc3BlY3RpdmWUjA1QaHlzaW9sb2dpY2FslIwKUG9zc2Vzc2l2ZZSMClZlcmJhbCBhY3SUZYaU
-dJSMBW1ldGFzlIwEd29yZJRLA4aUhZSMCmNsYXNzX3ZhcnOUKYwSbW9kaWZpZWRfdmFyaWFibGVz
-lF2UdWJhdS4=
+YXRolIyEL2hvbWUvZXJpa3QvcHJvamVjdHMvbmF2aWdhdGluZ3N0b3JpZXMvb3JhbmdlLXN0b3J5
+LW5hdmlnYXRvci9vcmFuZ2Vjb250cmliL3N0b3J5bmF2aWdhdGlvbi9yZXNvdXJjZXMvZHV0Y2hf
+aGFsbGlkYXlfYWN0aW9uX2xpc3QuY3N2lIwGcHJlZml4lE6MB3JlbHBhdGiUTowFdGl0bGWUjACU
+jAVzaGVldJRoDowLZmlsZV9mb3JtYXSUTnViaAYpgZR9lChoCYxfQzovUHJvamVjdHMvTmF2aWdh
+dGluZ1N0b3JpZXMvaXNzdWVzL29yYW5nZS1zdG9yeS1uYXZpZ2F0b3IvZGF0YS9kdXRjaF9oYWxs
+aWRheV9hY3Rpb25fbGlzdC5jc3aUaAtOaAxOaA1oDmgPaA5oEE51YmgGKYGUfZQoaAmMV0M6L1By
+b2plY3RzL05hdmlnYXRpbmdTdG9yaWVzL2lzc3Vlcy9vcmFuZ2Utc3RvcnktbmF2aWdhdG9yL2Rh
+dGEvZGljdF9zaW5nbGVfY29sdW1uLmNzdpRoC05oDE5oDWgOaA9oDmgQjBhPcmFuZ2UuZGF0YS5p
+by5DU1ZSZWFkZXKUdWJoBimBlH2UKGgJjFlDOi9Qcm9qZWN0cy9OYXZpZ2F0aW5nU3Rvcmllcy9v
+cmFuZ2Utc3RvcnktbmF2aWdhdG9yL2RhdGEyL2R1dGNoX2hhbGxpZGF5X2FjdGlvbl9saXN0LmNz
+dpRoC05oDE5oDWgOaA9oDmgQTnViaAYpgZR9lChoCYxiL2hvbWUvZXJpa3QvcHJvamVjdHMvbmF2
+aWdhdGluZ3N0b3JpZXMvdmVudjMvbGliL3B5dGhvbjMuMTAvc2l0ZS1wYWNrYWdlcy9PcmFuZ2Uv
+ZGF0YXNldHMvaXJpcy50YWKUaAuMD3NhbXBsZS1kYXRhc2V0c5RoDIwIaXJpcy50YWKUaA1oDmgP
+aA5oEE51YmgGKYGUfZQoaAmMZS9ob21lL2VyaWt0L3Byb2plY3RzL25hdmlnYXRpbmdzdG9yaWVz
+L3ZlbnYzL2xpYi9weXRob24zLjEwL3NpdGUtcGFja2FnZXMvT3JhbmdlL2RhdGFzZXRzL3RpdGFu
+aWMudGFilGgLaB5oDIwLdGl0YW5pYy50YWKUaA1oDmgPaA5oEE51YmgGKYGUfZQoaAmMZS9ob21l
+L2VyaWt0L3Byb2plY3RzL25hdmlnYXRpbmdzdG9yaWVzL3ZlbnYzL2xpYi9weXRob24zLjEwL3Np
+dGUtcGFja2FnZXMvT3JhbmdlL2RhdGFzZXRzL2hvdXNpbmcudGFilGgLaB5oDIwLaG91c2luZy50
+YWKUaA1oDmgPaA5oEE51YmgGKYGUfZQoaAmMay9ob21lL2VyaWt0L3Byb2plY3RzL25hdmlnYXRp
+bmdzdG9yaWVzL3ZlbnYzL2xpYi9weXRob24zLjEwL3NpdGUtcGFja2FnZXMvT3JhbmdlL2RhdGFz
+ZXRzL2hlYXJ0X2Rpc2Vhc2UudGFilGgLaB5oDIwRaGVhcnRfZGlzZWFzZS50YWKUaA1oDmgPaA5o
+EE51YmgGKYGUfZQoaAmMbC9ob21lL2VyaWt0L3Byb2plY3RzL25hdmlnYXRpbmdzdG9yaWVzL3Zl
+bnYzL2xpYi9weXRob24zLjEwL3NpdGUtcGFja2FnZXMvT3JhbmdlL2RhdGFzZXRzL2Jyb3duLXNl
+bGVjdGVkLnRhYpRoC2geaAyMEmJyb3duLXNlbGVjdGVkLnRhYpRoDWgOaA9oDmgQTnViaAYpgZR9
+lChoCYxhL2hvbWUvZXJpa3QvcHJvamVjdHMvbmF2aWdhdGluZ3N0b3JpZXMvdmVudjMvbGliL3B5
+dGhvbjMuMTAvc2l0ZS1wYWNrYWdlcy9PcmFuZ2UvZGF0YXNldHMvem9vLnRhYpRoC2geaAyMB3pv
+by50YWKUaA1oDmgPaA5oEE51YmWMC3JlY2VudF91cmxzlF2UjBNzYXZlZFdpZGdldEdlb21ldHJ5
+lENCAdnQywADAAAAAAJdAAABAAAABNwAAANFAAACXQAAAQAAAATcAAADRQAAAAAAAAAAB4AAAAJd
+AAABAAAABNwAAANFlIwLc2hlZXRfbmFtZXOUfZSMBnNvdXJjZZRLAIwDdXJslGgOjA1kb21haW5f
+ZWRpdG9ylH2UjAtfX3ZlcnNpb25fX5RLAYwQY29udGV4dF9zZXR0aW5nc5RdlIwVb3Jhbmdld2lk
+Z2V0LnNldHRpbmdzlIwHQ29udGV4dJSTlCmBlH2UKIwGdmFsdWVzlH2UKIwJdmFyaWFibGVzlF2U
+aDx9lGhIXZQoXZQojAVyZWFsbZSMFE9yYW5nZS5kYXRhLnZhcmlhYmxllIwQRGlzY3JldGVWYXJp
+YWJsZZSTlEsAjBVCZWluZywgRG9pbmcsIFNlbnNpbmeUiWVdlCiMB3Byb2Nlc3OUaFBLAIw9QmVo
+YXZpb3JhbCwgRXhpc3RlbnRpYWwsIE1hdGVyaWFsLCBNZW50YWwsIFJlbGF0aW9uYWwsIFZlcmJh
+bJSJZV2UKIwGcHJvc3VilGhQSwCMhEJlaGF2aW9yYWwsIEV4aXN0ZW50aWFsLCBNYXRlcmlhbCwg
+TWVudGFsOiBDb2duaXRpdmUsIE1lbnRhbDogRGVzaWRlcmF0aXZlLCBNZW50YWw6IEVtb3RpdmUs
+IE1lbnRhbDogUGVyc3BlY3RpdmUsIFJlbGF0aW9uYWwsIFZlcmJhbJSJZV2UKIwDc3VilGhQSwCM
+s0FjdHMgdmVyYmFsbHksIEJvZGlseSBwb3N0dXJlcywgQ2lyY3Vtc3RhbnRpYWwsIENvZ25pdGl2
+ZSwgQ3JlYXRpdmUsIERlc2lkZXJhdGl2ZSwgRGlzcG9zaXRpdmUsIEVtb3RpdmUsIEV4aXN0ZW50
+aWFsLCBJbnRlbnNpdmUsIFBlcnNwZWN0aXZlLCBQaHlzaW9sb2dpY2FsLCBQb3NzZXNzaXZlLCBW
+ZXJiYWwgYWN0lIllXZQojAR3b3JklGhOjA5TdHJpbmdWYXJpYWJsZZSTlEsCaA6JZWVzaD5LAXWM
+CmF0dHJpYnV0ZXOUKIwFcmVhbG2UXZQojAVCZWluZ5SMBURvaW5nlIwHU2Vuc2luZ5RlhpSMB3By
+b2Nlc3OUXZQojApCZWhhdmlvcmFslIwLRXhpc3RlbnRpYWyUjAhNYXRlcmlhbJSMBk1lbnRhbJSM
+ClJlbGF0aW9uYWyUjAZWZXJiYWyUZYaUjAZwcm9zdWKUXZQojApCZWhhdmlvcmFslIwLRXhpc3Rl
+bnRpYWyUjAhNYXRlcmlhbJSMEU1lbnRhbDogQ29nbml0aXZllIwUTWVudGFsOiBEZXNpZGVyYXRp
+dmWUjA9NZW50YWw6IEVtb3RpdmWUjBNNZW50YWw6IFBlcnNwZWN0aXZllIwKUmVsYXRpb25hbJSM
+BlZlcmJhbJRlhpSMA3N1YpRdlCiMDUFjdHMgdmVyYmFsbHmUjA9Cb2RpbHkgcG9zdHVyZXOUjA5D
+aXJjdW1zdGFudGlhbJSMCUNvZ25pdGl2ZZSMCENyZWF0aXZllIwMRGVzaWRlcmF0aXZllIwLRGlz
+cG9zaXRpdmWUjAdFbW90aXZllIwLRXhpc3RlbnRpYWyUjAlJbnRlbnNpdmWUjAtQZXJzcGVjdGl2
+ZZSMDVBoeXNpb2xvZ2ljYWyUjApQb3NzZXNzaXZllIwKVmVyYmFsIGFjdJRlhpR0lIwFbWV0YXOU
+jAR3b3JklEsDhpSFlIwKY2xhc3NfdmFyc5QpjBJtb2RpZmllZF92YXJpYWJsZXOUXZR1YmF1Lg==
 </properties>
-		<properties node_id="14" format="literal">{'autocommit': True, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x05\x00\x00\x00\x01\xf6\x00\x00\x07\x81\x00\x00\x03\xf5\x00\x00\x05\x01\x00\x00\x02\x15\x00\x00\x07\x80\x00\x00\x03\xf4\x00\x00\x00\x00\x00\x00\x00\x00\n\x00\x00\x00\x05\x01\x00\x00\x02\x15\x00\x00\x07\x80\x00\x00\x03\xf4', '__version__': 2, 'context_settings': []}</properties>
+		<properties node_id="14" format="literal">{'autocommit': True, 'controlAreaVisible': True, 'savedWidgetGeometry': b'\x01\xd9\xd0\xcb\x00\x03\x00\x00\x00\x00\x02]\x00\x00\x01\x1e\x00\x00\x04\xdc\x00\x00\x02\xfd\x00\x00\x02]\x00\x00\x01\x1e\x00\x00\x04\xdc\x00\x00\x02\xfd\x00\x00\x00\x00\x00\x00\x00\x00\x07\x80\x00\x00\x02]\x00\x00\x01\x1e\x00\x00\x04\xdc\x00\x00\x02\xfd', 'use_infinitives': False, '__version__': 2, 'context_settings': []}</properties>
 		<properties node_id="15" format="pickle">gASVEwEAAAAAAAB9lCiMB2FsbF9wb3OUiYwKYXV0b2NvbW1pdJSIjBJjb250cm9sQXJlYVZpc2li
 bGWUiIwGY3VzdG9tlImMBW5vdW5zlImME3NhdmVkV2lkZ2V0R2VvbWV0cnmUQ0IB2dDLAAMAAAAA
 A8EAAAHnAAAGQAAAA8YAAAPBAAAB5wAABkAAAAPGAAAAAAAAAAAKAAAAA8EAAAHnAAAGQAAAA8aU

@@ -1,6 +1,7 @@
 """ Utility function module 
 """
 from bs4 import BeautifulSoup
+from Orange.data import ContinuousVariable, DiscreteVariable, StringVariable
 import re
 import spacy
 import os
@@ -230,17 +231,26 @@ def convert_orangetable_to_dataframe(table):
         return pd.DataFrame([], columns=['storyid', 'sentence_id', 'token_start_idx', 'spacy_head_idx', 'sentence'])
 
     # Extract attribute names, class variable name, and meta attribute names
-    column_names = [var.name for var in table.domain.variables]
+    continuous_names = [var.name for var in table.domain.variables if isinstance(var, ContinuousVariable)]
+    discrete_names = [var.name for var in table.domain.variables if not isinstance(var, ContinuousVariable)]
     meta_names = [meta.name for meta in table.domain.metas]
 
-    # Combine attribute and meta names
-    all_column_names = column_names + meta_names
-
-    # Create a list of lists representing the data
-    data = [[str(entry[var]) for var in table.domain.variables + table.domain.metas] for entry in table]
-
     # Convert to a pandas DataFrame
-    df = pd.DataFrame(data, columns=all_column_names)
+    df_continuous = pd.DataFrame([[entry[var.name] 
+                                   for var in table.domain.attributes
+                                   if isinstance(var, ContinuousVariable)] 
+                                  for entry in table], 
+                                 columns=continuous_names)
+    df_discrete = pd.DataFrame([[str(entry[var.name]) 
+                                 for var in table.domain.attributes
+                                 if not isinstance(var, ContinuousVariable)] 
+                                for entry in table], 
+                               columns=discrete_names)
+    df_metas = pd.DataFrame([[str(entry[var.name]) 
+                              for var in table.domain.metas] 
+                             for entry in table], 
+                            columns=meta_names)
+    df = pd.concat([df_continuous, df_discrete, df_metas], axis=1)
 
     return df
 

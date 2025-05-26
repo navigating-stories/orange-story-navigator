@@ -175,81 +175,85 @@ class OWSNTagger(OWWidget, ConcurrentWidgetMixin):
         self.Warning.clear()
 
     def on_done(self, result) -> None:
-        # specify domain for columns in tagger output
-        tagging_domain = Domain(
-            attributes=[
-                ContinuousVariable("storyid"),
-                ContinuousVariable("token_start_idx"),
-                ContinuousVariable("token_end_idx"),
-                ContinuousVariable("spacy_head_idx"),
-                ContinuousVariable("associated_action_idx"),
-                ContinuousVariable("sentence_id"),
-                ContinuousVariable("segment_id"),
-                ContinuousVariable("num_words_in_sentence"),
-                DiscreteVariable.make("story_navigator_tag",
-                    values=self.tagger.complete_data_df["story_navigator_tag"].astype(str).unique()),
-                DiscreteVariable.make("spacy_tag",
-                    values=self.tagger.complete_data_df["spacy_tag"].astype(str).unique()),
-                DiscreteVariable.make("spacy_finegrained_tag",
-                    values=self.tagger.complete_data_df["spacy_finegrained_tag"].astype(str).unique()),
-                DiscreteVariable.make("spacy_dependency",
-                    values=self.tagger.complete_data_df["spacy_dependency"].astype(str).unique()),
-                DiscreteVariable.make("spacy_ne",
-                    values=self.tagger.complete_data_df["spacy_ne"].astype(str).unique()),
-                DiscreteVariable.make("is_pronoun_boolean",
-                    values=["0", "1"]),
-                DiscreteVariable.make("is_sentence_subject_boolean",
-                    values=["0", "1"]),
-                DiscreteVariable.make("active_voice_subject_boolean",
-                    values=["0", "1"]),
-                DiscreteVariable.make("voice",
-                    values=["ACTIVE", "PASSIVE"]),
-                DiscreteVariable.make("future_verb",
-                    values=["-", "FUTURE_VB"]),
-                DiscreteVariable.make("lang",
-                    values=["en", "nl"]),
-            ],
-            class_vars=[],
-            metas=[
-                StringVariable("sentence"),
-                StringVariable("token_text"),
-                StringVariable("spacy_lemma"),
-                StringVariable("space_head_text"),
-                StringVariable("associated_action"),
-                StringVariable("token_text_lowercase"),
-                StringVariable("associated_action_lowercase"),
-            ]
-        )
-
-        #self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data_df))
-        # order of columns in second Table.from_list data should be same as in domain definition
-        complete_data_df = self.tagger.complete_data_df[["storyid",
-                                                         "token_start_idx",
-                                                         "token_end_idx",
-                                                         "spacy_head_idx",
-                                                         "associated_action_idx",
-                                                         "sentence_id",
-                                                         "segment_id",
-                                                         "num_words_in_sentence",
-                                                         "story_navigator_tag",
-                                                         "spacy_tag",
-                                                         "spacy_finegrained_tag",
-                                                         "spacy_dependency",
-                                                         "spacy_ne",
-                                                         "is_pronoun_boolean",
-                                                         "is_sentence_subject_boolean",
-                                                         "active_voice_subject_boolean",
-                                                         "voice",
-                                                         "future_verb",
-                                                         "lang",
-                                                         "sentence",
-                                                         "token_text",
-                                                         "spacy_lemma",
-                                                         "spacy_head_text",
-                                                         "associated_action",
-                                                         "token_text_lowercase",
-                                                         "associated_action_lowercase"]]
-        self.Outputs.dataset_level_data.send(Table.from_list(tagging_domain, complete_data_df.values.tolist()))
+        if "token_text_lowercase" not in self.tagger.complete_data_df.columns:
+            # custom word list added: column names unknown: cannot define domain?
+            self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data_df))
+        else:
+            # specify domain for columns in tagger output
+            tagging_domain = Domain(
+                attributes=[
+                    ContinuousVariable("storyid"),
+                    ContinuousVariable("token_start_idx"),
+                    ContinuousVariable("token_end_idx"),
+                    ContinuousVariable("spacy_head_idx"),
+                    ContinuousVariable("associated_action_idx"),
+                    ContinuousVariable("sentence_id"),
+                    ContinuousVariable("segment_id"),
+                    ContinuousVariable("num_words_in_sentence"),
+                    DiscreteVariable.make("story_navigator_tag",
+                        values=self.tagger.complete_data_df["story_navigator_tag"].astype(str).unique()),
+                    DiscreteVariable.make("spacy_tag",
+                        values=self.tagger.complete_data_df["spacy_tag"].astype(str).unique()),
+                    DiscreteVariable.make("spacy_finegrained_tag",
+                        values=self.tagger.complete_data_df["spacy_finegrained_tag"].astype(str).unique()),
+                    DiscreteVariable.make("spacy_dependency",
+                        values=self.tagger.complete_data_df["spacy_dependency"].astype(str).unique()),
+                    DiscreteVariable.make("spacy_ne",
+                        values=self.tagger.complete_data_df["spacy_ne"].astype(str).unique()),
+                    DiscreteVariable.make("is_pronoun_boolean",
+                        values=["0", "1"]),
+                    DiscreteVariable.make("is_sentence_subject_boolean",
+                        values=["0", "1"]),
+                    DiscreteVariable.make("active_voice_subject_boolean",
+                        values=["0", "1"]),
+                    DiscreteVariable.make("voice",
+                        values=["ACTIVE", "PASSIVE"]),
+                    DiscreteVariable.make("future_verb",
+                        values=["-", "FUTURE_VB"]),
+                    DiscreteVariable.make("lang",
+                        values=["en", "nl"]),
+                ],
+                class_vars=[],
+                metas=[
+                    StringVariable("sentence"),
+                    StringVariable("token_text"),
+                    StringVariable("spacy_lemma"),
+                    StringVariable("spacy_head_text"),
+                    StringVariable("associated_action"),
+                    StringVariable("token_text_lowercase"),
+                    StringVariable("associated_action_lowercase"),
+                ]
+            )
+    
+            #self.Outputs.dataset_level_data.send(table_from_frame(self.tagger.complete_data_df))
+            # order of columns in second Table.from_list data should be same as in domain definition
+            complete_data_df = self.tagger.complete_data_df[["storyid",
+                                                             "token_start_idx",
+                                                             "token_end_idx",
+                                                             "spacy_head_idx",
+                                                             "associated_action_idx",
+                                                             "sentence_id",
+                                                             "segment_id",
+                                                             "num_words_in_sentence",
+                                                             "story_navigator_tag",
+                                                             "spacy_tag",
+                                                             "spacy_finegrained_tag",
+                                                             "spacy_dependency",
+                                                             "spacy_ne",
+                                                             "is_pronoun_boolean",
+                                                             "is_sentence_subject_boolean",
+                                                             "active_voice_subject_boolean",
+                                                             "voice",
+                                                             "future_verb",
+                                                             "lang",
+                                                             "sentence",
+                                                             "token_text",
+                                                             "spacy_lemma",
+                                                             "spacy_head_text",
+                                                             "associated_action",
+                                                             "token_text_lowercase",
+                                                             "associated_action_lowercase"]]
+            self.Outputs.dataset_level_data.send(Table.from_list(tagging_domain, complete_data_df.values.tolist()))
  
 
     def on_infinitives_changed(self):

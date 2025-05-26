@@ -847,7 +847,7 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                             custom=self.custom,
                             selected_prominence_metric=self.agent_prominence_metric,
                             prominence_score_min=self.agent_prominence_score_min,
-                            story_elements_df=self.story_elements_dict[str(c_index)]
+                            story_elements_df=self.story_elements_dict[c_index]
                         )                   
 
                 if feature in self.search_features and (len(self.regexp_filter) > 0):
