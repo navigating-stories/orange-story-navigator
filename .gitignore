@@ -24,6 +24,9 @@ data/
 
 navigator.code-workspace
 
+orange_env/
+
+
 
 # Cython generated files
 __pycache__
