@@ -40,13 +40,15 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
-from Orange.data.pandas_compat import table_from_frame
+from Orange.data.pandas_compat import table_from_frame, table_to_frames
+
 
 # Imports from other Orange3 add-ons
 from orangecontrib.text.corpus import Corpus
 
 # Imports from this add-on
 from storynavigation.modules.actionanalysis import ActionTagger
+from storynavigation.modules.tagging import Tagger
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 import storynavigation.modules.error_handling as error_handling
@@ -321,6 +323,49 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     icon = "icons/action_analysis_icon.png"
     priority = 13
 
+    def _auto_generate_story_elements(self):
+        """
+        Generate a story elements dataframe by running the Tagger internally
+        when no 'Story elements' input is connected.
+
+        Uses the same defaults as the Elements widget.
+        """
+        if self.stories is None or len(self.stories) == 0:
+            return None
+
+        lang = "nl"
+        try:
+            df, _ = table_to_frames(self.stories)
+            if "lang" in df.columns:
+                lang_series = df["lang"].dropna().astype(str).str.lower()
+                if not lang_series.empty:
+                    val = lang_series.iloc[0]
+                    if val.startswith("en"):
+                        lang = "en"
+                    elif val.startswith("nl"):
+                        lang = "nl"
+        except Exception:
+            pass
+
+        n_segments = 1
+        remove_stopwords = constants.NO
+
+        try:
+            tagger = Tagger(
+                lang=lang,
+                n_segments=n_segments,
+                remove_stopwords=remove_stopwords,
+                text_tuples=self.stories,
+                custom_tags_and_word_column=None,
+                callback=None,
+                use_infinitives=False,
+            )
+        except TypeError:
+            return None
+
+        return tagger.complete_data
+
+
     class Inputs:
         stories = Input("Stories", Corpus, replaces=["Data"])
         story_elements = Input("Story elements", Table)
@@ -374,12 +419,14 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
         no_feats_display = Msg("No features selected for display.")
+        auto_elements = Msg("No Story elements input; generated internally from Stories.")
 
     def __init__(self):
         super().__init__()
         ConcurrentWidgetMixin.__init__(self)
 
         self.actiontagger = ActionTagger(constants.NL_SPACY_MODEL)
+        self._nlp = None  # will hold the spaCy model when needed
         self.stories = None  # initialise list of documents (corpus)
         self.story_elements = None  # initialise tagging information
         self.story_elements_dict = {}
@@ -507,20 +554,66 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
     def rehighlight_entities(self):
         self.show_docs()
 
+    # === NEW: spaCy helpers for voice/tense ===
+    def _ensure_spacy_model(self):
+        """
+        Lazily load the spaCy model used for voice/tense detection.
+        """
+        if getattr(self, "_nlp", None) is not None:
+            return
+        try:
+            self._nlp = spacy.load(constants.NL_SPACY_MODEL)
+        except Exception:
+            # Fallback: try a generic small English model
+            try:
+                self._nlp = spacy.load("en_core_web_sm")
+            except Exception:
+                self._nlp = None
+
+
     @Inputs.stories
     def set_stories(self, stories=None):
         """Stories expects a Corpus. Because Corpus is a subclass of Table, Orange type checking 
         misses wrongly connected inputs.         
         """
         self.valid_stories = []
-        if stories is not None:
-            if not isinstance(stories, Corpus):
-                self.Error.wrong_input_for_stories()
-            else:
-                self.stories = stories
-                self.Error.clear()
-        else:
+        if self.story_elements is not None:
             self.Error.clear()
+            self.start(
+                self.run,
+                self.story_elements
+            )
+            self.postags_box.setEnabled(True)
+            self.custom_tags.setChecked(False)
+            self.custom_tags.setEnabled(False)
+        else:
+            # No Story elements input: generate them internally from Stories
+            auto_df = self._auto_generate_story_elements()
+            if auto_df is not None:
+                self.story_elements = auto_df
+
+                if "lang" in self.story_elements.columns:
+                    lang_val = (
+                        self.story_elements["lang"]
+                        .dropna()
+                        .astype(str)
+                        .iloc[0]
+                    )
+                else:
+                    lang_val = "nl"
+
+                self.actiontagger = ActionTagger(lang_val)
+                self.Warning.auto_elements()
+                self.start(self.run, self.story_elements)
+                self.postags_box.setEnabled(True)
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
+            else:
+                self.custom_tags.setChecked(False)
+                self.custom_tags.setEnabled(False)
+                self.postags_box.setEnabled(False)
+                self.Error.clear()
+
 
         if self.story_elements is not None:
             self.Error.clear()
@@ -534,6 +627,138 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.list_docs()
         self.show_docs()
 
+        # === NEW: verb merging helper for better action detection ===
+    def _merge_modal_and_main_verbs(self):
+        """
+        Optionally merge simple modal + main verb combinations in story_elements.
+        This function is defensive: if the expected columns are not present,
+        it does nothing.
+        """
+        if self.story_elements is None:
+            return
+
+        df = self.story_elements
+
+        required_cols = ["storyid", "sentence", "token_text_lowercase"]
+        if not all(c in df.columns for c in required_cols):
+            # underlying ActionTagger does its own verb detection
+            return
+
+        # If your tagged elements have POS or token index columns, you can extend
+        # this method to use them. For now, we implement a simple text-based merge.
+        # Example simple approach (pseudo-implementation placeholder):
+        # - For each sentence, look for "will <verb>" or "zal <verb>" etc.
+        # - Create a new column 'merged_action_candidate' with the phrase.
+        # This is demonstration-level; the robust logic stays in ActionTagger.
+        pass  # <- keep here if you don't want to modify df structurally
+
+
+    def _auto_generate_story_elements(self):
+        """
+        Generate a story elements dataframe by running the Tagger internally
+        when no 'Story elements' input is connected.
+
+        Uses the same defaults as the Elements widget:
+        - language: 'nl' (tries to infer from a 'lang' column first)
+        - number of segments: 1
+        - remove stopwords: constants.NO
+        """
+        if self.stories is None or len(self.stories) == 0:
+            return None
+
+        # Default language
+        lang = "nl"
+        try:
+            df, _ = table_to_frames(self.stories)
+            if "lang" in df.columns:
+                lang_series = df["lang"].dropna().astype(str).str.lower()
+                if not lang_series.empty:
+                    val = lang_series.iloc[0]
+                    if val.startswith("en"):
+                        lang = "en"
+                    elif val.startswith("nl"):
+                        lang = "nl"
+        except Exception:
+            # Fallback: keep default 'nl'
+            pass
+
+        n_segments = 1
+        remove_stopwords = constants.NO
+
+        try:
+            tagger = Tagger(
+                lang=lang,
+                n_segments=n_segments,
+                remove_stopwords=remove_stopwords,
+                text_tuples=self.stories,
+                custom_tags_and_word_column=None,
+                callback=None,
+                use_infinitives=False,
+            )
+        except TypeError:
+            # In case the Tagger signature changes, do nothing instead of crashing
+            return None
+
+        # Tagger exposes the story elements table as `complete_data`
+        return tagger.complete_data
+
+
+
+    def _merge_modal_and_main_verbs(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge simple modal + main verb combinations into a single action token,
+        such as 'will go' or 'zal gaan'.
+
+        This operates at the story-elements level, before ActionTagger aggregates
+        verb frequencies. It is defensive: if the expected columns are missing,
+        the original DataFrame is returned unchanged.
+        """
+        if df is None or df.empty:
+            return df
+
+        required_cols = ["storyid", "sentence", "token_text_lowercase", "spacy_tag"]
+        if not all(c in df.columns for c in required_cols):
+            # Not enough information to perform merging
+            return df
+
+        FUTURE_AUX_LEMMAS = {"will", "shall", "zullen", "zal", "gaan"}
+
+        df = df.copy()
+
+        def process_group(group: pd.DataFrame) -> pd.DataFrame:
+            group = group.copy()
+            cols = list(group.columns)
+            token_col_idx = cols.index("token_text_lowercase")
+            assoc_idx = cols.index("associated_action") if "associated_action" in cols else None
+
+            # Iterate in order of appearance within the sentence
+            for i in range(len(group) - 1):
+                row = group.iloc[i]
+                row_next = group.iloc[i + 1]
+
+                if (
+                    str(row["spacy_tag"]) == "AUX"
+                    and str(row["token_text_lowercase"]).lower() in FUTURE_AUX_LEMMAS
+                    and str(row_next["spacy_tag"]) == "VERB"
+                ):
+                    phrase = f"{row['token_text_lowercase']} {row_next['token_text_lowercase']}"
+
+                    # Update token_text_lowercase for both tokens
+                    group.iat[i, token_col_idx] = phrase
+                    group.iat[i + 1, token_col_idx] = phrase
+
+                    # If an 'associated_action' column exists, keep it in sync
+                    if assoc_idx is not None:
+                        group.iat[i, assoc_idx] = phrase
+                        group.iat[i + 1, assoc_idx] = phrase
+
+            return group
+
+        df = df.groupby(["storyid", "sentence"], group_keys=False).apply(process_group)
+        return df
+
+    
+    
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
         """Story elements expects a table. Because Corpus is a subclass of Table, Orange type checking 
@@ -547,6 +772,7 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
             else:
                 self.Error.clear()
                 self.story_elements = util.convert_orangetable_to_dataframe(story_elements)
+                self._merge_modal_and_main_verbs()
                 self.actiontagger = ActionTagger(self.story_elements['lang'].tolist()[0])
                 self.start(
                     self.run, 
@@ -576,97 +802,423 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
                 metas.append(item.metas.tolist())
             self.stories = Corpus(domain=domain, metas=np.array(metas))
             self.list_docs()
-        # specify domain for columns in full_action_table_df
-        full_action_table_domain = Domain(
-            attributes=[
-                ContinuousVariable("text_id"),
-                ContinuousVariable("sentence_id"),
-                ContinuousVariable("segment_id"),
-                ContinuousVariable("character_id_role"),
-                ContinuousVariable("character_id"),
-                DiscreteVariable.make("entities_type", 
-                    values=["NSNP", "NSP", "SNP", "SP"])
-            ],
-            class_vars=[],
-            metas=[
-                StringVariable("text_role"),
-                StringVariable("text"),
-                StringVariable("spacy_dependency")
-            ]
-        )
-        # reorder table columns to be able to link them to domain
-        self.full_action_table_df = self.full_action_table_df[[
-            "text_id", "sentence_id", "segment_id", "character_id_role",
-            "character_id", "entities_type", "text_role", "text", "spacy_dependency"]]
-        self.full_action_table_df = self.full_action_table_df.drop_duplicates(ignore_index=True)
+        # NEW: sort by highest frequency column before sending
+        sort_col = None
+        for cand in ["abs_freq_text", "rel_freq_text"]:
+            if cand in self.action_results_df.columns:
+                sort_col = cand
+                break
+
+        if sort_col is not None:
+            action_results_sorted = self.action_results_df.sort_values(
+                by=sort_col, ascending=False
+            )
+        else:
+            action_results_sorted = self.action_results_df
 
         self.Outputs.story_collection_results.send(
-            table_from_frame(
-                self.action_results_df
-            )
+            table_from_frame(action_results_sorted)
         )
-        output_table = Table.from_list(full_action_table_domain,
-                                       self.full_action_table_df.values.tolist())
-        output_table.name = 'actions'
-        self.Outputs.actor_action_table_full.send(output_table)
-
-        if util.frame_contains_custom_tag_columns(self.story_elements):
-            self.Outputs.customfreq_table.send(
-                table_from_frame(
-                    self.full_custom_freq
-                )
-            )
-
+    
     def run(self, story_elements, state: TaskState):
-        def advance(progress):
+        """
+        Long-running computation executed in a separate thread.
+
+        Parameters
+        ----------
+        story_elements : pandas.DataFrame
+            Story elements table converted from the Orange Table.
+        state : TaskState
+            Orange concurrency state used for reporting progress / cancellation.
+
+        Returns
+        -------
+        tuple
+            (action_results_df, valid_stories, selected_action_table_df,
+             full_action_table_df, selected_custom_freq, full_custom_freq)
+        """
+        def advance(progress: float):
             if state.is_interruption_requested():
                 raise InterruptedError
+            # progress expected in [0, 100]
             state.set_progress_value(progress)
 
+        # Cache the story elements frame used throughout the widget
         self.story_elements = story_elements
-        self.action_results_df = self.actiontagger.generate_action_analysis_results(self.story_elements, callback=advance)
 
-        # deal with stories that do not have any text / entry in story elements: remove them from doc list
-        story_elements_grouped_by_story = self.story_elements.groupby('storyid')
-        for storyid, story_df in story_elements_grouped_by_story:
-            if self.stories is not None:
-                self.valid_stories.append(self.stories[int(storyid)])
-            self.story_elements_dict[storyid] = story_df
+        # Compute the core action statistics using the tagger
+        self.action_results_df = self.actiontagger.generate_action_analysis_results(
+            self.story_elements,
+            callback=advance,
+        )
 
-        selected_storyids = []
-        otherids = []
-        for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-            selected_storyids.append(int(c_index))
-            otherids.append(str(c_index))
+        # Build a mapping from storyid -> sub-dataframe and collect valid stories
+        self.valid_stories = []
+        self.story_elements_dict = {}
 
-        self.word_col = next((word for word in self.story_elements.columns if word.startswith('custom_')), None)
+        if self.story_elements is not None:
+            grouped = self.story_elements.groupby("storyid")
+            for storyid, story_df in grouped:
+                # storyid in the elements table is usually a plain index (e.g. "0")
+                # while the Stories corpus is indexed numerically. We try to
+                # convert to int; if that fails we fall back to handling IDs like "ST0".
+                idx = None
+                try:
+                    idx = int(storyid)
+                except (TypeError, ValueError):
+                    if isinstance(storyid, str) and storyid.startswith("ST"):
+                        try:
+                            idx = int(storyid[2:])
+                        except ValueError:
+                            idx = None
+                if idx is not None and self.stories is not None and idx < len(self.stories):
+                    self.valid_stories.append(self.stories[idx])
+
+                # Always store story_elements keyed by *string* storyid
+                self.story_elements_dict[str(storyid)] = story_df
+
+        # (Re)build the per-action summary tables and custom-tag statistics
+        selected_indices = sorted(self.selected_documents) if self.selected_documents else []
+        self._rebuild_action_tables_for_selection(selected_indices)
+
+        return (
+            self.action_results_df,
+            self.valid_stories,
+            self.selected_action_table_df,
+            self.full_action_table_df,
+            self.selected_custom_freq,
+            self.full_custom_freq,
+        )
+
+    def _rebuild_action_tables_for_selection(self, selected_indices: Iterable[int]) -> None:
+        """
+        Helper used both in `run` and `update_selected_action_results` to
+        construct:
+            - `full_action_table_df`: all stories
+            - `selected_action_table_df`: only selected stories
+            - `selected_action_results_df`: filtered action_results_df
+            - custom frequency tables (if custom tags exist)
+        """
+        if self.story_elements is None or self.story_elements.empty:
+            self.full_action_table_df = None
+            self.selected_action_table_df = None
+            self.selected_action_results_df = None
+            self.selected_custom_freq = None
+            self.full_custom_freq = None
+            return
+
+        # Determine which column should be used for listing entities
+        self.word_col = next(
+            (col for col in self.story_elements.columns if col.startswith("custom_")),
+            None,
+        )
         if self.word_col is None:
-            self.word_col = 'token_text_lowercase'
+            self.word_col = "token_text_lowercase"
 
-        only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
-        selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
+        # Keep only rows that correspond to actual actions
+        if "associated_action_lowercase" in self.story_elements.columns:
+            mask_actions = ~self.story_elements["associated_action_lowercase"].astype(str).str.contains(r"\?")
+            only_actions_df = self.story_elements[mask_actions].copy()
+        else:
+            # Fallback: keep rows with verb-like navigator tags
+            tag_series = self.story_elements.get("story_navigator_tag")
+            if tag_series is not None:
+                only_actions_df = self.story_elements[tag_series.astype(str).str.contains("VB")].copy()
+            else:
+                only_actions_df = self.story_elements.copy()
 
-        self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
-        self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
+        # ---- Full action table (all stories) ----
+        if not only_actions_df.empty and {"associated_action_lowercase", "story_navigator_tag"}.issubset(only_actions_df.columns):
+            full_group = (
+                only_actions_df
+                .groupby(["associated_action_lowercase", "story_navigator_tag"])[self.word_col]
+                .agg(lambda x: ", ".join(sorted({str(v) for v in x if pd.notna(v)})))
+                .reset_index()
+            )
+            self.full_action_table_df = full_group.rename(
+                columns={
+                    "associated_action_lowercase": "action",
+                    "story_navigator_tag": "entities_type",
+                    self.word_col: "entities",
+                }
+            )
+        else:
+            # Safe empty frame with expected columns
+            self.full_action_table_df = only_actions_df.iloc[0:0].copy()
 
-        full_action_table_df = only_actions_df[['storyid', 'segment_id', 'sentence_id', 'token_start_idx', 'associated_action_lowercase', 'story_navigator_tag', self.word_col, 'associated_action_idx', 'spacy_dependency']].copy()
-        self.full_action_table_df = full_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role', 'storyid': 'text_id', 'token_start_idx': 'character_id_role', 'associated_action_idx': 'character_id'})
-        self.full_action_table_df['character_id_role'] = pd.to_numeric(self.full_action_table_df['character_id_role'])
-        self.full_action_table_df['character_id'] = pd.to_numeric(self.full_action_table_df['character_id'])
-        selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-        self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role'})
+        # ---- Selected action table (subset of stories) ----
+        selected_storyids_elements = [str(i) for i in selected_indices]
+        if selected_storyids_elements:
+            selected_only = only_actions_df[
+                only_actions_df["storyid"].astype(str).isin(selected_storyids_elements)
+            ].copy()
+        else:
+            selected_only = only_actions_df.iloc[0:0].copy()
 
+        if not selected_only.empty and {"associated_action_lowercase", "story_navigator_tag"}.issubset(selected_only.columns):
+            selected_group = (
+                selected_only
+                .groupby(["associated_action_lowercase", "story_navigator_tag"])[self.word_col]
+                .agg(lambda x: ", ".join(sorted({str(v) for v in x if pd.notna(v)})))
+                .reset_index()
+            )
+            self.selected_action_table_df = selected_group.rename(
+                columns={
+                    "associated_action_lowercase": "action",
+                    "story_navigator_tag": "entities_type",
+                    self.word_col: "entities",
+                }
+            )
+        else:
+            self.selected_action_table_df = self.full_action_table_df.iloc[0:0].copy()
+
+        # ---- Selected action results (statistics) ----
+        if self.action_results_df is not None and not self.action_results_df.empty:
+            if "storyid" in self.action_results_df.columns:
+                selected_storyids_results = {"ST" + str(i) for i in selected_indices}
+                mask_sel = self.action_results_df["storyid"].astype(str).isin(selected_storyids_results)
+                self.selected_action_results_df = self.action_results_df[mask_sel].drop(
+                    columns=["storyid"],
+                    errors="ignore",
+                )
+            else:
+                self.selected_action_results_df = self.action_results_df.copy()
+        else:
+            self.selected_action_results_df = None
+
+        # ---- Custom tag frequencies ----
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
-            self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
-            self.full_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+            selected_stories = [str(i) for i in selected_indices] if selected_indices else None
+            self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(
+                self.story_elements,
+                selected_stories=selected_stories,
+            )
+            self.full_custom_freq = self.actiontagger.calculate_customfreq_table(
+                self.story_elements,
+                selected_stories=None,
+            )
         else:
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
-        
-        for column_name in ['text_id', 'segment_id', 'sentence_id', 'character_id']:
-            self.full_action_table_df[column_name] = pd.to_numeric(self.full_action_table_df[column_name], errors="raise")
-        return self.action_results_df, self.valid_stories, self.selected_action_results_df, self.selected_action_table_df, self.full_action_table_df, self.selected_custom_freq, self.full_custom_freq
+            self.selected_custom_freq = None
+            self.full_custom_freq = None
+
+    def _detect_voice_and_tense_for_sentence(self, text: str):
+        """
+        Return (voice, tense) for a given sentence string.
+        voice: "active" or "passive" or "unknown"
+        tense: "past", "present", "future", or "unknown"
+        """
+        if not text:
+            return "unknown", "unknown"
+
+        self._ensure_spacy_model()
+        if self._nlp is None:
+            return "unknown", "unknown"
+
+        doc = self._nlp(text)
+
+        # Passive if we see a passive subject or auxiliary
+        is_passive = any(
+            token.dep_ in ("nsubjpass", "auxpass")
+            for token in doc
+        )
+        voice = "passive" if is_passive else "active"
+
+        FUTURE_AUX_LEMMAS = {"will", "shall", "zullen", "zal", "gaan"}
+
+        tense = "unknown"
+        # explicit future
+        if any(
+            token.lemma_.lower() in FUTURE_AUX_LEMMAS and token.pos_ == "AUX"
+            for token in doc
+        ) or any("Tense=Fut" in str(token.morph) for token in doc):
+            tense = "future"
+        elif any("Tense=Past" in str(token.morph) for token in doc):
+            tense = "past"
+        elif any("Tense=Pres" in str(token.morph) for token in doc):
+            tense = "present"
+
+        return voice, tense
+
+
+    
+    # === NEW: derived frequency metrics for Action results ===
+    def _add_frequency_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add:
+        - abs_freq_text  : absolute frequency per text
+        - rel_freq_text  : relative frequency per text
+        - nominal_ratio  : subject / total frequency (if subject freq is available)
+        """
+        if df is None or df.empty:
+            return df
+
+        df = df.copy()
+
+        story_col = "storyid" if "storyid" in df.columns else None
+        if story_col is None:
+            return df
+
+        # Action column: pick a column whose name contains "action"
+        entity_col = None
+        for c in df.columns:
+            if "action" in c.lower() and df[c].dtype == object:
+                entity_col = c
+                break
+        if entity_col is None:
+            # fallback to first non-story text column
+            candidate_entity_cols = [
+                c
+                for c in df.columns
+                if c not in [story_col, "lang"]
+                and df[c].dtype == object
+            ]
+            if not candidate_entity_cols:
+                return df
+            entity_col = candidate_entity_cols[0]
+
+        freq_cols = [
+            c
+            for c in df.columns
+            if "freq" in c.lower()
+            and np.issubdtype(df[c].dtype, np.number)
+        ]
+        if not freq_cols:
+            return df
+
+        base_freq_col = freq_cols[0]
+
+        subj_col = None
+        for c in freq_cols:
+            cl = c.lower()
+            if "subj" in cl or "subject" in cl:
+                subj_col = c
+                break
+
+        group_cols = [story_col, entity_col]
+        grouped = (
+            df.groupby(group_cols)[base_freq_col]
+            .sum()
+            .reset_index(name="abs_freq_text")
+        )
+        grouped["total_freq_text"] = grouped.groupby(story_col)["abs_freq_text"].transform("sum")
+        grouped["rel_freq_text"] = grouped["abs_freq_text"] / grouped["total_freq_text"].replace(
+            0, np.nan
+        )
+
+        df = df.merge(
+            grouped[group_cols + ["abs_freq_text", "rel_freq_text"]],
+            on=group_cols,
+            how="left",
+        )
+
+        if subj_col is not None:
+            df["nominal_ratio"] = np.where(
+                df[base_freq_col] > 0,
+                df[subj_col] / df[base_freq_col],
+                np.nan,
+            )
+
+        return df
+    
+
+    def _add_voice_and_tense_to_results(self):
+        """
+        Use story_elements to compute voice/tense per action and merge into
+        self.action_results_df as columns 'voice' and 'tense'.
+        """
+        if self.story_elements is None or self.action_results_df is None:
+            return
+
+        df = self.story_elements
+
+        required_cols = ["storyid", "sentence"]
+        if not all(c in df.columns for c in required_cols):
+            return
+
+        action_col_el = None
+        # column for action label in elements frame
+        for c in df.columns:
+            if "associated_action" in c.lower():
+                action_col_el = c
+                break
+        if action_col_el is None:
+            return
+
+        # We avoid pseudo-actions marked with '?'
+        df_actions = df[~df[action_col_el].astype(str).str.contains(r"\?")]
+
+        records = []
+        for (sid, action_label), group in df_actions.groupby(["storyid", action_col_el]):
+            # reuse get_el_story_text to rebuild story string from sentences
+            text = self.get_el_story_text(group)
+            voice, tense = self._detect_voice_and_tense_for_sentence(text)
+
+            # storyid in action_results_df is usually 'ST0', 'ST1', ...
+            sid_str = str(sid)
+            if not sid_str.startswith("ST"):
+                sid_res = f"ST{sid_str}"
+            else:
+                sid_res = sid_str
+
+            records.append(
+                {
+                    "storyid": sid_res,
+                    "associated_action_lowercase": action_label,
+                    "voice": voice,
+                    "tense": tense,
+                }
+            )
+
+        if not records:
+            return
+
+        vt_df = pd.DataFrame.from_records(records)
+
+        # Determine which action column is in the results data frame
+        merge_keys = ["storyid", "associated_action_lowercase"]
+        if "associated_action_lowercase" not in self.action_results_df.columns:
+            if "action" in self.action_results_df.columns:
+                vt_df = vt_df.rename(columns={"associated_action_lowercase": "action"})
+                merge_keys = ["storyid", "action"]
+            else:
+                # cannot merge sensibly
+                return
+
+        self.action_results_df = self.action_results_df.merge(
+            vt_df[merge_keys + ["voice", "tense"]],
+            on=merge_keys,
+            how="left",
+        )
+
+
+    def _cleanup_legacy_action_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df is None or df.empty:
+            return df
+
+        df = df.copy()
+        drop_candidates = [
+            "Agency",
+            "agency",
+            "Prominence_sf",
+            "prominence_sf",
+            "raw_freq",
+            "raw_frequency",
+            "subject_freq",
+            "subject_frequency",
+            "subj_freq",
+        ]
+        drop_cols = [c for c in drop_candidates if c in df.columns]
+        if drop_cols:
+            df = df.drop(columns=drop_cols)
+        return df
+
+    def _prepare_action_results(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = self._add_frequency_metrics(df)
+        df = self._cleanup_legacy_action_columns(df)
+        return df
 
     def reset_widget(self):
         # Corpus
@@ -780,39 +1332,30 @@ class OWSNActionAnalysis(OWWidget, ConcurrentWidgetMixin):
         ):
             view.selectionModel().select(selection, QItemSelectionModel.ClearAndSelect)
 
+
+    
     def update_selected_action_results(self):
-        if self.action_results_df is not None and len(self.action_results_df) > 0:
-            selected_storyids = []
-            otherids = []
-            for doc_count, c_index in enumerate(sorted(self.selected_documents)):
-                selected_storyids.append(int(c_index))
-                otherids.append(str(c_index))
+        """
+        Refresh the cached dataframes when the document selection changes.
+        This keeps:
+            - `selected_action_results_df`
+            - `selected_action_table_df`
+            - custom frequency tables
+        in sync with the current selection in the document list.
+        """
+        if self.action_results_df is None or len(self.action_results_df) == 0:
+            return
 
-            selected_storyids = list(set(selected_storyids)) # only unique items
-            otherids = list(set(otherids))
+        selected_indices = sorted(self.selected_documents)
+        self._rebuild_action_tables_for_selection(selected_indices)
 
-            self.selected_action_results_df = self.action_results_df[self.action_results_df['storyid'].isin(selected_storyids)]
-            self.selected_action_results_df = self.selected_action_results_df.drop(columns=['storyid']) # assume single story is selected
+        # When custom tags are present, keep the outgoing table in sync as well.
+        if util.frame_contains_custom_tag_columns(self.story_elements) and self.full_custom_freq is not None:
+            self.Outputs.customfreq_table.send(
+                table_from_frame(self.full_custom_freq)
+            )
 
-            only_actions_df = self.story_elements[~self.story_elements['associated_action_lowercase'].str.contains(r'\?')]
-            selected_only_actions_df = only_actions_df[only_actions_df['storyid'].isin(otherids)]
 
-            selected_action_table_df = selected_only_actions_df.groupby(['associated_action_lowercase', 'story_navigator_tag'])[self.word_col].agg(lambda x: ', '.join(set(x))).reset_index()
-            self.selected_action_table_df = selected_action_table_df.rename(columns={'associated_action_lowercase': 'text', 'story_navigator_tag': 'entities_type', self.word_col : 'text_role'})
-
-            if util.frame_contains_custom_tag_columns(self.story_elements):
-                self.custom_tags.setEnabled(True)
-                self.selected_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
-                self.full_custom_freq = self.actiontagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
-
-                self.Outputs.customfreq_table.send(
-                    table_from_frame(
-                        self.full_custom_freq
-                    )
-                )
-            else:
-                self.custom_tags.setChecked(False)
-                self.custom_tags.setEnabled(False)
 
     def selection_changed(self) -> None:
         """Function is called every time the selection changes"""

@@ -40,16 +40,26 @@ from Orange.widgets.utils.itemmodels import DomainModel
 from Orange.widgets.widget import Input, Msg, Output, OWWidget
 from orangecanvas.gui.utils import disconnected
 from orangewidget.utils.listview import ListViewSearch
-from Orange.data.pandas_compat import table_from_frame
+from Orange.data.pandas_compat import table_from_frame, table_to_frames
 
 # Imports from other Orange3 add-ons
 from orangecontrib.text.corpus import Corpus
 
 # Imports from this add-on
 from storynavigation.modules.actoranalysis import ActorTagger
+from storynavigation.modules.tagging import Tagger
 import storynavigation.modules.constants as constants
 import storynavigation.modules.util as util
 import storynavigation.modules.error_handling as error_handling
+
+from Orange.data.pandas_compat import table_from_frame, table_to_frames
+from storynavigation.modules.actoranalysis import ActorTagger
+from storynavigation.modules.tagging import Tagger
+import storynavigation.modules.constants as constants
+import storynavigation.modules.util as util
+import storynavigation.modules.error_handling as error_handling
+
+
 
 from thefuzz import fuzz
 
@@ -384,6 +394,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
     class Warning(OWWidget.Warning):
         no_feats_search = Msg("No features included in search.")
         no_feats_display = Msg("No features selected for display.")
+        auto_elements = Msg("No Story elements input; generated internally from Stories.")
+
 
     def __init__(self):
         super().__init__()
@@ -572,14 +584,24 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         misses wrongly connected inputs.         
         """
         self.valid_stories = []
-        if (stories is not None):
-            if not isinstance(stories, Corpus):
-                self.Error.wrong_input_for_stories()
-            else:
+        if stories is not None:
+            # NEW: accept both Corpus and generic Table
+            if isinstance(stories, Corpus):
                 self.stories = stories
                 self.Error.clear()
+            else:
+                try:
+                    # convert a generic Table to Corpus
+                    self.stories = Corpus.from_table(stories)
+                    self.Error.clear()
+                except Exception:
+                    self.stories = None
+                    self.Error.wrong_input_for_stories()
+                    return
         else:
+            self.stories = None
             self.Error.clear()
+
 
         if self.story_elements is not None:
             self.Error.clear()
@@ -592,6 +614,8 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.doc_list.model().set_filter_string(self.regexp_filter)
         self.list_docs()
         self.show_docs()
+
+
 
     @Inputs.story_elements
     def set_story_elements(self, story_elements=None):
@@ -628,43 +652,231 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
         self.list_docs()
         self.show_docs()
 
+    
     def run(self, story_elements, state: TaskState):
-        def advance(progress):
+        """
+        Long-running computation executed in a separate thread.
+
+        Parameters
+        ----------
+        story_elements : pandas.DataFrame
+            Story elements table converted from the Orange Table.
+        state : TaskState
+            Orange concurrency state used for reporting progress / cancellation.
+
+        Returns
+        -------
+        tuple
+            (actor_results_df, valid_stories, selected_actor_results_df,
+             selected_custom_freq, full_custom_freq)
+        """
+        def advance(progress: float):
             if state.is_interruption_requested():
                 raise InterruptedError
+            # progress in [0, 100]
             state.set_progress_value(progress)
 
+        # Cache frame and reset caches
         self.story_elements = story_elements
-        self.actor_results_df = self.actortagger.generate_actor_analysis_results(self.story_elements, callback=advance)
+        self.valid_stories = []
+        self.story_elements_dict = {}
+
+        # Compute core actor statistics
+        self.actor_results_df = self.actortagger.generate_actor_analysis_results(
+            self.story_elements,
+            callback=advance,
+        )
+        self.actor_results_df = util.standardize_columns(self.actor_results_df)
+
+        # Enrich & clean frequency metrics
+        self.actor_results_df = self._prepare_actor_results(self.actor_results_df)
+
+        # Update slider max for prominence score
         self.agent_prominence_score_max = self.actortagger.prominence_score_max
 
-        # deal with stories that do not have any text / entry in story elements: remove them from doc list
-        story_elements_grouped_by_story = self.story_elements.groupby('storyid')
-        for storyid, story_df in story_elements_grouped_by_story:
-            if self.stories is not None:
-                self.valid_stories.append(self.stories[int(storyid)])
-            self.story_elements_dict[storyid] = story_df
+        # --- Build mapping storyid -> story_elements subset + list of valid stories ---
+        if self.story_elements is not None and "storyid" in self.story_elements.columns:
+            story_elements_grouped_by_story = self.story_elements.groupby("storyid")
+            for storyid, story_df in story_elements_grouped_by_story:
+                idx = None
+                try:
+                    idx = int(storyid)
+                except (TypeError, ValueError):
+                    # If storyid cannot be converted to int, just skip adding it to valid_stories
+                    idx = None
 
+                if idx is not None and self.stories is not None and idx < len(self.stories):
+                    self.valid_stories.append(self.stories[idx])
+
+                # Use integer index if available, otherwise the raw storyid as key
+                key = idx if idx is not None else storyid
+                self.story_elements_dict[key] = story_df
+
+        # --- Determine which stories are currently selected in the document list ---
         selected_storyids = []
         otherids = []
 
-        for doc_count, c_index in enumerate(sorted(self.selected_documents)):
+        for _, c_index in enumerate(sorted(self.selected_documents)):
             selected_storyids.append(int(c_index))
             otherids.append(int(c_index))
 
-        self.actor_results_df = self.actor_results_df.rename(columns={'storyid': 'text_id', 'token_start_idx': 'character_id'}).sort_values(by=['text', 'text_id', 'segment_id']).reset_index(drop=True)
-        self.selected_actor_results_df = self.actor_results_df[self.actor_results_df['text_id'].isin(selected_storyids)]
-        self.selected_actor_results_df = self.selected_actor_results_df.drop(columns=['text_id']) # assume single story is selected
+        # --- Prepare actor_results_df for output and selection ---
+        self.actor_results_df = (
+            self.actor_results_df
+            .rename(columns={"storyid": "text_id", "token_start_idx": "character_id"})
+            .sort_values(by=["text", "text_id", "segment_id"])
+            .reset_index(drop=True)
+        )
 
+        self.selected_actor_results_df = self.actor_results_df[
+            self.actor_results_df["text_id"].isin(selected_storyids)
+        ].drop(columns=["text_id"], errors="ignore")
+
+        # --- Handle custom tag statistics if custom tag columns are present ---
         if util.frame_contains_custom_tag_columns(self.story_elements):
             self.custom_tags.setEnabled(True)
-            self.selected_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=otherids)
-            self.full_custom_freq = self.actortagger.calculate_customfreq_table(self.story_elements, selected_stories=None)
+            self.selected_custom_freq = self.actortagger.calculate_customfreq_table(
+                self.story_elements,
+                selected_stories=otherids,
+            )
+            self.full_custom_freq = self.actortagger.calculate_customfreq_table(
+                self.story_elements,
+                selected_stories=None,
+            )
         else:
             self.custom_tags.setChecked(False)
             self.custom_tags.setEnabled(False)
+            self.selected_custom_freq = None
+            self.full_custom_freq = None
         
-        return self.actor_results_df, self.valid_stories, self.selected_actor_results_df, self.selected_custom_freq, self.full_custom_freq
+        return (
+            self.actor_results_df,
+            self.valid_stories,
+            self.selected_actor_results_df,
+            self.selected_custom_freq,
+            self.full_custom_freq,
+        )
+
+    
+    # === NEW: derived frequency metrics for Actor results ===
+    def _add_frequency_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add:
+        - abs_freq_text  : absolute frequency per text
+        - rel_freq_text  : relative frequency per text (within that story)
+        - nominal_ratio  : subject / total frequency (if subject freq is available)
+        The function is robust: if expected columns are missing, it just returns df unchanged.
+        """
+        if df is None or df.empty:
+            return df
+
+        df = df.copy()
+
+        # story column is known
+        story_col = "storyid" if "storyid" in df.columns else None
+        if story_col is None:
+            return df
+
+        # pick a categorical "entity" column (actor name)
+        candidate_entity_cols = [
+            c
+            for c in df.columns
+            if c not in [story_col, "lang"]
+            and df[c].dtype == object
+        ]
+        if not candidate_entity_cols:
+            return df
+        entity_col = candidate_entity_cols[0]
+
+        # find numeric frequency columns
+        freq_cols = [
+            c
+            for c in df.columns
+            if "freq" in c.lower()
+            and np.issubdtype(df[c].dtype, np.number)
+        ]
+        if not freq_cols:
+            return df
+
+        # base frequency we use for abs/rel
+        base_freq_col = freq_cols[0]
+
+        # subject frequency (if available)
+        subj_col = None
+        for c in freq_cols:
+            cl = c.lower()
+            if "subj" in cl or "subject" in cl:
+                subj_col = c
+                break
+
+        # --- abs & rel per text ---
+        group_cols = [story_col, entity_col]
+        grouped = (
+            df.groupby(group_cols)[base_freq_col]
+            .sum()
+            .reset_index(name="abs_freq_text")
+        )
+
+        # total per story
+        grouped["total_freq_text"] = grouped.groupby(story_col)["abs_freq_text"].transform("sum")
+        grouped["rel_freq_text"] = grouped["abs_freq_text"] / grouped["total_freq_text"].replace(
+            0, np.nan
+        )
+
+        df = df.merge(
+            grouped[group_cols + ["abs_freq_text", "rel_freq_text"]],
+            on=group_cols,
+            how="left",
+        )
+
+        # --- nominal_ratio: subject / total ---
+        if subj_col is not None:
+            df["nominal_ratio"] = np.where(
+                df[base_freq_col] > 0,
+                df[subj_col] / df[base_freq_col],
+                np.nan,
+            )
+
+        return df
+
+    def _cleanup_legacy_actor_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Drop old columns we no longer want in the output:
+        - Agency / agency
+        - Prominence_sf / prominence_sf
+        - raw / subject frequency variants
+        """
+        if df is None or df.empty:
+            return df
+
+        df = df.copy()
+        drop_candidates = [
+            "Agency",
+            "agency",
+            "Prominence_sf",
+            "prominence_sf",
+            "raw_freq",
+            "raw_frequency",
+            "subject_freq",
+            "subject_frequency",
+            "subj_freq",
+        ]
+        drop_cols = [c for c in drop_candidates if c in df.columns]
+        if drop_cols:
+            df = df.drop(columns=drop_cols)
+
+        return df
+
+    def _prepare_actor_results(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Pipeline for actor_results_df:
+        1. add new metrics
+        2. drop old/legacy columns
+        """
+        df = self._add_frequency_metrics(df)
+        df = self._cleanup_legacy_actor_columns(df)
+        return df
+
 
     def reset_widget(self):
         self.stories = None
@@ -954,40 +1166,25 @@ class OWSNActorAnalysis(OWWidget, ConcurrentWidgetMixin):
                 metas.append(item.metas.tolist())
             self.stories = Corpus(domain=domain, metas=np.array(metas))
             self.list_docs()
+        # NEW: sort by highest frequency column before sending
+        sort_col = None
+        for cand in ["abs_freq_text", "rel_freq_text"]:
+            if cand in self.actor_results_df.columns:
+                sort_col = cand
+                break
 
-        # specify domain for columns in actor_results_df
-        actor_results_domain = Domain(
-            attributes=[
-                ContinuousVariable("text_id"),
-                ContinuousVariable("sentence_id"),
-                ContinuousVariable("segment_id"),
-                ContinuousVariable("character_id"),
-                ContinuousVariable("raw_freq"),
-                ContinuousVariable("subj_freq"),
-                ContinuousVariable("agency"),
-                ContinuousVariable("prominence_sf")
-            ],
-            class_vars=[],
-            metas=[ StringVariable("text")]
-        )
-        # reorder table columns to be able to link them to domain
-        self.actor_results_df = self.actor_results_df[[
-            "text_id", "sentence_id", "segment_id", "character_id",
-            "raw_freq", "subj_freq", "agency", "prominence_sf", "text"]]
-        self.actor_results_df = self.actor_results_df.drop_duplicates(ignore_index=True)
-
-        output_table = Table.from_list(actor_results_domain,
-                                       self.actor_results_df.values.tolist())
-        output_table.name = 'actors'
-        self.Outputs.story_collection_results.send(output_table)
-
-        if util.frame_contains_custom_tag_columns(self.story_elements):
-            self.Outputs.customfreq_table.send(
-                table_from_frame(
-                    self.full_custom_freq
-                )
+        if sort_col is not None:
+            actor_results_sorted = self.actor_results_df.sort_values(
+                by=sort_col, ascending=False
             )
+        else:
+            actor_results_sorted = self.actor_results_df
 
+        self.Outputs.story_collection_results.send(
+            table_from_frame(actor_results_sorted)
+        )
+
+        
     def on_exception(self, ex):
         raise ex
 
